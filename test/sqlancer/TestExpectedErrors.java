@@ -58,6 +58,40 @@ public class TestExpectedErrors {
         errors.addRegex(Pattern.compile(".violated."));
         assertTrue(errors.errorIsExpected("UNIQUE constraint was violated!"));
         assertTrue(errors.errorIsExpected("PRIMARY KEY constraint was violated!"));
+
+        errors.addRegex(Pattern.compile("unknown signature: (min|max)\\(.*\\)"));
+        assertTrue(errors.errorIsExpected("unknown signature: max(unknown[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: min(unknown[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: max(interval[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: min(interval[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: max(string[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: min(string[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: max(decimal[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: min(decimal[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: max(varbit[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: min(varbit[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: max(int[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: min(int[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: min(bool[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: max(bool[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: max(timestamp[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: min(timestamp[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: min(timestamptz[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: max(timestamptz[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: min(timetz[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: max(timetz[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: max(time[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: min(time[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: min(int2[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: max(int2[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: max(int4[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: min(int4[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: max(bytes[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: min(bytes[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: min(bit[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: max(bit[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: min(float[])"));
+        assertTrue(errors.errorIsExpected("unknown signature: max(float[])"));
     }
 
 }

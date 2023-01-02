@@ -1,5 +1,7 @@
 package sqlancer.cockroachdb;
 
+import java.util.regex.Pattern;
+
 import sqlancer.common.query.ExpectedErrors;
 
 public final class CockroachDBErrors {
@@ -212,38 +214,39 @@ public final class CockroachDBErrors {
     private static void addArrayErrors(ExpectedErrors errors) {
         // arrays
         errors.add("cannot determine type of empty array");
-        errors.add("unknown signature: max(unknown[])");
-        errors.add("unknown signature: min(unknown[])");
-        errors.add("unknown signature: max(interval[])");
-        errors.add("unknown signature: min(interval[])");
-        errors.add("unknown signature: max(string[])");
-        errors.add("unknown signature: min(string[])");
-        errors.add("unknown signature: max(decimal[])");
-        errors.add("unknown signature: min(decimal[])");
-        errors.add("unknown signature: max(varbit[])");
-        errors.add("unknown signature: min(varbit[])");
-        errors.add("unknown signature: max(int[])");
-        errors.add("unknown signature: min(int[])");
-        errors.add("unknown signature: min(bool[])");
-        errors.add("unknown signature: max(bool[])");
-        errors.add("unknown signature: max(timestamp[])");
-        errors.add("unknown signature: min(timestamp[])");
-        errors.add("unknown signature: min(timestamptz[])");
-        errors.add("unknown signature: max(timestamptz[])");
-        errors.add("unknown signature: min(timetz[])");
-        errors.add("unknown signature: max(timetz[])");
-        errors.add("unknown signature: max(time[])");
-        errors.add("unknown signature: min(time[])");
-        errors.add("unknown signature: min(int2[])");
-        errors.add("unknown signature: max(int2[])");
-        errors.add("unknown signature: max(int4[])");
-        errors.add("unknown signature: min(int4[])");
-        errors.add("unknown signature: max(bytes[])");
-        errors.add("unknown signature: min(bytes[])");
-        errors.add("unknown signature: min(bit[])");
-        errors.add("unknown signature: max(bit[])");
-        errors.add("unknown signature: min(float[])");
-        errors.add("unknown signature: max(float[])");
+        // errors.add("unknown signature: max(unknown[])");
+        // errors.add("unknown signature: min(unknown[])");
+        // errors.add("unknown signature: max(interval[])");
+        // errors.add("unknown signature: min(interval[])");
+        // errors.add("unknown signature: max(string[])");
+        // errors.add("unknown signature: min(string[])");
+        // errors.add("unknown signature: max(decimal[])");
+        // errors.add("unknown signature: min(decimal[])");
+        // errors.add("unknown signature: max(varbit[])");
+        // errors.add("unknown signature: min(varbit[])");
+        // errors.add("unknown signature: max(int[])");
+        // errors.add("unknown signature: min(int[])");
+        // errors.add("unknown signature: min(bool[])");
+        // errors.add("unknown signature: max(bool[])");
+        // errors.add("unknown signature: max(timestamp[])");
+        // errors.add("unknown signature: min(timestamp[])");
+        // errors.add("unknown signature: min(timestamptz[])");
+        // errors.add("unknown signature: max(timestamptz[])");
+        // errors.add("unknown signature: min(timetz[])");
+        // errors.add("unknown signature: max(timetz[])");
+        // errors.add("unknown signature: max(time[])");
+        // errors.add("unknown signature: min(time[])");
+        // errors.add("unknown signature: min(int2[])");
+        // errors.add("unknown signature: max(int2[])");
+        // errors.add("unknown signature: max(int4[])");
+        // errors.add("unknown signature: min(int4[])");
+        // errors.add("unknown signature: max(bytes[])");
+        // errors.add("unknown signature: min(bytes[])");
+        // errors.add("unknown signature: min(bit[])");
+        // errors.add("unknown signature: max(bit[])");
+        // errors.add("unknown signature: min(float[])");
+        // errors.add("unknown signature: max(float[])");
+        errors.addRegex(Pattern.compile("unknown signature: (min|max)(.*)"));
 
         errors.add("array must be enclosed in { and }"); // when casting a string to an array
         errors.add("extra text after closing right brace");
