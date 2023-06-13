@@ -1,0 +1,135 @@
+# Diff Details
+
+Date : 2023-04-17 11:40:35
+
+Directory /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/sqlite3
+
+Total : 120 files,  1878 codes, 57 comments, 297 blanks, all 2232 lines
+
+[Summary](results.md) / [Details](details.md) / [Diff Summary](diff.md) / Diff Details
+
+## Files
+| filename | language | code | comment | blank | total |
+| :--- | :--- | ---: | ---: | ---: | ---: |
+| [src/sqlancer/postgres/PostgresCompoundDataType.java](/src/sqlancer/postgres/PostgresCompoundDataType.java) | Java | -35 | 0 | -11 | -46 |
+| [src/sqlancer/postgres/PostgresExpectedValueVisitor.java](/src/sqlancer/postgres/PostgresExpectedValueVisitor.java) | Java | -143 | -10 | -28 | -181 |
+| [src/sqlancer/postgres/PostgresGlobalState.java](/src/sqlancer/postgres/PostgresGlobalState.java) | Java | -124 | -4 | -26 | -154 |
+| [src/sqlancer/postgres/PostgresOptions.java](/src/sqlancer/postgres/PostgresOptions.java) | Java | -72 | 0 | -17 | -89 |
+| [src/sqlancer/postgres/PostgresProvider.java](/src/sqlancer/postgres/PostgresProvider.java) | Java | -308 | -13 | -29 | -350 |
+| [src/sqlancer/postgres/PostgresSchema.java](/src/sqlancer/postgres/PostgresSchema.java) | Java | -276 | -6 | -46 | -328 |
+| [src/sqlancer/postgres/PostgresToStringVisitor.java](/src/sqlancer/postgres/PostgresToStringVisitor.java) | Java | -317 | -6 | -31 | -354 |
+| [src/sqlancer/postgres/PostgresVisitor.java](/src/sqlancer/postgres/PostgresVisitor.java) | Java | -104 | 0 | -28 | -132 |
+| [src/sqlancer/postgres/ast/PostgresAggregate.java](/src/sqlancer/postgres/ast/PostgresAggregate.java) | Java | -42 | -4 | -14 | -60 |
+| [src/sqlancer/postgres/ast/PostgresAlias.java](/src/sqlancer/postgres/ast/PostgresAlias.java) | Java | -26 | 0 | -10 | -36 |
+| [src/sqlancer/postgres/ast/PostgresBetweenOperation.java](/src/sqlancer/postgres/ast/PostgresBetweenOperation.java) | Java | -55 | 0 | -12 | -67 |
+| [src/sqlancer/postgres/ast/PostgresBinaryArithmeticOperation.java](/src/sqlancer/postgres/ast/PostgresBinaryArithmeticOperation.java) | Java | -88 | 0 | -22 | -110 |
+| [src/sqlancer/postgres/ast/PostgresBinaryBitOperation.java](/src/sqlancer/postgres/ast/PostgresBinaryBitOperation.java) | Java | -35 | 0 | -12 | -47 |
+| [src/sqlancer/postgres/ast/PostgresBinaryComparisonOperation.java](/src/sqlancer/postgres/ast/PostgresBinaryComparisonOperation.java) | Java | -122 | 0 | -18 | -140 |
+| [src/sqlancer/postgres/ast/PostgresBinaryLogicalOperation.java](/src/sqlancer/postgres/ast/PostgresBinaryLogicalOperation.java) | Java | -78 | 0 | -11 | -89 |
+| [src/sqlancer/postgres/ast/PostgresBinaryRangeOperation.java](/src/sqlancer/postgres/ast/PostgresBinaryRangeOperation.java) | Java | -54 | 0 | -20 | -74 |
+| [src/sqlancer/postgres/ast/PostgresCastOperation.java](/src/sqlancer/postgres/ast/PostgresCastOperation.java) | Java | -35 | 0 | -11 | -46 |
+| [src/sqlancer/postgres/ast/PostgresCollate.java](/src/sqlancer/postgres/ast/PostgresCollate.java) | Java | -24 | 0 | -10 | -34 |
+| [src/sqlancer/postgres/ast/PostgresColumnValue.java](/src/sqlancer/postgres/ast/PostgresColumnValue.java) | Java | -25 | 0 | -10 | -35 |
+| [src/sqlancer/postgres/ast/PostgresConcatOperation.java](/src/sqlancer/postgres/ast/PostgresConcatOperation.java) | Java | -30 | 0 | -8 | -38 |
+| [src/sqlancer/postgres/ast/PostgresConstant.java](/src/sqlancer/postgres/ast/PostgresConstant.java) | Java | -480 | 0 | -118 | -598 |
+| [src/sqlancer/postgres/ast/PostgresExpression.java](/src/sqlancer/postgres/ast/PostgresExpression.java) | Java | -10 | 0 | -5 | -15 |
+| [src/sqlancer/postgres/ast/PostgresFunction.java](/src/sqlancer/postgres/ast/PostgresFunction.java) | Java | -203 | -40 | -46 | -289 |
+| [src/sqlancer/postgres/ast/PostgresFunctionWithUnknownResult.java](/src/sqlancer/postgres/ast/PostgresFunctionWithUnknownResult.java) | Java | -137 | -27 | -23 | -187 |
+| [src/sqlancer/postgres/ast/PostgresInOperation.java](/src/sqlancer/postgres/ast/PostgresInOperation.java) | Java | -54 | 0 | -12 | -66 |
+| [src/sqlancer/postgres/ast/PostgresJoin.java](/src/sqlancer/postgres/ast/PostgresJoin.java) | Java | -36 | 0 | -14 | -50 |
+| [src/sqlancer/postgres/ast/PostgresLikeOperation.java](/src/sqlancer/postgres/ast/PostgresLikeOperation.java) | Java | -31 | 0 | -8 | -39 |
+| [src/sqlancer/postgres/ast/PostgresOrderByTerm.java](/src/sqlancer/postgres/ast/PostgresOrderByTerm.java) | Java | -31 | 0 | -12 | -43 |
+| [src/sqlancer/postgres/ast/PostgresPOSIXRegularExpression.java](/src/sqlancer/postgres/ast/PostgresPOSIXRegularExpression.java) | Java | -49 | 0 | -17 | -66 |
+| [src/sqlancer/postgres/ast/PostgresPostfixOperation.java](/src/sqlancer/postgres/ast/PostgresPostfixOperation.java) | Java | -120 | 0 | -32 | -152 |
+| [src/sqlancer/postgres/ast/PostgresPostfixText.java](/src/sqlancer/postgres/ast/PostgresPostfixText.java) | Java | -29 | 0 | -9 | -38 |
+| [src/sqlancer/postgres/ast/PostgresPrefixOperation.java](/src/sqlancer/postgres/ast/PostgresPrefixOperation.java) | Java | -92 | -2 | -26 | -120 |
+| [src/sqlancer/postgres/ast/PostgresSelect.java](/src/sqlancer/postgres/ast/PostgresSelect.java) | Java | -102 | 0 | -34 | -136 |
+| [src/sqlancer/postgres/ast/PostgresSimilarTo.java](/src/sqlancer/postgres/ast/PostgresSimilarTo.java) | Java | -30 | 0 | -11 | -41 |
+| [src/sqlancer/postgres/gen/PostgresAlterTableGenerator.java](/src/sqlancer/postgres/gen/PostgresAlterTableGenerator.java) | Java | -358 | -8 | -16 | -382 |
+| [src/sqlancer/postgres/gen/PostgresAnalyzeGenerator.java](/src/sqlancer/postgres/gen/PostgresAnalyzeGenerator.java) | Java | -35 | -1 | -7 | -43 |
+| [src/sqlancer/postgres/gen/PostgresClusterGenerator.java](/src/sqlancer/postgres/gen/PostgresClusterGenerator.java) | Java | -27 | 0 | -6 | -33 |
+| [src/sqlancer/postgres/gen/PostgresCommentGenerator.java](/src/sqlancer/postgres/gen/PostgresCommentGenerator.java) | Java | -59 | -3 | -7 | -69 |
+| [src/sqlancer/postgres/gen/PostgresCommon.java](/src/sqlancer/postgres/gen/PostgresCommon.java) | Java | -380 | -21 | -34 | -435 |
+| [src/sqlancer/postgres/gen/PostgresDeleteGenerator.java](/src/sqlancer/postgres/gen/PostgresDeleteGenerator.java) | Java | -41 | 0 | -6 | -47 |
+| [src/sqlancer/postgres/gen/PostgresDiscardGenerator.java](/src/sqlancer/postgres/gen/PostgresDiscardGenerator.java) | Java | -32 | -1 | -7 | -40 |
+| [src/sqlancer/postgres/gen/PostgresDropIndexGenerator.java](/src/sqlancer/postgres/gen/PostgresDropIndexGenerator.java) | Java | -45 | 0 | -7 | -52 |
+| [src/sqlancer/postgres/gen/PostgresExpressionGenerator.java](/src/sqlancer/postgres/gen/PostgresExpressionGenerator.java) | Java | -530 | -12 | -63 | -605 |
+| [src/sqlancer/postgres/gen/PostgresIndexGenerator.java](/src/sqlancer/postgres/gen/PostgresIndexGenerator.java) | Java | -129 | -13 | -12 | -154 |
+| [src/sqlancer/postgres/gen/PostgresInsertGenerator.java](/src/sqlancer/postgres/gen/PostgresInsertGenerator.java) | Java | -117 | 0 | -10 | -127 |
+| [src/sqlancer/postgres/gen/PostgresNotifyGenerator.java](/src/sqlancer/postgres/gen/PostgresNotifyGenerator.java) | Java | -39 | 0 | -9 | -48 |
+| [src/sqlancer/postgres/gen/PostgresRandomQueryGenerator.java](/src/sqlancer/postgres/gen/PostgresRandomQueryGenerator.java) | Java | -57 | 0 | -7 | -64 |
+| [src/sqlancer/postgres/gen/PostgresReindexGenerator.java](/src/sqlancer/postgres/gen/PostgresReindexGenerator.java) | Java | -57 | -3 | -8 | -68 |
+| [src/sqlancer/postgres/gen/PostgresSequenceGenerator.java](/src/sqlancer/postgres/gen/PostgresSequenceGenerator.java) | Java | -79 | -6 | -6 | -91 |
+| [src/sqlancer/postgres/gen/PostgresSetGenerator.java](/src/sqlancer/postgres/gen/PostgresSetGenerator.java) | Java | -104 | -35 | -10 | -149 |
+| [src/sqlancer/postgres/gen/PostgresStatisticsGenerator.java](/src/sqlancer/postgres/gen/PostgresStatisticsGenerator.java) | Java | -64 | 0 | -10 | -74 |
+| [src/sqlancer/postgres/gen/PostgresTableGenerator.java](/src/sqlancer/postgres/gen/PostgresTableGenerator.java) | Java | -281 | -9 | -18 | -308 |
+| [src/sqlancer/postgres/gen/PostgresTransactionGenerator.java](/src/sqlancer/postgres/gen/PostgresTransactionGenerator.java) | Java | -18 | -4 | -6 | -28 |
+| [src/sqlancer/postgres/gen/PostgresTruncateGenerator.java](/src/sqlancer/postgres/gen/PostgresTruncateGenerator.java) | Java | -30 | -4 | -7 | -41 |
+| [src/sqlancer/postgres/gen/PostgresUpdateGenerator.java](/src/sqlancer/postgres/gen/PostgresUpdateGenerator.java) | Java | -68 | -2 | -11 | -81 |
+| [src/sqlancer/postgres/gen/PostgresVacuumGenerator.java](/src/sqlancer/postgres/gen/PostgresVacuumGenerator.java) | Java | -65 | -5 | -8 | -78 |
+| [src/sqlancer/postgres/gen/PostgresViewGenerator.java](/src/sqlancer/postgres/gen/PostgresViewGenerator.java) | Java | -78 | -9 | -6 | -93 |
+| [src/sqlancer/postgres/oracle/PostgresNoRECOracle.java](/src/sqlancer/postgres/oracle/PostgresNoRECOracle.java) | Java | -155 | -1 | -13 | -169 |
+| [src/sqlancer/postgres/oracle/PostgresPivotedQuerySynthesisOracle.java](/src/sqlancer/postgres/oracle/PostgresPivotedQuerySynthesisOracle.java) | Java | -132 | -3 | -17 | -152 |
+| [src/sqlancer/postgres/oracle/tlp/PostgresTLPAggregateOracle.java](/src/sqlancer/postgres/oracle/tlp/PostgresTLPAggregateOracle.java) | Java | -161 | -18 | -17 | -196 |
+| [src/sqlancer/postgres/oracle/tlp/PostgresTLPBase.java](/src/sqlancer/postgres/oracle/tlp/PostgresTLPBase.java) | Java | -108 | -1 | -13 | -122 |
+| [src/sqlancer/postgres/oracle/tlp/PostgresTLPHavingOracle.java](/src/sqlancer/postgres/oracle/tlp/PostgresTLPHavingOracle.java) | Java | -57 | 0 | -11 | -68 |
+| [src/sqlancer/postgres/oracle/tlp/PostgresTLPWhereOracle.java](/src/sqlancer/postgres/oracle/tlp/PostgresTLPWhereOracle.java) | Java | -38 | 0 | -8 | -46 |
+| [src/sqlancer/sqlite3/SQLite3CollateHelper.java](/src/sqlancer/sqlite3/SQLite3CollateHelper.java) | Java | 15 | 0 | 6 | 21 |
+| [src/sqlancer/sqlite3/SQLite3Errors.java](/src/sqlancer/sqlite3/SQLite3Errors.java) | Java | 92 | 8 | 20 | 120 |
+| [src/sqlancer/sqlite3/SQLite3ExpectedValueVisitor.java](/src/sqlancer/sqlite3/SQLite3ExpectedValueVisitor.java) | Java | 263 | 0 | 44 | 307 |
+| [src/sqlancer/sqlite3/SQLite3GlobalState.java](/src/sqlancer/sqlite3/SQLite3GlobalState.java) | Java | 10 | 0 | 6 | 16 |
+| [src/sqlancer/sqlite3/SQLite3Options.java](/src/sqlancer/sqlite3/SQLite3Options.java) | Java | 144 | 0 | 36 | 180 |
+| [src/sqlancer/sqlite3/SQLite3Provider.java](/src/sqlancer/sqlite3/SQLite3Provider.java) | Java | 324 | 5 | 32 | 361 |
+| [src/sqlancer/sqlite3/SQLite3SpecialStringGenerator.java](/src/sqlancer/sqlite3/SQLite3SpecialStringGenerator.java) | Java | 37 | 0 | 7 | 44 |
+| [src/sqlancer/sqlite3/SQLite3ToStringVisitor.java](/src/sqlancer/sqlite3/SQLite3ToStringVisitor.java) | Java | 438 | 9 | 39 | 486 |
+| [src/sqlancer/sqlite3/SQLite3Visitor.java](/src/sqlancer/sqlite3/SQLite3Visitor.java) | Java | 173 | 1 | 47 | 221 |
+| [src/sqlancer/sqlite3/ast/SQLite3Aggregate.java](/src/sqlancer/sqlite3/ast/SQLite3Aggregate.java) | Java | 109 | 5 | 19 | 133 |
+| [src/sqlancer/sqlite3/ast/SQLite3Case.java](/src/sqlancer/sqlite3/ast/SQLite3Case.java) | Java | 126 | 0 | 26 | 152 |
+| [src/sqlancer/sqlite3/ast/SQLite3Cast.java](/src/sqlancer/sqlite3/ast/SQLite3Cast.java) | Java | 250 | 8 | 25 | 283 |
+| [src/sqlancer/sqlite3/ast/SQLite3Constant.java](/src/sqlancer/sqlite3/ast/SQLite3Constant.java) | Java | 512 | 5 | 109 | 626 |
+| [src/sqlancer/sqlite3/ast/SQLite3Expression.java](/src/sqlancer/sqlite3/ast/SQLite3Expression.java) | Java | 1,254 | 36 | 264 | 1,554 |
+| [src/sqlancer/sqlite3/ast/SQLite3Function.java](/src/sqlancer/sqlite3/ast/SQLite3Function.java) | Java | 304 | 10 | 42 | 356 |
+| [src/sqlancer/sqlite3/ast/SQLite3RowValueExpression.java](/src/sqlancer/sqlite3/ast/SQLite3RowValueExpression.java) | Java | 22 | 0 | 9 | 31 |
+| [src/sqlancer/sqlite3/ast/SQLite3Select.java](/src/sqlancer/sqlite3/ast/SQLite3Select.java) | Java | 108 | 1 | 32 | 141 |
+| [src/sqlancer/sqlite3/ast/SQLite3SetClause.java](/src/sqlancer/sqlite3/ast/SQLite3SetClause.java) | Java | 39 | 1 | 15 | 55 |
+| [src/sqlancer/sqlite3/ast/SQLite3UnaryOperation.java](/src/sqlancer/sqlite3/ast/SQLite3UnaryOperation.java) | Java | 125 | 9 | 23 | 157 |
+| [src/sqlancer/sqlite3/ast/SQLite3WindowFunction.java](/src/sqlancer/sqlite3/ast/SQLite3WindowFunction.java) | Java | 123 | 0 | 21 | 144 |
+| [src/sqlancer/sqlite3/ast/SQLite3WindowFunctionExpression.java](/src/sqlancer/sqlite3/ast/SQLite3WindowFunctionExpression.java) | Java | 133 | 0 | 48 | 181 |
+| [src/sqlancer/sqlite3/gen/SQLite3AnalyzeGenerator.java](/src/sqlancer/sqlite3/gen/SQLite3AnalyzeGenerator.java) | Java | 35 | 0 | 7 | 42 |
+| [src/sqlancer/sqlite3/gen/SQLite3ColumnBuilder.java](/src/sqlancer/sqlite3/gen/SQLite3ColumnBuilder.java) | Java | 144 | 2 | 19 | 165 |
+| [src/sqlancer/sqlite3/gen/SQLite3Common.java](/src/sqlancer/sqlite3/gen/SQLite3Common.java) | Java | 120 | 2 | 19 | 141 |
+| [src/sqlancer/sqlite3/gen/SQLite3CreateVirtualRtreeTabelGenerator.java](/src/sqlancer/sqlite3/gen/SQLite3CreateVirtualRtreeTabelGenerator.java) | Java | 54 | 0 | 9 | 63 |
+| [src/sqlancer/sqlite3/gen/SQLite3ExplainGenerator.java](/src/sqlancer/sqlite3/gen/SQLite3ExplainGenerator.java) | Java | 30 | 0 | 7 | 37 |
+| [src/sqlancer/sqlite3/gen/SQLite3ExpressionGenerator.java](/src/sqlancer/sqlite3/gen/SQLite3ExpressionGenerator.java) | Java | 588 | 49 | 69 | 706 |
+| [src/sqlancer/sqlite3/gen/SQLite3MatchStringGenerator.java](/src/sqlancer/sqlite3/gen/SQLite3MatchStringGenerator.java) | Java | 84 | 0 | 10 | 94 |
+| [src/sqlancer/sqlite3/gen/SQLite3PragmaGenerator.java](/src/sqlancer/sqlite3/gen/SQLite3PragmaGenerator.java) | Java | 189 | 33 | 14 | 236 |
+| [src/sqlancer/sqlite3/gen/SQLite3ReindexGenerator.java](/src/sqlancer/sqlite3/gen/SQLite3ReindexGenerator.java) | Java | 39 | 4 | 6 | 49 |
+| [src/sqlancer/sqlite3/gen/SQLite3TransactionGenerator.java](/src/sqlancer/sqlite3/gen/SQLite3TransactionGenerator.java) | Java | 32 | 1 | 8 | 41 |
+| [src/sqlancer/sqlite3/gen/SQLite3VacuumGenerator.java](/src/sqlancer/sqlite3/gen/SQLite3VacuumGenerator.java) | Java | 18 | 3 | 6 | 27 |
+| [src/sqlancer/sqlite3/gen/SQLite3VirtualFTSTableCommandGenerator.java](/src/sqlancer/sqlite3/gen/SQLite3VirtualFTSTableCommandGenerator.java) | Java | 86 | 3 | 9 | 98 |
+| [src/sqlancer/sqlite3/gen/ddl/SQLite3AlterTable.java](/src/sqlancer/sqlite3/gen/ddl/SQLite3AlterTable.java) | Java | 69 | 7 | 11 | 87 |
+| [src/sqlancer/sqlite3/gen/ddl/SQLite3CreateTriggerGenerator.java](/src/sqlancer/sqlite3/gen/ddl/SQLite3CreateTriggerGenerator.java) | Java | 131 | 0 | 15 | 146 |
+| [src/sqlancer/sqlite3/gen/ddl/SQLite3CreateVirtualFTSTableGenerator.java](/src/sqlancer/sqlite3/gen/ddl/SQLite3CreateVirtualFTSTableGenerator.java) | Java | 175 | 2 | 18 | 195 |
+| [src/sqlancer/sqlite3/gen/ddl/SQLite3DropIndexGenerator.java](/src/sqlancer/sqlite3/gen/ddl/SQLite3DropIndexGenerator.java) | Java | 23 | 1 | 6 | 30 |
+| [src/sqlancer/sqlite3/gen/ddl/SQLite3DropTableGenerator.java](/src/sqlancer/sqlite3/gen/ddl/SQLite3DropTableGenerator.java) | Java | 25 | 0 | 7 | 32 |
+| [src/sqlancer/sqlite3/gen/ddl/SQLite3IndexGenerator.java](/src/sqlancer/sqlite3/gen/ddl/SQLite3IndexGenerator.java) | Java | 104 | 11 | 12 | 127 |
+| [src/sqlancer/sqlite3/gen/ddl/SQLite3TableGenerator.java](/src/sqlancer/sqlite3/gen/ddl/SQLite3TableGenerator.java) | Java | 190 | 20 | 17 | 227 |
+| [src/sqlancer/sqlite3/gen/ddl/SQLite3ViewGenerator.java](/src/sqlancer/sqlite3/gen/ddl/SQLite3ViewGenerator.java) | Java | 81 | 11 | 11 | 103 |
+| [src/sqlancer/sqlite3/gen/dml/SQLite3DeleteGenerator.java](/src/sqlancer/sqlite3/gen/dml/SQLite3DeleteGenerator.java) | Java | 39 | 0 | 8 | 47 |
+| [src/sqlancer/sqlite3/gen/dml/SQLite3InsertGenerator.java](/src/sqlancer/sqlite3/gen/dml/SQLite3InsertGenerator.java) | Java | 149 | 4 | 15 | 168 |
+| [src/sqlancer/sqlite3/gen/dml/SQLite3StatTableGenerator.java](/src/sqlancer/sqlite3/gen/dml/SQLite3StatTableGenerator.java) | Java | 80 | 0 | 9 | 89 |
+| [src/sqlancer/sqlite3/gen/dml/SQLite3UpdateGenerator.java](/src/sqlancer/sqlite3/gen/dml/SQLite3UpdateGenerator.java) | Java | 86 | 11 | 18 | 115 |
+| [src/sqlancer/sqlite3/oracle/SQLite3Fuzzer.java](/src/sqlancer/sqlite3/oracle/SQLite3Fuzzer.java) | Java | 24 | 1 | 8 | 33 |
+| [src/sqlancer/sqlite3/oracle/SQLite3NoRECOracle.java](/src/sqlancer/sqlite3/oracle/SQLite3NoRECOracle.java) | Java | 185 | 0 | 22 | 207 |
+| [src/sqlancer/sqlite3/oracle/SQLite3PivotedQuerySynthesisOracle.java](/src/sqlancer/sqlite3/oracle/SQLite3PivotedQuerySynthesisOracle.java) | Java | 300 | 26 | 27 | 353 |
+| [src/sqlancer/sqlite3/oracle/SQLite3RandomQuerySynthesizer.java](/src/sqlancer/sqlite3/oracle/SQLite3RandomQuerySynthesizer.java) | Java | 135 | 16 | 10 | 161 |
+| [src/sqlancer/sqlite3/oracle/tlp/SQLite3TLPAggregateOracle.java](/src/sqlancer/sqlite3/oracle/tlp/SQLite3TLPAggregateOracle.java) | Java | 114 | 4 | 16 | 134 |
+| [src/sqlancer/sqlite3/oracle/tlp/SQLite3TLPBase.java](/src/sqlancer/sqlite3/oracle/tlp/SQLite3TLPBase.java) | Java | 62 | 0 | 10 | 72 |
+| [src/sqlancer/sqlite3/oracle/tlp/SQLite3TLPDistinctOracle.java](/src/sqlancer/sqlite3/oracle/tlp/SQLite3TLPDistinctOracle.java) | Java | 38 | 0 | 10 | 48 |
+| [src/sqlancer/sqlite3/oracle/tlp/SQLite3TLPGroupByOracle.java](/src/sqlancer/sqlite3/oracle/tlp/SQLite3TLPGroupByOracle.java) | Java | 46 | 0 | 11 | 57 |
+| [src/sqlancer/sqlite3/oracle/tlp/SQLite3TLPHavingOracle.java](/src/sqlancer/sqlite3/oracle/tlp/SQLite3TLPHavingOracle.java) | Java | 84 | 1 | 9 | 94 |
+| [src/sqlancer/sqlite3/oracle/tlp/SQLite3TLPWhereOracle.java](/src/sqlancer/sqlite3/oracle/tlp/SQLite3TLPWhereOracle.java) | Java | 41 | 0 | 10 | 51 |
+| [src/sqlancer/sqlite3/schema/SQLite3DataType.java](/src/sqlancer/sqlite3/schema/SQLite3DataType.java) | Java | 4 | 0 | 3 | 7 |
+| [src/sqlancer/sqlite3/schema/SQLite3Schema.java](/src/sqlancer/sqlite3/schema/SQLite3Schema.java) | Java | 414 | 18 | 62 | 494 |
+
+[Summary](results.md) / [Details](details.md) / [Diff Summary](diff.md) / Diff Details

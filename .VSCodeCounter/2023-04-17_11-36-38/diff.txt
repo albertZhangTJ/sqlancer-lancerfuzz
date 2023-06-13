@@ -1,0 +1,121 @@
+Date : 2023-04-17 11:36:38
+Directory : /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb
+Total : 85 files,  1860 codes, 50 comments, 376 blanks, all 2286 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| Java     |         85 |      1,860 |         50 |        376 |      2,286 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++----------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                                       | files      | code       | comment    | blank      | total      |
++----------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                                          |         85 |      1,860 |         50 |        376 |      2,286 |
+| . (Files)                                                                                                                  |          8 |      1,291 |         41 |        202 |      1,534 |
+| ..                                                                                                                         |         25 |     -2,230 |        -36 |       -432 |     -2,698 |
+| ../duckdb                                                                                                                  |         25 |     -2,230 |        -36 |       -432 |     -2,698 |
+| ../duckdb (Files)                                                                                                          |          5 |       -673 |        -11 |       -129 |       -813 |
+| ../duckdb/ast                                                                                                              |          4 |       -253 |          0 |        -90 |       -343 |
+| ../duckdb/gen                                                                                                              |          9 |       -762 |        -16 |       -137 |       -915 |
+| ../duckdb/test                                                                                                             |          7 |       -542 |         -9 |        -76 |       -627 |
+| ast                                                                                                                        |         27 |      1,016 |         21 |        348 |      1,385 |
+| gen                                                                                                                        |         17 |      1,146 |         20 |        167 |      1,333 |
+| oracle                                                                                                                     |          8 |        637 |          4 |         91 |        732 |
+| oracle (Files)                                                                                                             |          1 |        146 |          0 |         13 |        159 |
+| oracle/tlp                                                                                                                 |          7 |        491 |          4 |         78 |        573 |
++----------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++----------------------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                                                                                   | language | code       | comment    | blank      | total      |
++----------------------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/CockroachDBBugs.java                              | Java     |         22 |         18 |         21 |         61 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/CockroachDBCommon.java                            | Java     |         27 |          0 |          8 |         35 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/CockroachDBErrors.java                            | Java     |        270 |          7 |         44 |        321 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/CockroachDBOptions.java                           | Java     |         98 |          0 |         16 |        114 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/CockroachDBProvider.java                          | Java     |        308 |          9 |         27 |        344 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/CockroachDBSchema.java                            | Java     |        303 |          6 |         51 |        360 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/CockroachDBToStringVisitor.java                   | Java     |        205 |          1 |         18 |        224 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/CockroachDBVisitor.java                           | Java     |         58 |          0 |         17 |         75 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBAggregate.java                     | Java     |         90 |          2 |         18 |        110 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBAlias.java                         | Java     |         26 |          0 |         10 |         36 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBBetweenOperation.java              | Java     |         41 |          0 |         15 |         56 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBBinaryArithmeticOperation.java     | Java     |         27 |          0 |         11 |         38 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBBinaryComparisonOperator.java      | Java     |         27 |          0 |         11 |         38 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBBinaryLogicalOperation.java        | Java     |         26 |          0 |         11 |         37 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBCaseOperation.java                 | Java     |         22 |          0 |          9 |         31 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBCast.java                          | Java     |         23 |          0 |          9 |         32 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBCollate.java                       | Java     |         20 |          0 |          9 |         29 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBColumnReference.java               | Java     |         11 |          0 |          7 |         18 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBConcatOperation.java               | Java     |         11 |          0 |          6 |         17 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBConstant.java                      | Java     |        189 |          3 |         69 |        261 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBExpression.java                    | Java     |          3 |          0 |          3 |          6 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBFunction.java                      | Java     |        160 |         16 |         24 |        200 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBFunctionCall.java                  | Java     |         19 |          0 |          9 |         28 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBInOperation.java                   | Java     |         16 |          0 |          8 |         24 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBIndexReference.java                | Java     |         34 |          0 |         10 |         44 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBJoin.java                          | Java     |         58 |          0 |         19 |         77 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBMultiValuedComparison.java         | Java     |         47 |          0 |         18 |         65 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBNotOperation.java                  | Java     |         15 |          0 |          7 |         22 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBOrderingTerm.java                  | Java     |         26 |          0 |         10 |         36 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBRegexOperation.java                | Java     |         31 |          0 |         12 |         43 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBSelect.java                        | Java     |         11 |          0 |          7 |         18 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBTableReference.java                | Java     |         11 |          0 |          7 |         18 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBTypeAnnotation.java                | Java     |         18 |          0 |          8 |         26 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBUnaryArithmeticOperation.java      | Java     |         25 |          0 |         11 |         36 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/ast/CockroachDBUnaryPostfixOperation.java         | Java     |         29 |          0 |         10 |         39 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/gen/CockroachDBCommentOnGenerator.java            | Java     |         53 |          0 |          9 |         62 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/gen/CockroachDBCreateStatisticsGenerator.java     | Java     |         22 |          0 |          7 |         29 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/gen/CockroachDBDeleteGenerator.java               | Java     |         31 |          0 |          6 |         37 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/gen/CockroachDBDropTableGenerator.java            | Java     |         27 |          0 |          9 |         36 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/gen/CockroachDBDropViewGenerator.java             | Java     |         35 |          0 |          7 |         42 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/gen/CockroachDBExpressionGenerator.java           | Java     |        327 |          3 |         32 |        362 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/gen/CockroachDBGenerator.java                     | Java     |         26 |          0 |          8 |         34 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/gen/CockroachDBIndexGenerator.java                | Java     |         62 |          2 |          8 |         72 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/gen/CockroachDBInsertGenerator.java               | Java     |         88 |          4 |         10 |        102 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/gen/CockroachDBRandomQuerySynthesizer.java        | Java     |         69 |          0 |          9 |         78 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/gen/CockroachDBSetClusterSettingGenerator.java    | Java     |         41 |          1 |         11 |         53 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/gen/CockroachDBSetSessionGenerator.java           | Java     |         40 |          7 |         11 |         58 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/gen/CockroachDBShowGenerator.java                 | Java     |         56 |          0 |          7 |         63 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/gen/CockroachDBTableGenerator.java                | Java     |        150 |          2 |         10 |        162 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/gen/CockroachDBTruncateGenerator.java             | Java     |         34 |          1 |          7 |         42 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/gen/CockroachDBUpdateGenerator.java               | Java     |         53 |          0 |         10 |         63 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/gen/CockroachDBViewGenerator.java                 | Java     |         32 |          0 |          6 |         38 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/oracle/CockroachDBNoRECOracle.java                | Java     |        146 |          0 |         13 |        159 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/oracle/tlp/CockroachDBTLPAggregateOracle.java     | Java     |        182 |          4 |         18 |        204 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/oracle/tlp/CockroachDBTLPBase.java                | Java     |         63 |          0 |         10 |         73 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/oracle/tlp/CockroachDBTLPDistinctOracle.java      | Java     |         44 |          0 |          8 |         52 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/oracle/tlp/CockroachDBTLPExtendedWhereOracle.java | Java     |         56 |          0 |         11 |         67 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/oracle/tlp/CockroachDBTLPGroupByOracle.java       | Java     |         46 |          0 |         11 |         57 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/oracle/tlp/CockroachDBTLPHavingOracle.java        | Java     |         53 |          0 |         11 |         64 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/cockroachdb/oracle/tlp/CockroachDBTLPWhereOracle.java         | Java     |         47 |          0 |          9 |         56 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/DuckDBErrors.java                                      | Java     |        -88 |         -5 |        -23 |       -116 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/DuckDBOptions.java                                     | Java     |       -122 |          0 |        -36 |       -158 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/DuckDBProvider.java                                    | Java     |       -141 |         -1 |        -23 |       -165 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/DuckDBSchema.java                                      | Java     |       -239 |         -5 |        -38 |       -282 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/DuckDBToStringVisitor.java                             | Java     |        -83 |          0 |         -9 |        -92 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/ast/DuckDBConstant.java                                | Java     |       -135 |          0 |        -58 |       -193 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/ast/DuckDBExpression.java                              | Java     |         -3 |          0 |         -3 |         -6 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/ast/DuckDBJoin.java                                    | Java     |       -103 |          0 |        -22 |       -125 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/ast/DuckDBSelect.java                                  | Java     |        -12 |          0 |         -7 |        -19 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/gen/DuckDBAlterTableGenerator.java                     | Java     |        -64 |          0 |         -7 |        -71 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/gen/DuckDBDeleteGenerator.java                         | Java     |        -25 |          0 |         -6 |        -31 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/gen/DuckDBExpressionGenerator.java                     | Java     |       -364 |         -8 |        -75 |       -447 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/gen/DuckDBIndexGenerator.java                          | Java     |        -53 |          0 |         -7 |        -60 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/gen/DuckDBInsertGenerator.java                         | Java     |        -43 |         -1 |        -10 |        -54 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/gen/DuckDBRandomQuerySynthesizer.java                  | Java     |        -56 |         -7 |         -8 |        -71 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/gen/DuckDBTableGenerator.java                          | Java     |        -82 |          0 |         -8 |        -90 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/gen/DuckDBUpdateGenerator.java                         | Java     |        -44 |          0 |        -10 |        -54 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/gen/DuckDBViewGenerator.java                           | Java     |        -31 |          0 |         -6 |        -37 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/test/DuckDBNoRECOracle.java                            | Java     |       -119 |         -9 |        -10 |       -138 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/test/DuckDBQueryPartitioningAggregateTester.java       | Java     |       -174 |          0 |        -16 |       -190 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/test/DuckDBQueryPartitioningBase.java                  | Java     |        -77 |          0 |        -13 |        -90 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/test/DuckDBQueryPartitioningDistinctTester.java        | Java     |        -37 |          0 |         -8 |        -45 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/test/DuckDBQueryPartitioningGroupByTester.java         | Java     |        -44 |          0 |        -10 |        -54 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/test/DuckDBQueryPartitioningHavingTester.java          | Java     |        -54 |          0 |        -10 |        -64 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb/test/DuckDBQueryPartitioningWhereTester.java           | Java     |        -37 |          0 |         -9 |        -46 |
+| Total                                                                                                                      |          |      1,860 |         50 |        376 |      2,286 |
++----------------------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
