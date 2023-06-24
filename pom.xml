@@ -140,7 +140,7 @@
       <plugin>
         <groupId>org.antlr</groupId>
         <artifactId>antlr4-maven-plugin</artifactId>
-        <version>4.3</version>
+        <version>4.13.0</version>
         <executions>
           <execution>
             <id>antlr</id>
@@ -187,12 +187,12 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
+        <artifactId>maven-assembly-plugin</artifactId>
         <version>3.3.0</version>
         <executions>
           <execution>
             <id>main</id>
-            <goals><goal>jar</goal></goals>
+            <goals><goal>single</goal></goals>
             <phase>package</phase>
             <configuration>
               <classifier>sqlancer</classifier>
@@ -207,11 +207,12 @@
                   <mainClass>sqlancer.Main</mainClass>
                 </manifest>
               </archive>
+              <finalName>sqlancer</finalName>
             </configuration>
           </execution>
           <execution>
             <id>dsqlancer</id>
-            <goals><goal>jar</goal></goals>
+            <goals><goal>single</goal></goals>
             <phase>package</phase>
             <configuration>
               <classifier>dsqlancer</classifier>
@@ -226,6 +227,7 @@
                   <mainClass>dsqlancer.Main</mainClass>
                 </manifest>
               </archive>
+              <finalName>dsqlancer</finalName>
             </configuration>
           </execution>
         </executions>
@@ -407,6 +409,11 @@
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-csv</artifactId>
       <version>1.9.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.antlr</groupId>
+      <artifactId>antlr4-runtime</artifactId>
+      <version>4.7.1</version>
     </dependency>
   </dependencies>
   <reporting>

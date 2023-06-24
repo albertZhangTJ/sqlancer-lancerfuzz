@@ -24,4 +24,9 @@ public class Options {
     @Parameter(names = {"--output", "-o"}, description="Path to output folder", arity=1)
     public String outputLocation = "./";
     
+    @Parameter(names = {"--stages", "-s"}, description="Path to JSON file containing the execution stages", arity=1)
+    public String stagesConfig = "";
+
+    @Parameter(names = {"--weights", "-w"}, description="Path to a JSON file containing the weights for branches of the AST", arity=1)
+    public String weightsConfig = "";
 }

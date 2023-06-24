@@ -18,14 +18,19 @@ package dsqlancer;
 // import java.util.concurrent.ScheduledExecutorService;
 // import java.util.concurrent.TimeUnit;
 // import java.util.concurrent.atomic.AtomicBoolean;
-// import java.util.concurrent.atomic.AtomicLong;
+// import java.util.concurrent.atomic.AtomicLong;0
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.JCommander.Builder;
+import org.antlr.mojo.antlr4;
 
 
 
 public class Main {
+    public static void generate_fuzzer(Options options){
+        
+    }
+
     public static void main(String[] args){
 
         Options options=new Options();
@@ -38,7 +43,13 @@ public class Main {
         }
 
         if (options.parserRules.size()==0){
+            System.out.println("ERROR: need one or more grammar files for parser rules");
+            System.exit(-1);
+        }
 
+        if (options.stagesConfig.equals("")){
+            System.out.println("ERROR: need one JSON file for stages of fuzzing");
+            System.exit(-1);
         }
 
     }
