@@ -1,3 +1,5 @@
+package dsqlancer.ANTLR;
+
 // Generated from ANTLRv4Parser.g4 by ANTLR 4.13.0
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 

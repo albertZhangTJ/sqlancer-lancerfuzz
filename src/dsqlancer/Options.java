@@ -29,4 +29,7 @@ public class Options {
 
     @Parameter(names = {"--weights", "-w"}, description="Path to a JSON file containing the weights for branches of the AST", arity=1)
     public String weightsConfig = "";
+
+    @Parameter(names = {"--cwd"}, description="Working directory, default to be current working directory", arity=1)
+    public String cwd = System.getProperty("user.dir");
 }
