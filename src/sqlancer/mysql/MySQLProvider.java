@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import com.google.auto.service.AutoService;
 
@@ -16,8 +18,12 @@ import sqlancer.SQLConnection;
 import sqlancer.SQLProviderAdapter;
 import sqlancer.StatementExecutor;
 import sqlancer.common.DBMSCommon;
+import sqlancer.common.query.ExpectedErrors;
 import sqlancer.common.query.SQLQueryAdapter;
 import sqlancer.common.query.SQLQueryProvider;
+import sqlancer.mysql.MySQLOptions.MySQLOracleFactory;
+import sqlancer.mysql.MySQLSchema.MySQLColumn;
+import sqlancer.mysql.MySQLSchema.MySQLTable;
 import sqlancer.mysql.gen.MySQLAlterTable;
 import sqlancer.mysql.gen.MySQLDeleteGenerator;
 import sqlancer.mysql.gen.MySQLDropIndex;
@@ -150,6 +156,23 @@ public class MySQLProvider extends SQLProviderAdapter<MySQLGlobalState, MySQLOpt
                     }
                 });
         se.executeStatements();
+
+        if (globalState.getDbmsSpecificOptions().getTestOracleFactory().stream()
+                .anyMatch((o) -> o == MySQLOracleFactory.CERT)) {
+            // Enfore statistic collected for all tables
+            ExpectedErrors errors = new ExpectedErrors();
+            MySQLErrors.addExpressionErrors(errors);
+            for (MySQLTable table : globalState.getSchema().getDatabaseTables()) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("ANALYZE TABLE ");
+                sb.append(table.getName());
+                sb.append(" UPDATE HISTOGRAM ON ");
+                String columns = table.getColumns().stream().map(MySQLColumn::getName)
+                        .collect(Collectors.joining(", "));
+                sb.append(columns + ";");
+                globalState.executeStatement(new SQLQueryAdapter(sb.toString(), errors));
+            }
+        }
     }
 
     @Override
@@ -186,6 +209,17 @@ public class MySQLProvider extends SQLProviderAdapter<MySQLGlobalState, MySQLOpt
     @Override
     public String getDBMSName() {
         return "mysql";
+    }
+
+    @Override
+    public boolean addRowsToAllTables(MySQLGlobalState globalState) throws Exception {
+        List<MySQLTable> tablesNoRow = globalState.getSchema().getDatabaseTables().stream()
+                .filter(t -> t.getNrRows(globalState) == 0).collect(Collectors.toList());
+        for (MySQLTable table : tablesNoRow) {
+            SQLQueryAdapter queryAddRows = MySQLInsertGenerator.insertRow(globalState, table);
+            globalState.executeStatement(queryAddRows);
+        }
+        return true;
     }
 
 }
