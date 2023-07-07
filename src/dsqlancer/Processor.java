@@ -21,8 +21,11 @@ import dsqlancer.ANTLR.ANTLRv4Parser.GrammarSpecContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.IdentifierContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.PrequelConstructContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.RuleSpecContext;
+import dsqlancer.AST.GrammarGraph;
 
 public class Processor {
+
+    // Find any grammar file name that are imported by the root in base_dir
     public static List<String> collect_imports(GrammarSpecContext root, String base_dir){
         List<String> import_list = new ArrayList<>();
         for (PrequelConstructContext prerequisite: root.prequelConstruct()){
@@ -59,6 +62,9 @@ public class Processor {
         }
     }
 
+
+    // Parse a grammar file
+    // Scan the current working directory (cwd is cmdline parameters) for any dependency
     public GrammarSpecContext parse_grammar(List<String> grammar_files, Options options){
         GrammarSpecContext root = null;
         for (String grammar_file: grammar_files){
@@ -85,6 +91,31 @@ public class Processor {
     }
 
     public void generate_fuzzer(Options options){
-        //TODO
+        GrammarSpecContext lexer_root = null;
+        GrammarSpecContext parser_root = null;
+
+        // TODO: one thing i don't really get here in the grammarinator implementation
+        // is that they are updating these in a loop?
+        // For multiple grammars this will only keep the last one (or two) right?
+        for (String grammar: options.grammarRules){
+            if (grammar.endsWith(".g4")){
+                GrammarSpecContext root = parse_grammar(grammar, options);
+                if (root.grammarDecl().grammarType().LEXER()!=null || root.grammarDecl().grammarType().PARSER()==null){
+                    lexer_root = root;
+                }
+                else {
+                    parser_root = root;
+                }
+            }
+            else {
+                System.out.println("Expecting ANTLRv4 grammar file(s) with .g4 file extension");
+            }
+        }
+
+        GrammarGraph graph = new GrammarGraph();
+        // TODO: build graph
+        // TODO: analyze graph
+
+
     }
 }
