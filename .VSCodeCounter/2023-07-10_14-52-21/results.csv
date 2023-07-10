@@ -1,0 +1,7 @@
+"filename", "language", "Java", "comment", "blank", "total"
+"/home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/AST/Edge.java", "Java", 25, 3, 12, 40
+"/home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/AST/GrammarGraph.java", "Java", 41, 0, 12, 53
+"/home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/AST/LambdaNode.java", "Java", 6, 0, 2, 8
+"/home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/AST/Node.java", "Java", 23, 0, 8, 31
+"/home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/AST/RuleNode.java", "Java", 20, 2, 8, 30
+"Total", "-", 115, 5, 42, 162

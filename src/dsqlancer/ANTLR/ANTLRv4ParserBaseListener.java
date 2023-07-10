@@ -11,7 +11,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
  * which can be extended to create a listener which only needs to handle a subset
  * of the available methods.
  */
-@SuppressWarnings("CheckReturnValue")
+//@SuppressWarnings("CheckReturnValue")
 public class ANTLRv4ParserBaseListener implements ANTLRv4ParserListener {
 	/**
 	 * {@inheritDoc}

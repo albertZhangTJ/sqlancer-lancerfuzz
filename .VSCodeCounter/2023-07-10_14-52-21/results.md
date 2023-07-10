@@ -1,25 +1,21 @@
 # Summary
 
-Date : 2023-04-17 11:36:24
+Date : 2023-07-10 14:52:21
 
-Directory /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/sqlancer/duckdb
+Directory /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/AST
 
-Total : 25 files,  2230 codes, 36 comments, 432 blanks, all 2698 lines
+Total : 5 files,  115 codes, 5 comments, 42 blanks, all 162 lines
 
 Summary / [Details](details.md) / [Diff Summary](diff.md) / [Diff Details](diff-details.md)
 
 ## Languages
 | language | files | code | comment | blank | total |
 | :--- | ---: | ---: | ---: | ---: | ---: |
-| Java | 25 | 2,230 | 36 | 432 | 2,698 |
+| Java | 5 | 115 | 5 | 42 | 162 |
 
 ## Directories
 | path | files | code | comment | blank | total |
 | :--- | ---: | ---: | ---: | ---: | ---: |
-| . | 25 | 2,230 | 36 | 432 | 2,698 |
-| . (Files) | 5 | 673 | 11 | 129 | 813 |
-| ast | 4 | 253 | 0 | 90 | 343 |
-| gen | 9 | 762 | 16 | 137 | 915 |
-| test | 7 | 542 | 9 | 76 | 627 |
+| . | 5 | 115 | 5 | 42 | 162 |
 
 Summary / [Details](details.md) / [Diff Summary](diff.md) / [Diff Details](diff-details.md)

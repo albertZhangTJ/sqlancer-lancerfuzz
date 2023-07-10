@@ -1,0 +1,50 @@
+Date : 2023-07-10 14:50:44
+Directory : /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer
+Total : 20 files,  7653 codes, 1523 comments, 623 blanks, all 9799 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| Java     |         14 |      6,071 |      1,242 |        313 |      7,626 |
+| ANTLR    |          5 |      1,582 |        281 |        309 |      2,172 |
+| Markdown |          1 |          0 |          0 |          1 |          1 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++----------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                               | files      | code       | comment    | blank      | total      |
++----------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                  |         20 |      7,653 |      1,523 |        623 |      9,799 |
+| . (Files)                                                                                          |          5 |        155 |         47 |         52 |        254 |
+| ANTLR                                                                                              |          5 |      5,801 |      1,190 |        220 |      7,211 |
+| AST                                                                                                |          5 |        115 |          5 |         42 |        162 |
+| resources                                                                                          |          5 |      1,582 |        281 |        309 |      2,172 |
++----------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++----------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                                                           | language | code       | comment    | blank      | total      |
++----------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/ANTLR/ANTLRv4Lexer.java              | Java     |        631 |         16 |         21 |        668 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/ANTLR/ANTLRv4Parser.java             | Java     |      4,630 |          4 |        173 |      4,807 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/ANTLR/ANTLRv4ParserBaseListener.java | Java     |        136 |        657 |          4 |        797 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/ANTLR/ANTLRv4ParserListener.java     | Java     |        130 |        509 |          2 |        641 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/ANTLR/LexBasic.java                  | Java     |        274 |          4 |         20 |        298 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/AST/Edge.java                        | Java     |         25 |          3 |         12 |         40 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/AST/GrammarGraph.java                | Java     |         41 |          0 |         12 |         53 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/AST/LambdaNode.java                  | Java     |          6 |          0 |          2 |          8 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/AST/Node.java                        | Java     |         23 |          0 |          8 |         31 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/AST/RuleNode.java                    | Java     |         20 |          2 |          8 |         30 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/Main.java                            | Java     |         23 |         23 |         13 |         59 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/Options.java                         | Java     |         21 |          6 |         14 |         41 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/Processor.java                       | Java     |         86 |         12 |         16 |        114 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/README.md                            | Markdown |          0 |          0 |          1 |          1 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/Utils.java                           | Java     |         25 |          6 |          8 |         39 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/resources/ANTLRv4Lexer.g4            | ANTLR    |        222 |        101 |         79 |        402 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/resources/ANTLRv4Parser.g4           | ANTLR    |        233 |         79 |         67 |        379 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/resources/LexBasic.g4                | ANTLR    |        168 |         56 |         51 |        275 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/resources/SQLite.g4                  | ANTLR    |        761 |         45 |         97 |        903 |
+| /home/albert/Desktop/NUS/UROP/SQLancer/sqlancer/src/dsqlancer/resources/test.g4                    | ANTLR    |        198 |          0 |         15 |        213 |
+| Total                                                                                              |          |      7,653 |      1,523 |        623 |      9,799 |
++----------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+

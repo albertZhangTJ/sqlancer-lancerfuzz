@@ -1,6 +1,6 @@
 package dsqlancer;
 
-import java.io.FileInputStream;
+// import java.io.FileInputStream;
 // import java.io.File;
 // import java.io.FileWriter;
 // import java.io.IOException;
@@ -11,7 +11,7 @@ import java.io.FileInputStream;
 // import java.util.ArrayList;
 // import java.util.Date;
 // import java.util.HashMap;
-import java.util.List;
+// import java.util.List;
 // import java.util.Map;
 // import java.util.ServiceLoader;
 // import java.util.Set;
@@ -43,8 +43,8 @@ public class Main {
             jc.usage();
             return;
         }
-
-        if (options.parserRules.size()==0){
+        // deliberate typo here
+        if (options.grammarRules.size()==0){
             System.out.println("ERROR: need one or more grammar files for parser rules");
             System.exit(-1);
         }
