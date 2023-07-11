@@ -13,7 +13,7 @@ public class Options {
     public static final Options DEFAULT_OPTIONS = new Options();
 
     @Parameter(names = { "--help", "-h" }, description = "Display help message", help = true)
-    public boolean help = false;
+    public boolean help;
 
     @Parameter(names = {"--grammar", "-g"}, description= "ANTLR grammar files", variableArity = true)
     public List<String> grammarRules = new ArrayList<>();

@@ -39,11 +39,17 @@ public class Main {
         Builder commandBuilder = JCommander.newBuilder().addObject(options);
         JCommander jc = commandBuilder.programName("DSQLancer").build();
         jc.parse(args);
-        if (jc.getParsedCommand() == null || options.help) {
+        if (jc.getParsedCommand() == null) {
+            Utils.oops("Main::main : parameters needed for running DSQLancer, see usage below");
             jc.usage();
             return;
         }
-        // deliberate typo here
+
+        if (options.help){
+            jc.usage();
+            return;
+        }
+        
         if (options.grammarRules.size()==0){
             System.out.println("ERROR: need one or more grammar files for parser rules");
             System.exit(-1);
