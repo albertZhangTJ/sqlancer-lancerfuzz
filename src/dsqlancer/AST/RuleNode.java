@@ -5,7 +5,6 @@ import java.util.ArrayList;
 
 import dsqlancer.Utils;
 
-@SuppressWarnings("unused")
 public class RuleNode extends Node{
     public static enum RuleNodeType {UNLEXER, UNPARSER};
     private String name;
@@ -43,5 +42,33 @@ public class RuleNode extends Node{
         ans.add(Utils.copy_list(returns));
 
         return ans;
+    }
+
+    public String get_name(){
+        return this.name;
+    }
+
+    public RuleNodeType get_type(){
+        return this.type;
+    }
+
+    public int get_min_depth(){
+        return this.min_depth;
+    }
+
+    public List<String> get_labels(){
+        return Utils.copy_list(this.labels);
+    }
+
+    public List<String> get_args(){
+        return Utils.copy_list(this.args);
+    }
+
+    public List<String> get_locals(){
+        return Utils.copy_list(this.locals);
+    }
+
+    public List<String> get_returns(){
+        return Utils.copy_list(this.returns);
     }
 }

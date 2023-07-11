@@ -1,6 +1,5 @@
 package dsqlancer.AST;
 
-@SuppressWarnings("unused")
 public class CharsetNode extends Node{
     private int rule_id;
     private int index;
@@ -10,5 +9,17 @@ public class CharsetNode extends Node{
         this.rule_id = rule_id;
         this.index = index;
         this.charset = charset;
+    }
+
+    public int get_rule_id(){
+        return this.rule_id;
+    }
+
+    public int get_index(){
+        return this.index;
+    }
+
+    public int get_charset(){
+        return this.charset;
     }
 }

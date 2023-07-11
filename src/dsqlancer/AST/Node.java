@@ -27,4 +27,12 @@ public class Node {
         }
         this.outward_edges.add(edge);
     }
+
+    public List<Edge> get_outward_edges(){
+        return Utils.copy_list(this.outward_edges);
+    }
+
+    public static int total_nodes(){
+        return nodes_count;
+    }
 }
