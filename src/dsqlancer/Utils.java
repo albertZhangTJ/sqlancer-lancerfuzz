@@ -37,6 +37,10 @@ public class Utils {
         System.out.println("["+ANSI_YELLOW+"WARNING"+ANSI_RESET+"] "+message);
     }
 
+    public static void log(String message){
+        System.out.println("["+ANSI_GREEN+"LOG"+ANSI_RESET+"] "+message);
+    }
+
     public static <T> List<T> copy_list(List<T> ori){
         if (ori==null){
             return null;

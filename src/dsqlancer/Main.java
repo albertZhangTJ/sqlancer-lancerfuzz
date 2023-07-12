@@ -27,8 +27,6 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.JCommander.Builder;
 
 
-
-
 public class Main {
 
     
@@ -39,6 +37,7 @@ public class Main {
         Builder commandBuilder = JCommander.newBuilder().addObject(options);
         JCommander jc = commandBuilder.programName("DSQLancer").build();
         jc.parse(args);
+
         if (jc.getParsedCommand() == null) {
             Utils.oops("Main::main : parameters needed for running DSQLancer, see usage below");
             jc.usage();
