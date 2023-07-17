@@ -168,7 +168,8 @@ public class ANTLRv4Lexer extends Lexer {
 	private void BEGIN_ARGUMENT_action(RuleContext _localctx, int actionIndex) {
 		switch (actionIndex) {
 		case 0:
-			// this.handleBeginArgument();
+			System.out.println("!!!!!!!!!!!!REMOVED CONTENT IN LEXER USED!!!!!!!!!!!!!!!!!!!");
+			// self.handleBeginArgument();
 			// TODO: this was inserted here as an action from the grammar file
 			// Couldn't actually find where this should lead to so I had it removed for the time being
 			break;
@@ -177,6 +178,7 @@ public class ANTLRv4Lexer extends Lexer {
 	private void END_ARGUMENT_action(RuleContext _localctx, int actionIndex) {
 		switch (actionIndex) {
 		case 1:
+			System.out.println("!!!!!!!!!!!!REMOVED CONTENT IN LEXER USED!!!!!!!!!!!!!!!!!!!");
 			// this.handleEndArgument();
 			// TODO: this was inserted here as an action from the grammar file
 			// Couldn't actually find where this should lead to so I had it removed for the time being
@@ -186,6 +188,7 @@ public class ANTLRv4Lexer extends Lexer {
 	private void END_ACTION_action(RuleContext _localctx, int actionIndex) {
 		switch (actionIndex) {
 		case 2:
+			System.out.println("!!!!!!!!!!!!REMOVED CONTENT IN LEXER USED!!!!!!!!!!!!!!!!!!!");
 			// this.handleEndAction();
 			// TODO: this was inserted here as an action from the grammar file
 			// Couldn't actually find where this should lead to so I had it removed for the time being

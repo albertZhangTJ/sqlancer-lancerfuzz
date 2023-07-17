@@ -9,20 +9,38 @@ import dsqlancer.Utils;
 public class GrammarGraph{
     private String name = "";
     private LinkedHashMap<Integer, Node> vertices;
-    private String header = "";
-    private String members = "";
+    private LinkedHashMap<String, String> options;
+    private String header = ""; //raw action code for header
+    private String members = ""; //raw action code for member methods
     private Node default_rule = null;
 
     public GrammarGraph(){
         this.vertices = new LinkedHashMap<>();
-
+        this.options = new LinkedHashMap<>();
     }
 
-    public void add_node(Node node){
+    public int add_node(Node node){
         if (this.vertices.get(node.get_id())!=null) {
-            Utils.oops("GrammarGraph::add_node : node with id "+node.get_id()+"already exists");
+            Utils.oops("GrammarGraph::add_node : node with id "+node.get_id()+"already exists, replacing");
         }
         this.vertices.put(node.get_id(), node);
+        return node.get_id();
+    }
+
+    public String get_name(){
+        if (this.name.equals("")){
+            return null;
+        }
+        return this.name;
+    }
+
+    // effectively make this.name final
+    // only changes when not set before
+    public String set_name(String name){
+        if (this.name.equals("")){
+            this.name = name;
+        }
+        return this.name;
     }
 
     public void add_edge(Node source, Node destination, List<String> args){
@@ -50,4 +68,33 @@ public class GrammarGraph{
 
         this.vertices.get(source_id).add_outward_edge(edge);
     }
+
+    public void add_option(String key, String value){
+        if (this.options.get(key)!=null){
+            Utils.oops("GrammarGraph::add_option : graph "+this.name+" already has an option "+
+                    key+" with value "+this.options.get(key)+" , replacing with "+value);
+        }
+        this.options.put(key, value);
+    }
+
+    public String get_option(String key){
+        return this.options.get(key);
+    }
+
+    public void append_members_code(String code){
+        this.members = this.members + "\n" + code;
+    }
+
+    public String get_members(){
+        return this.members;
+    }
+
+    public void append_header_code(String code){
+        this.header = this.header + "\n" + code;
+    }
+
+    public String get_header(){
+        return this.header;
+    }
+
 }

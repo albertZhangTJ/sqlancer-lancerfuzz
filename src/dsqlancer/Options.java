@@ -15,6 +15,9 @@ public class Options {
     @Parameter(names = { "--help", "-h" }, description = "Display help message", help = true)
     public boolean help;
 
+    @Parameter(names = {"--ignore_actions", "-ia"}, description = "Ignore actions defined in the grammar files")
+    public boolean ignore_actions = false;
+
     @Parameter(names = {"--grammar", "-g"}, description= "ANTLR grammar files", variableArity = true)
     public List<String> grammarRules = new ArrayList<>();
 
