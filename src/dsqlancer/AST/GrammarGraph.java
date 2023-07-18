@@ -10,6 +10,7 @@ public class GrammarGraph{
     private String name = "";
     private LinkedHashMap<Integer, Node> vertices;
     private LinkedHashMap<String, String> options;
+    private int encoding_set;
     private String header = ""; //raw action code for header
     private String members = ""; //raw action code for member methods
     private Node default_rule = null;
@@ -17,6 +18,7 @@ public class GrammarGraph{
     public GrammarGraph(){
         this.vertices = new LinkedHashMap<>();
         this.options = new LinkedHashMap<>();
+        this.encoding_set = 0;
     }
 
     public int add_node(Node node){
@@ -95,6 +97,17 @@ public class GrammarGraph{
 
     public String get_header(){
         return this.header;
+    }
+
+    public void set_encoding(int encoding){
+        if (encoding<0 || encoding>2){
+            Utils.panic("GrammarGraph::set_encoding : invalid option "+encoding+". Valid encodings are 0 for any ASCII characters, 1 for any ASCII letters, 2 for any Unicode characters");
+        }
+        this.encoding_set = encoding;
+    }
+
+    public int get_encoding(){
+        return this.encoding_set;
     }
 
 }

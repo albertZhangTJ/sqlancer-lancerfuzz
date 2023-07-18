@@ -15,8 +15,11 @@ public class Options {
     @Parameter(names = { "--help", "-h" }, description = "Display help message", help = true)
     public boolean help;
 
-    @Parameter(names = {"--ignore_actions", "-ia"}, description = "Ignore actions defined in the grammar files")
+    @Parameter(names = {"--ignore_actions", "-i"}, description = "Ignore actions defined in the grammar files")
     public boolean ignore_actions = false;
+
+    @Parameter(names = {"--encoding", "-e"}, description = "Encoding of generated characters, 0 for any ASCII characters, 1 for any ASCII letters, 2 for any Unicode characters")
+    public int encoding = 0;
 
     @Parameter(names = {"--grammar", "-g"}, description= "ANTLR grammar files", variableArity = true)
     public List<String> grammarRules = new ArrayList<>();

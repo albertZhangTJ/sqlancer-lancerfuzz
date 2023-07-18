@@ -1,6 +1,7 @@
 package dsqlancer.AST;
 
 import java.util.List;
+import java.util.ArrayList;
 
 import org.antlr.v4.runtime.tree.TerminalNode;
 
@@ -83,6 +84,10 @@ public class GrammarGraphBuilder {
         }
 
     }
+
+    public static void build_rules(GrammarGraph graph, GrammarSpecContext node, Options options){
+        List<RuleNode> generator_rules = new ArrayList<>();
+    }
     
     
     public static GrammarGraph build_grammar_graph(GrammarSpecContext lexer_root, GrammarSpecContext parser_root, Options options){
@@ -95,6 +100,9 @@ public class GrammarGraphBuilder {
         if (parser_root!=null){
             build_prerequisite(graph, parser_root, options);
         }
+
+        // Ignored the options for the graph, not entirely sure why grammar graph need info on options
+        // Will come back to implement if later found needed
         // TODO
 
         return graph;
