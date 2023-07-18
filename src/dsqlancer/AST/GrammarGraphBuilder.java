@@ -2,8 +2,10 @@ package dsqlancer.AST;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.antlr.v4.runtime.ParserRuleContext;
 
 import dsqlancer.Options;
 import dsqlancer.Utils;
@@ -11,7 +13,10 @@ import dsqlancer.ANTLR.ANTLRv4Parser.Action_Context;
 import dsqlancer.ANTLR.ANTLRv4Parser.GrammarSpecContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.IdentifierContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.OptionContext;
+import dsqlancer.ANTLR.ANTLRv4Parser.ParserRuleSpecContext;
+import dsqlancer.ANTLR.ANTLRv4Parser.LexerRuleSpecContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.PrequelConstructContext;
+import dsqlancer.ANTLR.ANTLRv4Parser.RuleSpecContext;
 
 // TODO: remove suppress after complete
 @SuppressWarnings("unused")
@@ -86,7 +91,36 @@ public class GrammarGraphBuilder {
     }
 
     public static void build_rules(GrammarGraph graph, GrammarSpecContext node, Options options){
-        List<RuleNode> generator_rules = new ArrayList<>();
+        LinkedHashMap<RuleNode, ParserRuleContext> generator_rules = new LinkedHashMap<>();
+        List<Integer> duplicate_rules = new ArrayList<>();
+
+        for (RuleSpecContext rule : node.rules().ruleSpec()){
+            ParserRuleContext antlr_node = null;
+            RuleNode rule_node = null;
+            if (rule.parserRuleSpec()!=null){
+                ParserRuleSpecContext rule_spec = rule.parserRuleSpec();
+                rule_node = new UnparserRuleNode(rule_spec.RULE_REF().toString());
+                antlr_node = rule_spec;
+            }
+            else if (rule.lexerRuleSpec()!=null){
+                LexerRuleSpecContext rule_spec = rule.lexerRuleSpec();
+                rule_node =new  UnlexerRuleNode(rule_spec.TOKEN_REF().toString());
+                antlr_node = rule_spec;
+            }
+            else {
+                Utils.panic("GrammarGraphBuilder::build_rules : Something went very wrong, this line should not be executed");
+            }
+
+            if (!graph.contains_node_with_id(rule_node.get_id())){
+                graph.add_node(rule_node);
+                generator_rules.put(rule_node, antlr_node);
+            }
+            else {
+                duplicate_rules.add(rule_node.get_id());
+            }
+        }
+
+        // TODO handle the modeSpec thing
     }
     
     

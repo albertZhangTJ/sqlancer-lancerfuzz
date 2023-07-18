@@ -21,6 +21,10 @@ public class GrammarGraph{
         this.encoding_set = 0;
     }
 
+    public boolean contains_node_with_id(int id){
+        return this.vertices.containsKey(id);
+    }
+    
     public int add_node(Node node){
         if (this.vertices.get(node.get_id())!=null) {
             Utils.oops("GrammarGraph::add_node : node with id "+node.get_id()+"already exists, replacing");
