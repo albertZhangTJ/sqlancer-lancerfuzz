@@ -165,7 +165,6 @@ public class ANTLRv4Lexer extends LexerAdaptor {
 	private void BEGIN_ARGUMENT_action(RuleContext _localctx, int actionIndex) {
 		switch (actionIndex) {
 		case 0:
-			System.out.println("!!!!!!!!!!!!REMOVED CONTENT IN LEXER USED!!!!!!!!!!!!!!!!!!!");
 			this.handleBeginArgument();
 			break;
 		}
@@ -173,7 +172,6 @@ public class ANTLRv4Lexer extends LexerAdaptor {
 	private void END_ARGUMENT_action(RuleContext _localctx, int actionIndex) {
 		switch (actionIndex) {
 		case 1:
-			System.out.println("!!!!!!!!!!!!REMOVED CONTENT IN LEXER USED!!!!!!!!!!!!!!!!!!!");
 			this.handleEndArgument();
 			break;
 		}
@@ -181,7 +179,6 @@ public class ANTLRv4Lexer extends LexerAdaptor {
 	private void END_ACTION_action(RuleContext _localctx, int actionIndex) {
 		switch (actionIndex) {
 		case 2:
-			System.out.println("!!!!!!!!!!!!REMOVED CONTENT IN LEXER USED!!!!!!!!!!!!!!!!!!!");
 			this.handleEndAction();
 			break;
 		}

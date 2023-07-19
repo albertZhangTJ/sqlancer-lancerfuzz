@@ -108,6 +108,7 @@ public class Processor {
 
         GrammarGraph graph = GrammarGraphBuilder.build_grammar_graph(lexer_root, parser_root, options);
         // TODO: analyze graph
+        
 
 
     }
