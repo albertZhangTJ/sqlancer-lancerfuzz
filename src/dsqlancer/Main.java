@@ -59,5 +59,6 @@ public class Main {
             System.exit(-1);
         }
 
+        Processor.generate_fuzzer(options);
     }
 }

@@ -15,6 +15,8 @@ import dsqlancer.ANTLR.ANTLRv4Parser.GrammarSpecContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.IdentifierContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.PrequelConstructContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.RuleSpecContext;
+import dsqlancer.AST.GrammarGraph;
+import dsqlancer.AST.GrammarGraphBuilder;
 
 
 public class Processor {
@@ -48,7 +50,7 @@ public class Processor {
 
     // Parse a grammar file
     // Scan the current working directory (cwd is cmdline parameters) for any dependency
-    public GrammarSpecContext parse_grammar(List<String> grammar_files, Options options){
+    public static GrammarSpecContext parse_grammar(List<String> grammar_files, Options options){
         GrammarSpecContext root = null;
         for (String grammar_file: grammar_files){
             try {
@@ -80,7 +82,7 @@ public class Processor {
     }
 
     @SuppressWarnings("unused")
-    public void generate_fuzzer(Options options){
+    public static void generate_fuzzer(Options options){
         GrammarSpecContext lexer_root = null;
         GrammarSpecContext parser_root = null;
 
@@ -104,8 +106,7 @@ public class Processor {
             }
         }
 
-        // GrammarGraph graph = new GrammarGraph();
-        // TODO: build graph
+        GrammarGraph graph = GrammarGraphBuilder.build_grammar_graph(lexer_root, parser_root, options);
         // TODO: analyze graph
 
 

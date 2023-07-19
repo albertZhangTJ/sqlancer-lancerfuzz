@@ -11,10 +11,7 @@ import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.misc.*;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast", "CheckReturnValue"})
-// TODO: The original superclass specified in the grammar file was "LexerAdapter"
-// Couldn't find it and I have reasons to believe it should be "Lexer" instead
-// Need further investigation to confirm this though
-public class ANTLRv4Lexer extends Lexer {
+public class ANTLRv4Lexer extends LexerAdaptor {
 	static { RuntimeMetaData.checkVersion("4.13.0", RuntimeMetaData.VERSION); }
 
 	protected static final DFA[] _decisionToDFA;
@@ -169,9 +166,7 @@ public class ANTLRv4Lexer extends Lexer {
 		switch (actionIndex) {
 		case 0:
 			System.out.println("!!!!!!!!!!!!REMOVED CONTENT IN LEXER USED!!!!!!!!!!!!!!!!!!!");
-			// self.handleBeginArgument();
-			// TODO: this was inserted here as an action from the grammar file
-			// Couldn't actually find where this should lead to so I had it removed for the time being
+			this.handleBeginArgument();
 			break;
 		}
 	}
@@ -179,9 +174,7 @@ public class ANTLRv4Lexer extends Lexer {
 		switch (actionIndex) {
 		case 1:
 			System.out.println("!!!!!!!!!!!!REMOVED CONTENT IN LEXER USED!!!!!!!!!!!!!!!!!!!");
-			// this.handleEndArgument();
-			// TODO: this was inserted here as an action from the grammar file
-			// Couldn't actually find where this should lead to so I had it removed for the time being
+			this.handleEndArgument();
 			break;
 		}
 	}
@@ -189,9 +182,7 @@ public class ANTLRv4Lexer extends Lexer {
 		switch (actionIndex) {
 		case 2:
 			System.out.println("!!!!!!!!!!!!REMOVED CONTENT IN LEXER USED!!!!!!!!!!!!!!!!!!!");
-			// this.handleEndAction();
-			// TODO: this was inserted here as an action from the grammar file
-			// Couldn't actually find where this should lead to so I had it removed for the time being
+			this.handleEndAction();
 			break;
 		}
 	}
