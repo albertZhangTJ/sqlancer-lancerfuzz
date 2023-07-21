@@ -2,6 +2,7 @@ package dsqlancer.AST;
 
 import java.util.List;
 import java.util.LinkedHashMap;
+import java.util.Set;
 
 import dsqlancer.Utils;
 
@@ -25,6 +26,20 @@ public class GrammarGraph{
         return this.vertices.containsKey(id);
     }
     
+    public boolean contains_node_with_identifier(String identifier){
+        if (identifier==null){
+            return false;
+        }
+        Set<Integer> key_set = this.vertices.keySet();
+        for (Integer key : key_set){
+            if (Utils.null_safe_equals(identifier, this.vertices.get(key).get_identifier())){
+                return true;
+            }
+        }
+        return false;
+    }
+
+
     public int add_node(Node node){
         if (this.vertices.get(node.get_id())!=null) {
             Utils.oops("GrammarGraph::add_node : node with id "+node.get_id()+"already exists, replacing");

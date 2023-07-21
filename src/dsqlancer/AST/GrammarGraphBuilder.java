@@ -15,6 +15,7 @@ import dsqlancer.ANTLR.ANTLRv4Parser.IdentifierContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.OptionContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.ParserRuleSpecContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.LexerRuleSpecContext;
+import dsqlancer.ANTLR.ANTLRv4Parser.ModeSpecContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.PrequelConstructContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.RuleSpecContext;
 
@@ -92,7 +93,7 @@ public class GrammarGraphBuilder {
 
     public static void build_rules(GrammarGraph graph, GrammarSpecContext node, Options options){
         LinkedHashMap<RuleNode, ParserRuleContext> generator_rules = new LinkedHashMap<>();
-        List<Integer> duplicate_rules = new ArrayList<>();
+        List<String> duplicate_rules = new ArrayList<>();
 
         for (RuleSpecContext rule : node.rules().ruleSpec()){
             ParserRuleContext antlr_node = null;
@@ -104,23 +105,41 @@ public class GrammarGraphBuilder {
             }
             else if (rule.lexerRuleSpec()!=null){
                 LexerRuleSpecContext rule_spec = rule.lexerRuleSpec();
-                rule_node =new  UnlexerRuleNode(rule_spec.TOKEN_REF().toString());
+                rule_node =new UnlexerRuleNode(rule_spec.TOKEN_REF().toString());
                 antlr_node = rule_spec;
             }
             else {
-                Utils.panic("GrammarGraphBuilder::build_rules : Something went very wrong, this line should not be executed");
+                Utils.panic("GrammarGraphBuilder::build_rules : Something went very wrong, this line should never be executed");
             }
 
-            if (!graph.contains_node_with_id(rule_node.get_id())){
+            if (!graph.contains_node_with_identifier(rule_node.get_identifier())){
                 graph.add_node(rule_node);
                 generator_rules.put(rule_node, antlr_node);
             }
             else {
-                duplicate_rules.add(rule_node.get_id());
+                duplicate_rules.add(rule_node.get_identifier());
             }
         }
 
-        // TODO handle the modeSpec thing
+
+        for (ModeSpecContext mode_spec : node.modeSpec()){
+            for (LexerRuleSpecContext rule_spec : mode_spec.lexerRuleSpec()){
+                UnlexerRuleNode rule_node = new UnlexerRuleNode(rule_spec.TOKEN_REF().toString());
+                if (!graph.contains_node_with_identifier(rule_spec.TOKEN_REF().toString())){
+                    graph.add_node(rule_node);
+                    generator_rules.put(rule_node, rule_spec.lexerRuleBlock());
+                }
+                else {
+                    duplicate_rules.add(rule_node.get_identifier());
+                }
+            }
+        }
+
+        if (duplicate_rules.size()>0){
+            Utils.panic("GrammarGraphBuilder::build_rules : Redefinition of the following rule(s) "+duplicate_rules.toString());
+        }
+        
+        // TODO: build a single rule
     }
     
     
