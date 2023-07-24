@@ -2,6 +2,7 @@ package dsqlancer.AST;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import dsqlancer.Utils;
 
@@ -14,18 +15,18 @@ public class RuleNode extends Node{
 
     // Not entirely sure what these are for and what type should they have
     // TODO: further investigation needed here
-    private List<String> labels;
-    private List<String> args;
-    private List<String> locals;
-    private List<String> returns; 
+    private HashMap<String, String> labels;
+    private HashMap<String, String> args;
+    private HashMap<String, String> locals;
+    private HashMap<String, String> returns; 
 
-    public RuleNode(String name, List<String> labels, RuleNodeType type){
+    public RuleNode(String name, HashMap<String, String> labels, RuleNodeType type){
         this.name = name;
         this.labels = labels;
 
-        this.args = new ArrayList<>();
-        this.locals = new ArrayList<>();
-        this.returns = new ArrayList<>();
+        this.args = new HashMap<String, String>();
+        this.locals = new HashMap<String, String>();
+        this.returns = new HashMap<String, String>();
     } 
 
     public boolean has_var(){
@@ -35,11 +36,11 @@ public class RuleNode extends Node{
                 this.returns.size()>0;
     }
 
-    public List<List<String>> attributes(){
-        List<List<String>> ans = new ArrayList<>();
-        ans.add(Utils.copy_list(args));
-        ans.add(Utils.copy_list(locals));
-        ans.add(Utils.copy_list(returns));
+    public List<HashMap<String, String>> attributes(){
+        List<HashMap<String, String>> ans = new ArrayList<>();
+        ans.add(Utils.copy_map(args));
+        ans.add(Utils.copy_map(locals));
+        ans.add(Utils.copy_map(returns));
 
         return ans;
     }
@@ -56,19 +57,31 @@ public class RuleNode extends Node{
         return this.min_depth;
     }
 
-    public List<String> get_labels(){
-        return Utils.copy_list(this.labels);
+    public HashMap<String, String> get_labels(){
+        return Utils.copy_map(this.labels);
     }
 
-    public List<String> get_args(){
-        return Utils.copy_list(this.args);
+    public HashMap<String, String> get_args(){
+        return Utils.copy_map(this.args);
     }
 
-    public List<String> get_locals(){
-        return Utils.copy_list(this.locals);
+    public HashMap<String, String> get_locals(){
+        return Utils.copy_map(this.locals);
     }
 
-    public List<String> get_returns(){
-        return Utils.copy_list(this.returns);
+    public HashMap<String, String> get_returns(){
+        return Utils.copy_map(this.returns);
+    }
+
+    public void set_args(HashMap<String, String> args){
+        this.args = args;
+    }
+
+    public void set_locals(HashMap<String, String> locals){
+        this.locals = locals;
+    }
+
+    public void set_returns(HashMap<String, String> returns){
+        this.returns = returns;
     }
 }

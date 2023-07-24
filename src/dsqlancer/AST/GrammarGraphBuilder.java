@@ -2,6 +2,7 @@ package dsqlancer.AST;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -9,19 +10,71 @@ import org.antlr.v4.runtime.ParserRuleContext;
 
 import dsqlancer.Options;
 import dsqlancer.Utils;
+import dsqlancer.ANTLR.ANTLRv4Parser;
 import dsqlancer.ANTLR.ANTLRv4Parser.Action_Context;
+import dsqlancer.ANTLR.ANTLRv4Parser.ArgActionBlockContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.GrammarSpecContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.IdentifierContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.OptionContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.ParserRuleSpecContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.LexerRuleSpecContext;
+import dsqlancer.ANTLR.ANTLRv4Parser.LocalsSpecContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.ModeSpecContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.PrequelConstructContext;
+import dsqlancer.ANTLR.ANTLRv4Parser.RuleReturnsContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.RuleSpecContext;
 
 // TODO: remove suppress after complete
 @SuppressWarnings("unused")
 public class GrammarGraphBuilder {
+    public static HashMap<String, String> arg_action_block(ParserRuleContext node){
+        HashMap<String, String> args = new HashMap<>();
+        ArgActionBlockContext aabc = null;
+        if (node!=null && node instanceof ParserRuleSpecContext){
+            aabc = ((ParserRuleSpecContext)node).argActionBlock();
+        }
+        else if(node!=null && node instanceof LocalsSpecContext){
+            aabc = ((LocalsSpecContext)node).argActionBlock();
+        }
+        else if(node!=null && node instanceof RuleReturnsContext){
+            aabc = ((RuleReturnsContext)node).argActionBlock();
+        }
+
+        if (aabc!=null){
+            String chr_args = "";
+            for (TerminalNode chr_arg: aabc.ARGUMENT_CONTENT()){
+                chr_args = chr_args+chr_arg.toString();
+            }
+            String[] chr_args_list = chr_args.split(",");
+            for (String s : chr_args_list){
+                if (s.contains("=")){
+                    args.put(s.split("=")[0].strip(), s.split("=")[1].strip());
+                }
+                else {
+                    args.put(s.strip(), null);
+                }
+            }
+        }
+        return args;
+    }
+
+    public static void build_expr(RuleNode rule, ParserRuleContext node, int parent_id, Options options){
+        if (node instanceof ANTLRv4Parser.ParserRuleSpecContext){
+            if (!options.ignore_actions){
+                rule.set_args(arg_action_block(node));
+                rule.set_locals(arg_action_block(((ParserRuleSpecContext)node).localsSpec()));
+                rule.set_returns(arg_action_block(((ParserRuleSpecContext)node).ruleReturns()));
+            }
+        }
+    }
+
+
+    public static void build_rule(RuleNode rule, ParserRuleContext node){
+        if (rule instanceof UnlexerRuleNode){
+            
+        }   
+    }
+
     public static void build_prerequisite(GrammarGraph graph, GrammarSpecContext node, Options options){
         if (node==null){
             Utils.panic("GrammarGraphBuilder::build_prerequisite : root node cannot be null");

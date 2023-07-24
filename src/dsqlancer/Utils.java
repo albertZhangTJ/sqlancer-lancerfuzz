@@ -1,6 +1,7 @@
 package dsqlancer;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 //Collection of static helper methods
@@ -48,6 +49,17 @@ public class Utils {
         List<T> res = new ArrayList<>();
         for (T item: ori){
             res.add(item);
+        }
+        return res;
+    }
+
+    public static <T, U> HashMap<T, U> copy_map(HashMap<T, U> ori){
+        if (ori==null){
+            return null;
+        }
+        HashMap<T, U> res = new HashMap<>();
+        for (HashMap.Entry<T, U> entry: ori.entrySet()){
+            res.put(entry.getKey(), entry.getValue());
         }
         return res;
     }
