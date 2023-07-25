@@ -141,6 +141,9 @@ public class ANTLRv4Parser extends Parser {
 		_interp = new ParserATNSimulator(this,_ATN,_decisionToDFA,_sharedContextCache);
 	}
 
+
+	// This class is an encapsulation of the ParserRuleContext class
+	// Provides an API to call these methods of any subclasses of ParserRuleContext
 	public static class FlexibleParserRuleContext extends ParserRuleContext {
 		public FlexibleParserRuleContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
@@ -155,6 +158,35 @@ public class ANTLRv4Parser extends Parser {
 			return null;
 		}
 		public RuleReturnsContext ruleReturns(){
+			return null;
+		}
+		public List<TerminalNode> QUESTION(){
+			return null;
+		}
+		public TerminalNode QUESTION(int i){
+			return null;
+		}
+		public List<ElementContext> element() {
+			return null;
+		}
+		public ElementContext element(int i) {
+			return null;
+		}
+		public List<LexerElementContext> lexerElement() {
+			return null;
+		}
+		public LexerElementContext lexerElement(int i) {
+			return null;
+		}
+		public List<AlternativeContext> alternative() {
+			return null;
+		}
+		public AlternativeContext alternative(int i) {
+			return null;
+		}
+		// really not a fan of the naming convention here
+		// but hey, this whole parser is auto-generated lol
+		public LexerElementsContext lexerElements(){
 			return null;
 		}
 	}
@@ -2182,8 +2214,10 @@ public class ANTLRv4Parser extends Parser {
 
 	@SuppressWarnings("CheckReturnValue")
 	public static class LabeledAltContext extends FlexibleParserRuleContext {
-		public AlternativeContext alternative() {
-			return getRuleContext(AlternativeContext.class,0);
+		public List<AlternativeContext> alternative() {
+			List<AlternativeContext> ans = new ArrayList<>();
+			ans.add(getRuleContext(AlternativeContext.class,0));
+			return ans;
 		}
 		public TerminalNode POUND() { return getToken(ANTLRv4Parser.POUND, 0); }
 		public IdentifierContext identifier() {
@@ -2572,7 +2606,11 @@ public class ANTLRv4Parser extends Parser {
 		public ActionBlockContext actionBlock() {
 			return getRuleContext(ActionBlockContext.class,0);
 		}
-		public TerminalNode QUESTION() { return getToken(ANTLRv4Parser.QUESTION, 0); }
+		public List<TerminalNode> QUESTION() { 
+			List<TerminalNode> ans = new ArrayList<>();
+			ans.add(getToken(ANTLRv4Parser.QUESTION, 0));
+			return ans; 
+		}
 		public LexerElementContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -3129,7 +3167,11 @@ public class ANTLRv4Parser extends Parser {
 		public ActionBlockContext actionBlock() {
 			return getRuleContext(ActionBlockContext.class,0);
 		}
-		public TerminalNode QUESTION() { return getToken(ANTLRv4Parser.QUESTION, 0); }
+		public List<TerminalNode> QUESTION() { 
+			List<TerminalNode> ans = new ArrayList<>();
+			ans.add(getToken(ANTLRv4Parser.QUESTION, 0));
+			return ans; 
+		}
 		public ElementContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
