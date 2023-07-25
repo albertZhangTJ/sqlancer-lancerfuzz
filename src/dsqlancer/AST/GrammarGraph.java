@@ -1,6 +1,7 @@
 package dsqlancer.AST;
 
 import java.util.List;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Set;
 
@@ -127,6 +128,10 @@ public class GrammarGraph{
 
     public int get_encoding(){
         return this.encoding_set;
+    }
+
+    public HashMap<Integer, Node> get_vertices(){
+        return Utils.copy_map(this.vertices);
     }
 
 }

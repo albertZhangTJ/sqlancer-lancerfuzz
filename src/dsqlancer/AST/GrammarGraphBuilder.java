@@ -27,6 +27,8 @@ import dsqlancer.ANTLR.ANTLRv4Parser.LocalsSpecContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.ModeSpecContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.PrequelConstructContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.RuleAltListContext;
+import dsqlancer.ANTLR.ANTLRv4Parser.AltListContext;
+import dsqlancer.ANTLR.ANTLRv4Parser.LexerAltListContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.RuleReturnsContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.RuleSpecContext;
 
@@ -92,29 +94,51 @@ public class GrammarGraphBuilder {
     // so many instanceof and type castings
     // But an alternative would require modification to the ANTLR generated code
     // And the current method is how grammarinator did this
+    //indices == [alt_idx, quant_idx, chr_idx]
     public static void build_expr(GrammarGraph graph, RuleNode rule, ParserRuleContext node, 
-                                    int parent_id, int alt_index, int quant_index, int chr_index, Options options){
+                                    int parent_id, List<Integer> indices, Options options){
         if (node instanceof ANTLRv4Parser.ParserRuleSpecContext){
             if (!options.ignore_actions){
                 rule.set_args(arg_action_block((ParserRuleSpecContext)node));
                 rule.set_locals(arg_action_block(((ParserRuleSpecContext)node).localsSpec()));
                 rule.set_returns(arg_action_block(((ParserRuleSpecContext)node).ruleReturns()));
             }
-            build_expr(graph, rule, ((ParserRuleSpecContext)node).ruleBlock(), parent_id, alt_index, quant_index, chr_index, options);
+            build_expr(graph, rule, ((ParserRuleSpecContext)node).ruleBlock(), parent_id, indices, options);
         }
 
-        else if (node instanceof ANTLRv4Parser.RuleAltListContext){
-            List<ParserRuleContext> children = new ArrayList<>();
-            for (ParseTree child : ((RuleAltListContext)node).children){
-                if (child instanceof ParserRuleContext){
-                    children.add((ParserRuleContext)child);
+        else if (node instanceof ANTLRv4Parser.RuleAltListContext || node instanceof ANTLRv4Parser.AltListContext || node instanceof ANTLRv4Parser.LexerAltListContext){
+            List<ParseTree> children_list = null;
+            if (node instanceof ANTLRv4Parser.RuleAltListContext){
+                children_list = ((RuleAltListContext)node).children;
+            }
+            else if (node instanceof ANTLRv4Parser.AltListContext){
+                children_list = ((AltListContext)node).children;
+            }
+            else if (node instanceof ANTLRv4Parser.LexerAltListContext) {
+                children_list = ((LexerAltListContext)node).children;
+            }
+            List<FlexibleParserRuleContext> children = new ArrayList<>();
+            for (ParseTree child : children_list){
+                if (child instanceof FlexibleParserRuleContext){
+                    children.add((FlexibleParserRuleContext)child);
                 }
-                if (children.size()==1){
-                    build_expr(graph, rule, children.get(0), parent_id, alt_index, quant_index, chr_index, options);
-                    return;
-                }
-                int alt_id = graph.add_node(new AlternationNode(-1, alt_index, null));
-
+            }
+            if (children.size()==1){
+                build_expr(graph, rule, children.get(0), parent_id, indices, options);
+                return;
+            }
+            List<String> conditions = new ArrayList<>();
+            for (FlexibleParserRuleContext child : children){
+                conditions.add(find_condition(child, options));
+            }
+            int alt_id = graph.add_node(new AlternationNode(rule.get_name(), indices.get(0), conditions));
+            int parent_alt_index = indices.get(0);
+            indices.set(0, indices.get(0)+1);
+            graph.add_edge(parent_id, alt_id, null);
+            for (int i=0; i<children.size(); i++){
+                int alter_id = graph.add_node(new AlternativeNode(rule.get_name(), parent_alt_index, i));
+                graph.add_edge(alt_id, alter_id, null);
+                build_expr(graph, rule, children.get(i), alter_id, indices, options);
             }
         }
     }
