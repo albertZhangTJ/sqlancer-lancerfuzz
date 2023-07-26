@@ -20,10 +20,12 @@ public class RuleNode extends Node{
     private HashMap<String, String> locals;
     private HashMap<String, String> returns; 
 
-    public RuleNode(String name, HashMap<String, String> labels, RuleNodeType type){
+    public RuleNode(String name, String label, RuleNodeType type){
+        super(name, label);
         this.name = name;
-        this.labels = labels;
+        this.type = type;
 
+        this.labels = new HashMap<String, String>();
         this.args = new HashMap<String, String>();
         this.locals = new HashMap<String, String>();
         this.returns = new HashMap<String, String>();

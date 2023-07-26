@@ -20,6 +20,7 @@ import dsqlancer.ANTLR.ANTLRv4Parser.ArgActionBlockContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.FlexibleParserRuleContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.GrammarSpecContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.IdentifierContext;
+import dsqlancer.ANTLR.ANTLRv4Parser.LabeledAltContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.OptionContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.ParserRuleSpecContext;
 import dsqlancer.ANTLR.ANTLRv4Parser.LexerRuleSpecContext;
@@ -140,6 +141,22 @@ public class GrammarGraphBuilder {
                 graph.add_edge(alt_id, alter_id, null);
                 build_expr(graph, rule, children.get(i), alter_id, indices, options);
             }
+        }
+        else if (node instanceof ANTLRv4Parser.LabeledAltContext){
+            if (((LabeledAltContext)node).identifier()==null){
+                build_expr(graph, rule, ((LabeledAltContext)node).alternative().get(0), parent_id, indices, options);
+                return;
+            }
+            String label = null;
+            if (((LabeledAltContext)node).identifier().TOKEN_REF()!=null){
+                label = ((LabeledAltContext)node).identifier().TOKEN_REF().toString();
+            }
+            else if (((LabeledAltContext)node).identifier().RULE_REF()!=null){
+                label = ((LabeledAltContext)node).identifier().RULE_REF().toString();
+            }
+            RuleNode rule_node = new UnparserRuleNode(rule.get_name(), label);
+            graph.add_edge(parent_id, graph.add_node(rule_node), null);
+            build_rule(graph, rule_node,  ((LabeledAltContext)node).alternative().get(0));
         }
     }
 

@@ -26,6 +26,18 @@ public class Node {
         this.identifier = identifier;
     }
 
+    public Node(String name, String label){
+        this.id = nodes_count;
+        nodes_count++;
+        this.outward_edges = new ArrayList<>();
+        if (label==null){
+            this.identifier = name;
+        }
+        else {
+            this.identifier = name + "_" + label;
+        }
+    }
+
     public int get_id(){
         return this.id;
     }
