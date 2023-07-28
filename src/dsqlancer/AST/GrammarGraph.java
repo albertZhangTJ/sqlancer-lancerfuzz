@@ -16,11 +16,27 @@ public class GrammarGraph{
     private String header = ""; //raw action code for header
     private String members = ""; //raw action code for member methods
     private Node default_rule = null;
+    private int lambda_id;
+
 
     public GrammarGraph(){
         this.vertices = new LinkedHashMap<>();
         this.options = new LinkedHashMap<>();
         this.encoding_set = 0;
+        this.lambda_id = -1;
+    }
+
+    public void set_lambda_id(int lambda_id){
+        if (this.lambda_id!=-1){
+            Utils.oops("GrammarGraph::add_node : attempting to overwrite existing lambda id, ignored");
+        }
+        else {
+            this.lambda_id = lambda_id;
+        }
+    }
+
+    public int get_lambda_id(){
+        return this.lambda_id;
     }
 
     public boolean contains_node_with_id(int id){

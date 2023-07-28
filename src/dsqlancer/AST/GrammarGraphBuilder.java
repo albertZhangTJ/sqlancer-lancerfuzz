@@ -15,23 +15,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import dsqlancer.Options;
 import dsqlancer.Utils;
 import dsqlancer.ANTLR.ANTLRv4Parser;
-import dsqlancer.ANTLR.ANTLRv4Parser.Action_Context;
-import dsqlancer.ANTLR.ANTLRv4Parser.ArgActionBlockContext;
-import dsqlancer.ANTLR.ANTLRv4Parser.FlexibleParserRuleContext;
-import dsqlancer.ANTLR.ANTLRv4Parser.GrammarSpecContext;
-import dsqlancer.ANTLR.ANTLRv4Parser.IdentifierContext;
-import dsqlancer.ANTLR.ANTLRv4Parser.LabeledAltContext;
-import dsqlancer.ANTLR.ANTLRv4Parser.OptionContext;
-import dsqlancer.ANTLR.ANTLRv4Parser.ParserRuleSpecContext;
-import dsqlancer.ANTLR.ANTLRv4Parser.LexerRuleSpecContext;
-import dsqlancer.ANTLR.ANTLRv4Parser.LocalsSpecContext;
-import dsqlancer.ANTLR.ANTLRv4Parser.ModeSpecContext;
-import dsqlancer.ANTLR.ANTLRv4Parser.PrequelConstructContext;
-import dsqlancer.ANTLR.ANTLRv4Parser.RuleAltListContext;
-import dsqlancer.ANTLR.ANTLRv4Parser.AltListContext;
-import dsqlancer.ANTLR.ANTLRv4Parser.LexerAltListContext;
-import dsqlancer.ANTLR.ANTLRv4Parser.RuleReturnsContext;
-import dsqlancer.ANTLR.ANTLRv4Parser.RuleSpecContext;
+import dsqlancer.ANTLR.ANTLRv4Parser.*;
 
 // TODO: remove suppress after complete
 @SuppressWarnings("unused")
@@ -157,6 +141,21 @@ public class GrammarGraphBuilder {
             RuleNode rule_node = new UnparserRuleNode(rule.get_name(), label);
             graph.add_edge(parent_id, graph.add_node(rule_node), null);
             build_rule(graph, rule_node,  ((LabeledAltContext)node).alternative().get(0));
+        }
+        else if (node instanceof ANTLRv4Parser.AlternativeContext || node instanceof ANTLRv4Parser.LexerAltContext){
+            if (node instanceof ANTLRv4Parser.AlternativeContext){
+                for (ElementContext child : ((ANTLRv4Parser.AlternativeContext)node).element()){
+                    build_expr(graph, rule, child, parent_id, indices, options);
+                }
+            }
+            else {
+                for (LexerElementContext child : ((ANTLRv4Parser.LexerAltContext)node).lexerElement()){
+                    build_expr(graph, rule, child, parent_id, indices, options);
+                }
+            }
+            if (graph.get_vertices().get(parent_id).get_outward_edges().size()==0){
+                graph.add_edge(parent_id, graph.get_lambda_id(), null);
+            }
         }
     }
 
@@ -290,7 +289,7 @@ public class GrammarGraphBuilder {
     
     public static GrammarGraph build_grammar_graph(GrammarSpecContext lexer_root, GrammarSpecContext parser_root, Options options){
         GrammarGraph graph = new GrammarGraph();
-        int lambda_id = graph.add_node(new LambdaNode());
+        graph.set_lambda_id(graph.add_node(new LambdaNode()));
         graph.add_node(new UnlexerRuleNode("EOF"));
         if (lexer_root!=null){
             build_prerequisite(graph, lexer_root, options);
