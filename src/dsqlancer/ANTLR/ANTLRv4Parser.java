@@ -189,6 +189,12 @@ public class ANTLRv4Parser extends Parser {
 		public LexerElementsContext lexerElements(){
 			return null;
 		}
+		public EbnfSuffixContext ebnfSuffix(){
+			return null;
+		}
+		public EbnfContext ebnf() {
+			return null;
+		}
 	}
 
 	@SuppressWarnings("CheckReturnValue")

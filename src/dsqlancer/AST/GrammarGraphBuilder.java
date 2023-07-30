@@ -80,7 +80,7 @@ public class GrammarGraphBuilder {
     // But an alternative would require modification to the ANTLR generated code
     // And the current method is how grammarinator did this
     //indices == [alt_idx, quant_idx, chr_idx]
-    public static void build_expr(GrammarGraph graph, RuleNode rule, ParserRuleContext node, 
+    public static void build_expr(GrammarGraph graph, RuleNode rule, FlexibleParserRuleContext node, 
                                     int parent_id, List<Integer> indices, Options options){
         if (node instanceof ANTLRv4Parser.ParserRuleSpecContext){
             if (!options.ignore_actions){
@@ -157,10 +157,57 @@ public class GrammarGraphBuilder {
                 graph.add_edge(parent_id, graph.get_lambda_id(), null);
             }
         }
+        
+        else if (node instanceof ANTLRv4Parser.ElementContext || node instanceof ANTLRv4Parser.LexerElementContext){
+            if (node.actionBlock()!=null){
+                if (options.ignore_actions || (node.QUESTION()!=null && node.QUESTION().size()>0)){
+                    return;
+                }
+                String action_content = "";
+                for (TerminalNode child : node.actionBlock().ACTION_CONTENT()){
+                    action_content = action_content + child.toString();
+                }
+                graph.add_edge(parent_id, graph.add_node(new ActionNode(action_content)), null);
+                return;
+            }
+            EbnfSuffixContext suffix = null;
+            if (node.ebnfSuffix()!=null){
+                suffix = node.ebnfSuffix();
+            }
+            else if (node.ebnf()!=null && node.ebnf().blockSuffix()!=null){
+                suffix = node.ebnf().blockSuffix().ebnfSuffix();
+            }
+            if (suffix==null){
+                build_expr(graph, rule, (FlexibleParserRuleContext)(node.children.get(0)), parent_id, indices, options);
+                return;
+            }
+            String suf = suffix.children.get(0).toString();
+            int min=-1;
+            int max=-1;
+            if (suf.equals("?")){
+                int quant_id = graph.add_node(new QuantifierNode(rule.get_id(), indices.get(1), 0, 1));
+                indices.set(1, indices.get(1)+1);
+                graph.add_edge(parent_id, quant_id, null);
+                build_expr(graph, rule, (FlexibleParserRuleContext)(node.children.get(0)), quant_id, indices, options);
+            }
+            else if (suf.equals("*")){
+                int quant_id = graph.add_node(new QuantifierNode(rule.get_id(), indices.get(1), 0, Integer.MAX_VALUE));
+                indices.set(1, indices.get(1)+1);
+                graph.add_edge(parent_id, quant_id, null);
+                build_expr(graph, rule, (FlexibleParserRuleContext)(node.children.get(0)), quant_id, indices, options);
+            }
+            else if (suf.equals("+")){
+                int quant_id = graph.add_node(new QuantifierNode(rule.get_id(), indices.get(1), 1, Integer.MAX_VALUE));
+                indices.set(1, indices.get(1)+1);
+                graph.add_edge(parent_id, quant_id, null);
+                build_expr(graph, rule, (FlexibleParserRuleContext)(node.children.get(0)), quant_id, indices, options);
+            }
+        }
+
     }
 
 
-    public static void build_rule(GrammarGraph graph, RuleNode rule, ParserRuleContext node){
+    public static void build_rule(GrammarGraph graph, RuleNode rule, FlexibleParserRuleContext node){
         if (rule instanceof UnlexerRuleNode){
             
         }   
