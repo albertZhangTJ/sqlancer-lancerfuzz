@@ -86,4 +86,8 @@ public class RuleNode extends Node{
     public void set_returns(HashMap<String, String> returns){
         this.returns = returns;
     }
+
+    public void add_label(String key, String value){
+        this.labels.put(key, value);
+    }
 }

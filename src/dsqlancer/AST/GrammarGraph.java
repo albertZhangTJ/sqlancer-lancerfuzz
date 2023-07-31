@@ -81,7 +81,7 @@ public class GrammarGraph{
         return this.name;
     }
 
-    public void add_edge(Node source, Node destination, List<String> args){
+    public void add_edge(Node source, Node destination, HashMap<String, String> args){
         if (this.vertices.get(source.get_id())==null){
             Utils.panic("GrammarGraph::add_edge : source node "+source.toString()+" does not exist");
         }
@@ -94,7 +94,7 @@ public class GrammarGraph{
         this.vertices.get(source.get_id()).add_outward_edge(edge);
     }
 
-    public void add_edge(int source_id, int destination_id, List<String> args){
+    public void add_edge(int source_id, int destination_id, HashMap<String, String> args){
         if (this.vertices.get(source_id)==null){
             Utils.panic("GrammarGraph::add_edge : source node with id "+source_id+" does not exist");
         }
@@ -148,6 +148,15 @@ public class GrammarGraph{
 
     public HashMap<Integer, Node> get_vertices(){
         return Utils.copy_map(this.vertices);
+    }
+
+    public int get_node_id_with_identifier(String identifier){
+        for (Integer key : this.vertices.keySet()){
+            if (Utils.null_safe_equals(identifier, this.vertices.get(key).get_identifier())){
+                return key;
+            }
+        }
+        return -1;
     }
 
 }

@@ -195,6 +195,18 @@ public class ANTLRv4Parser extends Parser {
 		public EbnfContext ebnf() {
 			return null;
 		}
+		public AtomContext atom() {
+			return null;
+		}
+		public BlockContext block(){
+			return null;
+		}
+		public List<TerminalNode> DOT(){
+			return null;
+		}
+		public NotSetContext notSet(){
+			return null;
+		}
 	}
 
 	@SuppressWarnings("CheckReturnValue")
@@ -3590,7 +3602,14 @@ public class ANTLRv4Parser extends Parser {
 			return getRuleContext(NotSetContext.class,0);
 		}
 		public TerminalNode LEXER_CHAR_SET() { return getToken(ANTLRv4Parser.LEXER_CHAR_SET, 0); }
-		public TerminalNode DOT() { return getToken(ANTLRv4Parser.DOT, 0); }
+		public List<TerminalNode> DOT() { 
+			List<TerminalNode> ans = new ArrayList<TerminalNode>();
+			ans.add(getToken(ANTLRv4Parser.DOT, 0));
+			return ans; 
+		}
+		public TerminalNode DOT(int i){
+			return this.DOT().get(i);
+		}
 		public ElementOptionsContext elementOptions() {
 			return getRuleContext(ElementOptionsContext.class,0);
 		}
@@ -3685,7 +3704,14 @@ public class ANTLRv4Parser extends Parser {
 		public NotSetContext notSet() {
 			return getRuleContext(NotSetContext.class,0);
 		}
-		public TerminalNode DOT() { return getToken(ANTLRv4Parser.DOT, 0); }
+		public List<TerminalNode> DOT() { 
+			List<TerminalNode> ans = new ArrayList<TerminalNode>();
+			ans.add(getToken(ANTLRv4Parser.DOT, 0));
+			return ans; 
+		}
+		public TerminalNode DOT(int i){
+			return this.DOT().get(i);
+		}
 		public ElementOptionsContext elementOptions() {
 			return getRuleContext(ElementOptionsContext.class,0);
 		}

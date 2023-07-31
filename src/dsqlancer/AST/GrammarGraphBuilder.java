@@ -21,6 +21,8 @@ import dsqlancer.ANTLR.ANTLRv4Parser.*;
 @SuppressWarnings("unused")
 public class GrammarGraphBuilder {
 
+    
+
     //Since Java does not have a getattr, the behavior of this function is slightly different with the 
     //corresponding function in Grammarinator
     public static String find_condition(FlexibleParserRuleContext node, Options options){
@@ -51,6 +53,158 @@ public class GrammarGraphBuilder {
             return find_condition(node.lexerElements(), options);
         }
         return "1";
+    }
+
+    public static List<Integer> character_range_interval(SetElementContext node){
+        String start = node.characterRange().STRING_LITERAL(0).toString();
+        start = start.substring(1, start.length()-1);
+        String end = node.characterRange().STRING_LITERAL(1).toString();
+        end = end.substring(1, start.length()-1);
+        List<Integer> start_val = process_lexer_char(start, 0);
+        List<Integer> end_val = process_lexer_char(end, 0);
+        if (start_val.get(1)<start.length() || end_val.get(1)<end.length()){
+            Utils.panic("GrammarGraphBuilder::character_range_interval : only single character are allowed in character intervals");
+        }
+        List<Integer> ans = new ArrayList<>();
+        ans.add(start_val.get(0));
+        ans.add(end_val.get(0)+1);
+        return ans;
+    }
+
+    public static List<Integer> process_lexer_char(String s, int offset){
+        List<Integer> ans = new ArrayList<>();
+        //not an escape character
+        if (s.charAt(offset)!='\\'){
+            ans.add((int)(s.charAt(offset)));
+            ans.add(offset+1);
+            return ans;
+        }
+
+        if (offset+2 > s.length()){
+            Utils.panic("GrammarGraphBuilder::process_lexer_char : Escape character must have at least two characters");
+        }
+
+        char escaped = s.charAt(offset+1);
+        offset += 2;
+
+        //unicode
+        if (escaped=='u'){
+            int hex_start_offset = -1;
+            int hex_end_offset = -1;
+            //u{....}
+            if (s.charAt(offset)=='{'){
+                hex_start_offset = offset+1;
+                hex_end_offset = s.substring(hex_start_offset).indexOf('}');
+                if (hex_end_offset==-1){
+                    Utils.panic("GrammarGraphBuilder::process_lexer_char : Missing right bracket for unicode value");
+                }
+                if (hex_end_offset==hex_start_offset){
+                    Utils.panic("GrammarGraphBuilder::process_lexer_char : Missing code point for unicode value");
+                }
+                offset = hex_end_offset + 1;
+            }
+            //uXXXX
+            else {
+                hex_start_offset = offset;
+                hex_end_offset = hex_start_offset+4;
+                if (hex_end_offset>s.length()){
+                    Utils.panic("GrammarGraphBuilder::process_lexer_char : Unbracketed unicode escape must be in the form of \\uXXXX");
+                }
+            }
+            try {
+                int codepoint = Integer.valueOf(s.substring(hex_start_offset, hex_end_offset), 16);
+                //TODO
+                //ignoring the multi-character unicode codepoints for now
+                if (codepoint<0 || codepoint>0xFFFF){
+                    Utils.panic("GrammarGraphBuilder::process_lexer_char : invalid or unsupported unicode hex value "+codepoint);
+                }
+                ans.add(codepoint);
+                ans.add(offset); 
+            }
+            catch (Exception e){
+                Utils.panic("GrammarGraphBuilder::process_lexer_char : invalid hex value\n"+e.toString());
+            }
+            return ans;
+        }
+
+        if (escaped=='p' || escaped=='P'){
+            Utils.panic("GrammarGraphBuilder::process_lexer_char : Unicode properties is not supported");
+        }
+
+        HashMap<Character, Character> escapes = new HashMap<>();
+        escapes.put('n', '\n');
+        escapes.put('r', '\r');
+        escapes.put('b', '\b');
+        escapes.put('t', '\t');
+        escapes.put('f', '\f');
+        escapes.put('\\', '\\');
+        escapes.put('-', '-');
+        escapes.put(']', ']');
+        escapes.put('\'', '\'');
+
+        if (escapes.containsKey(Character.valueOf(escaped))){
+            ans.add((int)(escapes.get(escaped).charValue()));
+            ans.add(offset);
+            return ans;
+        }
+        Utils.panic("GrammarGraphBuilder::process_lexer_char : unsupported escape character");
+        return ans; //placeholder
+    }
+
+    public static List<Integer> lexer_charset_interval(String s){
+        if (!(s.length()>0)){
+            Utils.panic("GrammarGraphBuilder::lexer_charset_interval : Charset cannot be empty");
+        }
+        List<Integer> ranges = new ArrayList<>();
+        int offset = 0;
+        while (offset<s.length()){
+            boolean in_range = (s.charAt(offset)=='-' && offset!=0 && offset!=s.length()-1); // x-y format, covering all intermediate values
+            if (in_range){
+                offset++;
+            }
+            List<Integer> vals = process_lexer_char(s, offset);
+            if (in_range){
+                ranges.set(ranges.size()-1, vals.get(0)+1);
+            }
+            else {
+                ranges.add(vals.get(0));
+                ranges.add(vals.get(1));
+            }
+        }
+        return ranges;
+    }
+
+
+
+    public static List<Integer> chars_from_set(GrammarGraph graph, SetElementContext node){
+        if (node.characterRange()!=null){
+            return character_range_interval(node);
+        }
+        if (node.LEXER_CHAR_SET()!=null){
+            return lexer_charset_interval(node.LEXER_CHAR_SET().toString().substring(1, node.LEXER_CHAR_SET().toString().length()-1));
+        }
+        if (node.STRING_LITERAL()!=null){
+            String characters = node.STRING_LITERAL().toString();
+            characters = characters.substring(1, characters.length()-1);
+            List<Integer> char_vals = process_lexer_char(characters, 0);
+            if (char_vals.get(1)<characters.length()){
+                Utils.panic("GrammarGraphBuilder::chars_from_set : Zero or multi-character literals are not allowed in lexer sets");
+            }
+            char_vals.set(1, char_vals.get(0)+1); //simply reusing the list, the meaning of the list is NOT preserved
+            return char_vals;
+        }
+        if (node.TOKEN_REF()!=null){
+            String src = node.TOKEN_REF().toString();
+            Node src_node = graph.get_vertices().get(graph.get_node_id_with_identifier(src));
+            //TODO
+            //Not entirely sure whether it should be UnlexerRuleNode or RuleNode here
+            //but I think UnparserRuleNode (or RuleNode in general) should have start_ranges
+            if (src_node instanceof UnlexerRuleNode && ((UnlexerRuleNode)src_node).get_start_ranges()!=null){
+                return ((UnlexerRuleNode)src_node).get_start_ranges();
+            }
+            Utils.panic("GrammarGraphBuilder::chars_from_set : Source node "+src+" has no start_ranges");
+        }
+        return new ArrayList<>();
     }
 
     public static HashMap<String, String> arg_action_block(FlexibleParserRuleContext node){
@@ -201,6 +355,31 @@ public class GrammarGraphBuilder {
                 indices.set(1, indices.get(1)+1);
                 graph.add_edge(parent_id, quant_id, null);
                 build_expr(graph, rule, (FlexibleParserRuleContext)(node.children.get(0)), quant_id, indices, options);
+            }
+        }
+        else if (node instanceof ANTLRv4Parser.LabeledElementContext){
+            build_expr(graph, rule, node.atom()==null ? node.atom() : node.block() , parent_id, indices, options);
+            IdentifierContext ident = ((LabeledElementContext)node).identifier();
+            String name = ident.RULE_REF()==null ? ident.RULE_REF().toString() : ident.TOKEN_REF().toString();
+            boolean is_list = ((LabeledElementContext)node).PLUS_ASSIGN()!=null;
+            graph.add_edge(parent_id, graph.add_node(new VariableNode(name, is_list)), null);
+            rule.add_label(name, String.valueOf(is_list));
+        }
+        else if (node instanceof ANTLRv4Parser.RulerefContext){
+            int ref_id = graph.get_node_id_with_identifier(((RulerefContext)node).RULE_REF().toString());
+            if (ref_id!=-1){
+                graph.add_edge(parent_id, ref_id, arg_action_block(node)); 
+            }
+        }
+        else if (node instanceof ANTLRv4Parser.LexerAtomContext || node instanceof ANTLRv4Parser.AtomContext){
+            if (node.DOT().get(0)!=null){
+                graph.add_edge(parent_id, graph.add_node(new CharsetNode(rule.get_id(), indices.get(2), graph.get_encoding())), null);
+                indices.set(2, indices.get(2)+1);
+            }
+            else if (node.notSet()!=null){
+                if (node.notSet().setElement()!=null){
+
+                }
             }
         }
 

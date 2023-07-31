@@ -1,6 +1,6 @@
 package dsqlancer.AST;
 
-import java.util.List;
+import java.util.HashMap;
 
 import dsqlancer.Utils;
 
@@ -12,9 +12,9 @@ public class Edge {
     private Node source;
 
     private Node destination;
-    private List<String> args;
+    private HashMap<String, String> args;
 
-    public Edge(Node source, Node destination, List<String> args){
+    public Edge(Node source, Node destination, HashMap<String, String> args){
         this.source = source;
         this.destination = destination;
         this.args = args;
