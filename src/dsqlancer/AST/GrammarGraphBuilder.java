@@ -71,6 +71,22 @@ public class GrammarGraphBuilder {
         return ans;
     }
 
+    public static List<Integer> character_range_interval(LexerAtomContext node){
+        String start = node.characterRange().STRING_LITERAL(0).toString();
+        start = start.substring(1, start.length()-1);
+        String end = node.characterRange().STRING_LITERAL(1).toString();
+        end = end.substring(1, start.length()-1);
+        List<Integer> start_val = process_lexer_char(start, 0);
+        List<Integer> end_val = process_lexer_char(end, 0);
+        if (start_val.get(1)<start.length() || end_val.get(1)<end.length()){
+            Utils.panic("GrammarGraphBuilder::character_range_interval : only single character are allowed in character intervals");
+        }
+        List<Integer> ans = new ArrayList<>();
+        ans.add(start_val.get(0));
+        ans.add(end_val.get(0)+1);
+        return ans;
+    }
+
     public static List<Integer> process_lexer_char(String s, int offset){
         List<Integer> ans = new ArrayList<>();
         //not an escape character
@@ -377,10 +393,59 @@ public class GrammarGraphBuilder {
                 indices.set(2, indices.get(2)+1);
             }
             else if (node.notSet()!=null){
+                List<Integer> not_ranges = null;
                 if (node.notSet().setElement()!=null){
-
+                    not_ranges = chars_from_set(graph, node.notSet().setElement());
+                }
+                else {
+                    not_ranges = new ArrayList<>();
+                    for (SetElementContext set_element : node.notSet().blockSet().setElement()){
+                        for (Integer i : chars_from_set(graph, set_element)){
+                            not_ranges.add(i);
+                        }
+                    }
+                }
+                int charset_id = CharSet.register_custom_charset(not_ranges, true, graph.get_encoding());
+                graph.add_edge(parent_id, graph.add_node(new CharsetNode(rule.get_id(), indices.get(2), charset_id)), null);
+                indices.set(2, indices.get(2)+1);
+            }
+            else if (node instanceof ANTLRv4Parser.LexerAtomContext && ((LexerAtomContext)node).characterRange()!=null){
+                List<Integer> vals = character_range_interval((LexerAtomContext)node);
+                if (rule instanceof UnlexerRuleNode){
+                    ((UnlexerRuleNode)rule).append_start_ranges(vals);
+                }
+                int charset_id = CharSet.register_custom_charset(vals, false, graph.get_encoding());
+                graph.add_edge(parent_id, graph.add_node(new CharsetNode(rule.get_id(), indices.get(2), charset_id)), null);
+                indices.set(2, indices.get(2)+1);
+            }
+            else if (node instanceof ANTLRv4Parser.LexerAtomContext && ((LexerAtomContext)node).LEXER_CHAR_SET()!=null){
+                String s = ((LexerAtomContext)node).LEXER_CHAR_SET().toString();
+                s = s.substring(1, s.length()-1);
+                List<Integer> vals = lexer_charset_interval(s);
+                if (rule instanceof UnlexerRuleNode){
+                    ((UnlexerRuleNode)rule).append_start_ranges(vals);
+                }
+                //TODO didn't sort as in grammarinator
+                int charset_id = CharSet.register_custom_charset(vals, false, graph.get_encoding());
+                graph.add_edge(parent_id, graph.add_node(new CharsetNode(rule.get_id(), indices.get(2), charset_id)), null);
+                indices.set(2, indices.get(2)+1);
+            }
+            for (ParseTree child : node.children){
+                if (child instanceof FlexibleParserRuleContext){
+                    build_expr(graph, rule, ((FlexibleParserRuleContext)child), parent_id, indices, options);
                 }
             }
+        }
+        else if (node instanceof ANTLRv4Parser.TerminalContext){
+            TerminalContext t_node = (TerminalContext)node;
+            if (t_node.TOKEN_REF()!=null){
+                int ref_id = graph.get_node_id_with_identifier(t_node.TOKEN_REF().toString());
+                if (ref_id==-1){
+                    Utils.panic("GrammarGraphBuilder::build_expr : cannot find referenced node "+t_node.TOKEN_REF().toString());
+                }
+                graph.add_edge(parent_id, ref_id, null);
+            }
+
         }
 
     }

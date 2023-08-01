@@ -24,4 +24,10 @@ public class UnlexerRuleNode extends RuleNode{
         }
         this.start_ranges = start_ranges;
     }
+
+    public void append_start_ranges(List<Integer> start_range){
+        for (Integer i : start_range){
+            this.start_ranges.add(i);
+        }
+    }
 }
