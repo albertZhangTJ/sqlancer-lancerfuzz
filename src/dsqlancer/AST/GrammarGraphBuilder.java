@@ -9,6 +9,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import com.google.protobuf.TextFormat.Parser;
+import com.kenai.jffi.Array;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
@@ -245,6 +246,17 @@ public class GrammarGraphBuilder {
         return args;
     }
 
+    public static String unescape_string(String s){
+        String ans = "";
+        int offset = 0;
+        while (offset<s.length()){
+            List<Integer> vals=process_lexer_char(s, offset);
+            ans = ans + (char)(vals.get(0).intValue());
+            offset = vals.get(1);
+        }
+        return ans;
+    }
+
     // I personally feels that this implementation is not quite elegant
     // so many instanceof and type castings
     // But an alternative would require modification to the ANTLR generated code
@@ -310,7 +322,7 @@ public class GrammarGraphBuilder {
             }
             RuleNode rule_node = new UnparserRuleNode(rule.get_name(), label);
             graph.add_edge(parent_id, graph.add_node(rule_node), null);
-            build_rule(graph, rule_node,  ((LabeledAltContext)node).alternative().get(0));
+            build_rule(graph, rule_node,  ((LabeledAltContext)node).alternative().get(0), options);
         }
         else if (node instanceof ANTLRv4Parser.AlternativeContext || node instanceof ANTLRv4Parser.LexerAltContext){
             if (node instanceof ANTLRv4Parser.AlternativeContext){
@@ -445,16 +457,39 @@ public class GrammarGraphBuilder {
                 }
                 graph.add_edge(parent_id, ref_id, null);
             }
-
+            else if (t_node.STRING_LITERAL()!=null){
+                String raw = t_node.STRING_LITERAL().toString();
+                raw = raw.substring(1, raw.length()-1);
+                String src = unescape_string(raw);
+                if (rule instanceof UnlexerRuleNode){
+                    List<Integer> strt_r = new ArrayList<>();
+                    strt_r.add((int)(src.charAt(0)));
+                    strt_r.add((int)(src.charAt(0))+1);
+                    ((UnlexerRuleNode)rule).append_start_ranges(strt_r); 
+                }
+                graph.add_edge(parent_id, graph.add_node(new LiteralNode(src)), null);
+            }
+        }
+        else if (node.getChildCount()>0){
+            for (ParseTree child : node.children){
+                if (child instanceof FlexibleParserRuleContext){
+                    build_expr(graph, rule, ((FlexibleParserRuleContext)child), parent_id, indices, options);
+                }
+            }
         }
 
     }
 
 
-    public static void build_rule(GrammarGraph graph, RuleNode rule, FlexibleParserRuleContext node){
+    public static void build_rule(GrammarGraph graph, RuleNode rule, FlexibleParserRuleContext node, Options options){
         if (rule instanceof UnlexerRuleNode){
-            
-        }   
+            ((UnlexerRuleNode)rule).set_start_ranges(new ArrayList<>());
+        }
+        List<Integer> indices = new ArrayList<>();
+        indices.add(0); //alt_idx
+        indices.add(0); //quant_idx
+        indices.add(0); //chr_idx
+        build_expr(graph, rule, node, rule.get_id(), indices, options);
     }
 
     public static void build_prerequisite(GrammarGraph graph, GrammarSpecContext node, Options options){

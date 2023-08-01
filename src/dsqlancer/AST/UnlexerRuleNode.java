@@ -19,8 +19,8 @@ public class UnlexerRuleNode extends RuleNode{
         if (this.start_ranges!=null){
             Utils.oops("UnlexerRuleNode::set_start_ranges : start_ranges already been set, overwriting");
         }
-        if (start_ranges==null || start_ranges.size()==0){
-            Utils.oops("UnlexerRuleNode::set_start_ranges : New start_ranges is empty, ignored");
+        if (start_ranges==null){
+            Utils.oops("UnlexerRuleNode::set_start_ranges : New start_ranges is null, ignored");
         }
         this.start_ranges = start_ranges;
     }
