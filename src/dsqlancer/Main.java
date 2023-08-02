@@ -38,11 +38,11 @@ public class Main {
         JCommander jc = commandBuilder.programName("DSQLancer").build();
         jc.parse(args);
 
-        if (jc.getParsedCommand() == null) {
-            Utils.oops("Main::main : parameters needed for running DSQLancer, see usage below");
-            jc.usage();
-            return;
-        }
+        // if (jc.getParsedCommand() == null) {
+        //     Utils.oops("Main::main : parameters needed for running DSQLancer, see usage below");
+        //     jc.usage();
+        //     return;
+        // }
 
         if (options.help){
             jc.usage();
@@ -54,10 +54,10 @@ public class Main {
             System.exit(-1);
         }
 
-        if (options.stagesConfig.equals("")){
-            System.out.println("ERROR: need one JSON file for stages of fuzzing");
-            System.exit(-1);
-        }
+        // if (options.stagesConfig.equals("")){
+        //     System.out.println("ERROR: need one JSON file for stages of fuzzing");
+        //     System.exit(-1);
+        // }
 
         Processor.generate_fuzzer(options);
     }
