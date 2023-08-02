@@ -43,4 +43,7 @@ public class Options {
 
     @Parameter(names = {"--cwd"}, description="Library directory, default to be current working directory", arity=1)
     public String cwd = System.getProperty("user.dir");
+
+    @Parameter(names = {"--default_rule", "-d"}, description = "the root grammar rule", arity=1)
+    public String defaultRule = null;
 }

@@ -159,4 +159,11 @@ public class GrammarGraph{
         return -1;
     }
 
+    public void set_default_rule(String rule_name){
+        int rule_id = this.get_node_id_with_identifier(rule_name);
+        if (rule_id==-1){
+            Utils.panic("GrammarGraph::set_default_rule : cannot find rule with name "+rule_name);
+        }
+        this.default_rule=this.vertices.get(rule_id);
+    }
 }
