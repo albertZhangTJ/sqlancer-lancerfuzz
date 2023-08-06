@@ -180,12 +180,13 @@ public class GrammarGraphBuilder {
                 offset++;
             }
             List<Integer> vals = process_lexer_char(s, offset);
+            offset=vals.get(1);
             if (in_range){
                 ranges.set(ranges.size()-1, vals.get(0)+1);
             }
             else {
                 ranges.add(vals.get(0));
-                ranges.add(vals.get(1));
+                ranges.add(vals.get(0)+1);
             }
         }
         return ranges;
@@ -225,7 +226,11 @@ public class GrammarGraphBuilder {
     }
 
     public static HashMap<String, String> arg_action_block(FlexibleParserRuleContext node){
+
         HashMap<String, String> args = new HashMap<>();
+        if (node==null){
+            return args;
+        }
         ArgActionBlockContext aabc = node.argActionBlock();
 
         if (aabc!=null){
@@ -331,7 +336,7 @@ public class GrammarGraphBuilder {
                 }
             }
             else {
-                for (LexerElementContext child : ((ANTLRv4Parser.LexerAltContext)node).lexerElement()){
+                for (LexerElementContext child : ((ANTLRv4Parser.LexerAltContext)node).lexerElements().lexerElement()){
                     build_expr(graph, rule, child, parent_id, indices, options);
                 }
             }
@@ -455,7 +460,9 @@ public class GrammarGraphBuilder {
                 if (ref_id==-1){
                     Utils.panic("GrammarGraphBuilder::build_expr : cannot find referenced node "+t_node.TOKEN_REF().toString());
                 }
-                graph.add_edge(parent_id, ref_id, null);
+                else {
+                    graph.add_edge(parent_id, ref_id, null);
+                }
             }
             else if (t_node.STRING_LITERAL()!=null){
                 String raw = t_node.STRING_LITERAL().toString();
@@ -631,6 +638,12 @@ public class GrammarGraphBuilder {
         }
         if (parser_root!=null){
             build_prerequisite(graph, parser_root, options);
+        }
+        if (lexer_root!=null){
+            build_rules(graph, lexer_root, options);
+        }
+        if (parser_root!=null){
+            build_rules(graph, parser_root, options);
         }
 
         // Ignored the options for the graph, not entirely sure why grammar graph need info on options

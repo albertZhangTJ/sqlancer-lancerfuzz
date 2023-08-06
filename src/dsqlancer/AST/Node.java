@@ -11,12 +11,14 @@ public class Node {
     private int id;
     private String identifier;
     private List<Edge> outward_edges;
+    public boolean walked;
 
     public Node(){
         this.id = nodes_count;
         nodes_count++;
         this.outward_edges = new ArrayList<>();
         this.identifier = null;
+        this.walked=false;
     }
 
     public Node(String identifier){
@@ -24,6 +26,7 @@ public class Node {
         nodes_count++;
         this.outward_edges = new ArrayList<>();
         this.identifier = identifier;
+        this.walked=false;
     }
 
     public Node(String name, String label){
@@ -36,6 +39,7 @@ public class Node {
         else {
             this.identifier = name + "_" + label;
         }
+        this.walked=false;
     }
 
     public int get_id(){
@@ -44,7 +48,7 @@ public class Node {
 
     public void add_outward_edge(Edge edge){
         if (this.outward_edges.contains(edge)){
-            Utils.oops("Node::add_outward_edge : Edge "+edge.toString()+" already exists for node "+this.toString());
+            //Utils.oops("Node::add_outward_edge : Edge "+edge.toString()+" already exists for node "+this.toString());
         }
         this.outward_edges.add(edge);
     }
@@ -59,5 +63,11 @@ public class Node {
 
     public String get_identifier(){
         return this.identifier;
+    }
+
+    public String toString(){
+        return "\n[NODE]\n"+
+                "    id: "+this.id+"\n"+
+                "    identifier: "+this.identifier;
     }
 }

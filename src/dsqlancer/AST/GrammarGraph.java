@@ -166,4 +166,21 @@ public class GrammarGraph{
         }
         this.default_rule=this.vertices.get(rule_id);
     }
+
+    // for debugging purpose
+    public void walk_print(Node root){
+        System.out.println(root);
+        if (root.walked){
+            return;
+        }
+        root.walked=true;
+        for (Edge e : root.get_outward_edges()){
+            walk_print(e.get_dest());
+        }
+    }
+
+    // for debugging purpose
+    public void walk_print(){
+        this.walk_print(this.default_rule);
+    }
 }

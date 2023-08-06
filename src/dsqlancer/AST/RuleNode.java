@@ -90,4 +90,8 @@ public class RuleNode extends Node{
     public void add_label(String key, String value){
         this.labels.put(key, value);
     }
+
+    public String toString(){
+        return super.toString()+"\n"+"    type: RuleNode\n    name: "+this.name;
+    }
 }

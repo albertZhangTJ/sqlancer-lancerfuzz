@@ -20,7 +20,13 @@ public class Edge {
         this.args = args;
     }
 
+    public Node get_src(){
+        return this.source;
+    }
 
+    public Node get_dest(){
+        return this.destination;
+    }
 
     public boolean equals(Object other){
         if (other!=null && other instanceof Edge){
