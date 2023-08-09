@@ -91,7 +91,24 @@ public class RuleNode extends Node{
         this.labels.put(key, value);
     }
 
+
     public String toString(){
-        return super.toString()+"\n"+"    type: RuleNode\n    name: "+this.name;
+        String label="\n";
+        String arg="\n";
+        String local="\n";
+        String ret="\n";
+        for (String k : this.labels.keySet()){
+            label = label + "        " + k + ": " + this.labels.get(k)+"\n";
+        }
+        for (String k : this.args.keySet()){
+            arg = arg + "        " + k + ": " + this.args.get(k)+"\n";
+        }
+        for (String k : this.locals.keySet()){
+            local = local + "        " + k + ": " + this.locals.get(k)+"\n";
+        }
+        for (String k : this.returns.keySet()){
+            ret = ret + "        " + k + ": " + this.returns.get(k)+"\n";
+        }
+        return super.toString()+"\n"+"    type: RuleNode\n    name: "+this.name+"\n    labels: "+label+"    args: "+arg+"    local: "+local+"    returns: "+ret;
     }
 }

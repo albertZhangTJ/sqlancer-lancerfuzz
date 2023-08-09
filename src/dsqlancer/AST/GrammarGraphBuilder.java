@@ -347,7 +347,9 @@ public class GrammarGraphBuilder {
         
         else if (node instanceof ANTLRv4Parser.ElementContext || node instanceof ANTLRv4Parser.LexerElementContext){
             if (node.actionBlock()!=null){
-                if (options.ignore_actions || (node.QUESTION()!=null && node.QUESTION().size()>0)){
+                //System.out.println("Action found");
+                //System.out.println("options.ignore_actions: "+options.ignore_actions);
+                if (options.ignore_actions || (node.QUESTION()!=null && node.QUESTION().size()>0 && node.QUESTION().get(0)!=null)){
                     return;
                 }
                 String action_content = "";

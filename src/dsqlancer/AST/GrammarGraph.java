@@ -168,19 +168,22 @@ public class GrammarGraph{
     }
 
     // for debugging purpose
-    public void walk_print(Node root){
-        System.out.println(root);
+    public void walk_print(Node root, String parent_identifier){
         if (root.walked){
             return;
         }
+        System.out.print(parent_identifier+" ==> ");
+        System.out.println(root);
         root.walked=true;
         for (Edge e : root.get_outward_edges()){
-            walk_print(e.get_dest());
+            walk_print(e.get_dest(), root.get_identifier());
         }
     }
 
     // for debugging purpose
     public void walk_print(){
-        this.walk_print(this.default_rule);
+        System.out.println("Header code:\n"+this.header+"\n");
+        System.out.println("Member code:\n"+this.members+"\n");
+        this.walk_print(this.default_rule, "ROOT");
     }
 }
