@@ -7,6 +7,11 @@ import dsqlancer.Utils;
 
 public class AstUtils {
 
+    public static final String EERR_DECL = "E_ERR(";
+    public static final int EERR_MIN_LENGTH = 10; // E_ERR("");
+    public static final String WGHT_DECL = "BRANCH_W(";
+    public static final int WGHT_MIN_LENGTH = 13;  // BRANCH_W("");
+
     // Implementation acquired from https://stackoverflow.com/q/220547
     // with modifications
     public static boolean is_printable(char c){
@@ -44,5 +49,74 @@ public class AstUtils {
         }
 
         return ranges;
+    }
+
+    // This is not actually parsing but simply a string matching
+    // The result list of strings start with the stripped src with all the declaration removed
+    // then starting from index 1 the content of declared expected errors
+    public static List<String> get_decl_from_action(String src, boolean is_eerr){
+        int MIN_LENGTH = is_eerr ? EERR_MIN_LENGTH : WGHT_MIN_LENGTH;
+        String DECL = is_eerr ? EERR_DECL : WGHT_DECL;
+        List<String> ans = new ArrayList<>();
+        int start_index = 0;
+        // An empty expected error declaration E_ERR(""); is 10 chars long
+        // Anything shorter than that won't be valid
+        if (src==null || src.length()<MIN_LENGTH){
+            ans.add(src);
+            return ans;
+        }
+        String stripped_src = "";
+        while (start_index<src.length()){
+            int idx = src.indexOf(DECL, start_index);
+            if (idx==-1){
+                stripped_src = stripped_src + src.substring(start_index);
+                break;
+            }
+            stripped_src = stripped_src + src.substring(start_index, idx);
+            int stk = -1; // the left bracket at DECL will set this to 0
+            String content = "";
+            for (int i=idx; i<src.length(); i++){
+                if (src.charAt(i)=='('){
+                    stk++;
+                }
+                else if (src.charAt(i)==')'){
+                    stk--;
+                    if (stk==0){
+                        content = src.substring(idx+DECL.length(), i);
+                        start_index = src.indexOf(";", i)+1;
+                        // if the ending ; is not found, start_index will be set to -1
+                        if (start_index==0){
+                            Utils.panic("AstUtils::get_decl_from_action : Declaration is not ended with ;\nsrc:\n"+src);
+                        }
+                        content = content.strip();
+                        if (is_eerr){
+                            if (content.charAt(0)!='\"' || content.charAt(content.length()-1)!='\"'){
+                                Utils.panic("AstUtils::get_decl_from_action : Expected Error declaration content not wrapped with \"\"\nsrc:\n"+src);
+                            }
+                            content=content.substring(1, content.length()-1);
+                        }
+                        ans.add(content);
+                        break;
+                    }
+                }
+                else if (i==src.length()-1){
+                    Utils.panic("AstUtils::get_decl_from_action : No matching right bracket found for declaration\nsrc:\n"+src);
+                }
+            }
+
+        }
+        if (!is_eerr && ans.size()>1){
+            Utils.panic("AstUtils::get_decl_from_action : Each action block can only have one weight declaration\nsrc:\n"+src);
+        }
+        ans.add(0, stripped_src);
+        return ans;
+    }
+
+    public static List<String> get_expected_errors(String src){
+        return get_decl_from_action(src, true);
+    }
+
+    public static List<String> get_weight_decl(String src){
+        return get_decl_from_action(src, false);
     }
 }

@@ -11,6 +11,7 @@ public class Node {
     private int id;
     private String identifier;
     private List<Edge> outward_edges;
+    private List<String> expected_errors;
     public boolean walked;
 
     public Node(){
@@ -68,6 +69,13 @@ public class Node {
     public String toString(){
         return "\n[NODE]\n"+
                 "    id: "+this.id+"\n"+
-                "    identifier: "+this.identifier;
+                "    identifier: "+this.identifier+"\n"+
+                "    Expected_errors: "+this.expected_errors.toString();
+    }
+
+    public void add_expected_errors(String content){
+        if (content!=null && content.length()>0){
+            this.expected_errors.add(content);
+        }
     }
 }

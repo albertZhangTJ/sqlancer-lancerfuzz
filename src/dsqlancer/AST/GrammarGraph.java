@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.Set;
 
 import dsqlancer.Utils;
+import dsqlancer.ANTLR.ANTLRv4Parser;
 
 @SuppressWarnings("unused")
 public class GrammarGraph{
@@ -167,6 +168,8 @@ public class GrammarGraph{
         this.default_rule=this.vertices.get(rule_id);
     }
 
+   
+
     // for debugging purpose
     public void walk_print(Node root, String parent_identifier){
         if (root.walked){
@@ -185,5 +188,54 @@ public class GrammarGraph{
         System.out.println("Header code:\n"+this.header+"\n");
         System.out.println("Member code:\n"+this.members+"\n");
         this.walk_print(this.default_rule, "ROOT");
+    }
+
+    // Used for post-processing the AST
+    // Should not be called on a Node with multiple parents
+    public Node parent_of(Node node){
+        boolean parent_found = false;
+        Node parent = null;
+        for (Integer idx : this.vertices.keySet()){
+            Node n = this.vertices.get(idx);
+            for (Edge e : n.get_outward_edges()){
+                if (e.get_dest().equals(node)){
+                    if (parent_found){
+                        Utils.panic("GrammarGraph::parent_of : "+node.toString()+" has multiple parents");
+                    }
+                    parent = n;
+                    parent_found = true;
+                }
+            }
+        }
+        if (!parent_found){
+            Utils.panic("GrammarGraph::parent_of : "+node.toString()+" has no parent");
+        }
+        return parent;
+    }
+
+     // Going through all ActionNodes and add the expected errors to the parent nodes
+    // Remove the expected error specifications from the source in the ActionNode
+    // For simplicity, we do not remove any ActionNode left empty after the removal
+    public void process_expected_errors(){
+        for (Integer idx : this.vertices.keySet()){
+            if (this.vertices.get(idx) instanceof ActionNode){
+                ActionNode an = (ActionNode)this.vertices.get(idx);
+                List<String> res = AstUtils.get_expected_errors(an.get_src());
+                if (res==null || res.size()<1){
+                    continue;
+                }
+                an.update_src(res.get(0));
+                if (res.size()>1){
+                    Node parent = this.parent_of(an);
+                    for (int i=1; i<res.size(); i++){
+                        parent.add_expected_errors(res.get(i));
+                    }
+                }
+            }
+        }
+    }
+
+    public void process_weights(){
+
     }
 }
