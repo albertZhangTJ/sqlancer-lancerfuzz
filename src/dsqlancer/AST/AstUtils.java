@@ -73,7 +73,7 @@ public class AstUtils {
                 break;
             }
             stripped_src = stripped_src + src.substring(start_index, idx);
-            int stk = -1; // the left bracket at DECL will set this to 0
+            int stk = 0; // the left bracket at DECL will set this to 0
             String content = "";
             for (int i=idx; i<src.length(); i++){
                 if (src.charAt(i)=='('){

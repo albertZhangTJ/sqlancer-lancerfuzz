@@ -1,6 +1,7 @@
 package dsqlancer.AST;
 
 import java.util.List;
+import java.util.ArrayList;
 
 import dsqlancer.Utils;
 
@@ -16,6 +17,7 @@ public class AlternationNode extends Node {
         this.index = index;
         this.conditions = conditions;
         this.min_depth = -1;
+        this.weights = new ArrayList<>();
     }
 
     public String get_rule_id(){

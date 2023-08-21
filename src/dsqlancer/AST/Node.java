@@ -11,7 +11,7 @@ public class Node {
     private int id;
     private String identifier;
     private List<Edge> outward_edges;
-    private List<String> expected_errors;
+    private List<String> expected_errors = new ArrayList<>();
     public boolean walked;
 
     public Node(){
