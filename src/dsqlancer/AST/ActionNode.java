@@ -17,7 +17,7 @@ public class ActionNode extends Node{
         if (this.src.length()<source.length()){
             Utils.oops("ActionNode::update_src : updated source is longer than original source, seems like unexpected behavior. Proceeding.");
         }
-        this.src =source;
+        this.src=source;
     }
     
     public String toString(){
