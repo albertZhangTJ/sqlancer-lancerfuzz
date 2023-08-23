@@ -179,7 +179,7 @@ public class GrammarGraph{
         System.out.println(root);
         root.walked=true;
         for (Edge e : root.get_outward_edges()){
-            walk_print(e.get_dest(), root.get_identifier());
+            walk_print(e.get_dest(), ""+root.get_identifier()+" "+root.get_id());
         }
     }
 

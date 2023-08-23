@@ -27,9 +27,6 @@ public class GrammarGraphBuilder {
     //Since Java does not have a getattr, the behavior of this function is slightly different with the 
     //corresponding function in Grammarinator
     public static String find_condition(FlexibleParserRuleContext node, Options options){
-        if (options.ignore_actions){
-            return "1";
-        }
         if (node.actionBlock()!=null){
             if (node.actionBlock().ACTION_CONTENT()!=null && node.QUESTION()!=null){
                 String ans = "";
@@ -270,11 +267,9 @@ public class GrammarGraphBuilder {
     public static void build_expr(GrammarGraph graph, RuleNode rule, FlexibleParserRuleContext node, 
                                     int parent_id, List<Integer> indices, Options options){
         if (node instanceof ANTLRv4Parser.ParserRuleSpecContext){
-            if (!options.ignore_actions){
-                rule.set_args(arg_action_block((ParserRuleSpecContext)node));
-                rule.set_locals(arg_action_block(((ParserRuleSpecContext)node).localsSpec()));
-                rule.set_returns(arg_action_block(((ParserRuleSpecContext)node).ruleReturns()));
-            }
+            rule.set_args(arg_action_block((ParserRuleSpecContext)node));
+            rule.set_locals(arg_action_block(((ParserRuleSpecContext)node).localsSpec()));
+            rule.set_returns(arg_action_block(((ParserRuleSpecContext)node).ruleReturns()));
             build_expr(graph, rule, ((ParserRuleSpecContext)node).ruleBlock(), parent_id, indices, options);
         }
 
@@ -349,7 +344,7 @@ public class GrammarGraphBuilder {
             if (node.actionBlock()!=null){
                 //System.out.println("Action found");
                 //System.out.println("options.ignore_actions: "+options.ignore_actions);
-                if (options.ignore_actions || (node.QUESTION()!=null && node.QUESTION().size()>0 && node.QUESTION().get(0)!=null)){
+                if ((node.QUESTION()!=null && node.QUESTION().size()>0 && node.QUESTION().get(0)!=null)){
                     return;
                 }
                 String action_content = "";
@@ -544,7 +539,7 @@ public class GrammarGraphBuilder {
                     }
                 }
 
-                if (prequel_construct.action_()!=null && !options.ignore_actions){
+                if (prequel_construct.action_()!=null){
                     Action_Context action = prequel_construct.action_();
                     IdentifierContext action_identifier = action.identifier();
                     String action_type = "";

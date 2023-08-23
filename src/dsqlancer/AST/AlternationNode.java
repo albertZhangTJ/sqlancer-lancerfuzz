@@ -56,4 +56,8 @@ public class AlternationNode extends Node {
     }
     // TODO: translate simple_alternatives 
     // 
+
+    public String toString(){
+        return super.toString() + "\n    type: AlternationNode\n    weights: "+this.weights.toString();
+    }
 }

@@ -15,8 +15,6 @@ public class Options {
     @Parameter(names = { "--help", "-h" }, description = "Display help message", help = true)
     public boolean help;
 
-    @Parameter(names = {"--ignore_actions", "-i"}, description = "Ignore actions defined in the grammar files")
-    public boolean ignore_actions = false;
 
     @Parameter(names = {"--encoding", "-e"}, description = "Encoding of generated characters, 0 for any ASCII characters, 1 for any ASCII letters, 2 for any Unicode characters")
     public int encoding = 0;
@@ -35,11 +33,8 @@ public class Options {
     @Parameter(names = {"--output", "-o"}, description="Path to output folder", arity=1)
     public String outputLocation = "./";
     
-    @Parameter(names = {"--stages", "-s"}, description="Path to JSON file containing the execution stages", arity=1)
-    public String stagesConfig = "";
-
-    @Parameter(names = {"--weights", "-w"}, description="Path to a JSON file containing the weights for branches of the AST", arity=1)
-    public String weightsConfig = "";
+    @Parameter(names = {"--config", "-c"}, description="Path to JSON file containing the configuration info", arity=1)
+    public String config = "";;
 
     @Parameter(names = {"--cwd"}, description="Library directory, default to be current working directory", arity=1)
     public String cwd = System.getProperty("user.dir");
