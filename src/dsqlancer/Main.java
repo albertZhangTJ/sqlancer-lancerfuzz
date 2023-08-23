@@ -51,7 +51,10 @@ public class Main {
         
         if (options.grammarRules.size()==0){
             Utils.panic("Main::main : need one or more grammar files for parser rules");
-            System.exit(-1);
+        }
+
+        if (options.config.equals("")){
+            Utils.panic("Main::main : need one configuration file");
         }
 
         // if (options.stagesConfig.equals("")){

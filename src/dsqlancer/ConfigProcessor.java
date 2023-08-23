@@ -8,6 +8,8 @@ import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import dsqlancer.AST.GrammarGraph;
+
 public class ConfigProcessor {
     public static JSONObject read_json_file(String file_path){
         try {
@@ -55,4 +57,15 @@ public class ConfigProcessor {
         return ans;
     }
 
+    // Make sure every rule referred in the stages exists in the AST
+    // Will panic when a rule is not found
+    public static void sanity_check(GrammarGraph graph, List<Stage> stages){
+        for (Stage stage : stages){
+            for (String rule_name : stage.get_rules()){
+                if (graph.contains_node_with_identifier(rule_name)){
+                    Utils.panic("ConfigProcessor::sanity_check : rule "+rule_name+" not found in the AST");
+                }
+            }
+        }
+    }
 }
