@@ -35,7 +35,7 @@ public class ConfigProcessor {
                 Utils.panic("ConfigProcessor::get_stages : cannot find rules in stage "+i);
             }
             List<String> stmts = new ArrayList<>();
-            for (int j=0; j<stages.length(); j++){
+            for (int j=0; j<rules.length(); j++){
                 stmts.add(rules.getString(j));
             }
             ans.add(new Stage(stage.getString("name"), stmts, stage.getInt("min"), stage.getInt("max")));
