@@ -28,6 +28,9 @@ public class Edge {
         return this.destination;
     }
 
+    public HashMap<String, String> get_args(){
+        return Utils.copy_map(this.args);
+    }
     public boolean equals(Object other){
         if (other!=null && other instanceof Edge){
             Edge other_edge = (Edge)other;

@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.io.IOException;
 import java.io.ObjectInputFilter.Config;
+import java.util.regex.Pattern;
 
 import org.antlr.v4.runtime.*;
 import org.json.JSONObject;
@@ -109,11 +110,13 @@ public class Processor {
         }
 
         GrammarGraph graph = GrammarGraphBuilder.build_grammar_graph(lexer_root, parser_root, options);
+        graph.handle_schema_locals();
         graph.walk_print(); //for debugging
         JSONObject config_file = ConfigProcessor.read_json_file(options.config);
         List<Stage> stages = ConfigProcessor.get_stages(config_file);
         List<DBMSOption> dbms_options = ConfigProcessor.get_options(config_file);
         ConfigProcessor.sanity_check(graph, stages);
+
         // TODO: analyze graph
         
 

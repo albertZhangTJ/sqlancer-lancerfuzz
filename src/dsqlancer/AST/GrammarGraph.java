@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import dsqlancer.Utils;
 import dsqlancer.ANTLR.ANTLRv4Parser;
@@ -179,7 +180,7 @@ public class GrammarGraph{
         System.out.println(root);
         root.walked=true;
         for (Edge e : root.get_outward_edges()){
-            walk_print(e.get_dest(), ""+root.get_identifier()+" "+root.get_id());
+            walk_print(e.get_dest(), ""+root.get_identifier()+" "+root.get_id()+" "+(e.get_args()==null ? "null" : e.get_args().toString()));
         }
     }
 
@@ -251,6 +252,55 @@ public class GrammarGraph{
                         Utils.panic("GrammarGraph::process_weights : expect parent node of the weight definition to be an AlternativeNode");
                     }
                     ((AlternationNode)alter).set_weight(Double.valueOf(res.get(1)), alt);
+                }
+            }
+        }
+    }
+
+    public void handle_schema_locals(){
+        for (Integer idx : this.vertices.keySet()){
+            if (this.vertices.get(idx) instanceof RuleNode){
+                RuleNode rn = (RuleNode)this.vertices.get(idx);
+                HashMap<String, String> locals = rn.get_locals();
+                Set<String> key_set = locals.keySet();
+                Pattern pq = Pattern.compile("String\\s{1,}query");
+                Pattern pp = Pattern.compile("String\\s{1,}parent_type");
+                Pattern ps = Pattern.compile("boolean\\s{1,}is_schema");
+                String parent_type = null;
+                String query = null;
+                boolean is_schema = false;
+                for (String key : key_set){
+                    if (ps.matcher(key.strip()).find()){
+                        is_schema = true;
+                    }
+                    if (pq.matcher(key.strip()).find()){
+                        query = locals.get(key);
+                        if (query!=null){
+                            query = query.strip();
+                            if (query.length()>=2 && query.charAt(0)=='"' && query.charAt(query.length()-1)=='"'){
+                                query=query.substring(1, query.length()-1);
+                            }
+                        }
+                    }
+                    if (pp.matcher(key.strip()).find()){
+                        parent_type = locals.get(key).strip();
+                        if (parent_type==null){
+                            Utils.panic("GrammarGraph::handle_schema_locals : if parent_type is defined, it must be set to a value that matches another schema reference rule");
+                        }
+                        if (parent_type.length()>=2 && parent_type.charAt(0)=='"' && parent_type.charAt(parent_type.length()-1)=='"'){
+                            parent_type=parent_type.substring(1, parent_type.length()-1);
+                        }
+                        if (!this.contains_node_with_identifier(parent_type)){
+                            Utils.panic("GrammarGraph::handle_schema_locals : Cannot find parent type rule "+parent_type);
+                        }
+                        
+                    }
+                }
+                if (is_schema){
+                    if (query==null || query.length()==0){
+                        Utils.panic("GrammarGraph::handle_schema_locals : For each schema reference rule, a query SQL statement must be provided");
+                    }
+                    rn.set_schema_reference(parent_type, query);
                 }
             }
         }

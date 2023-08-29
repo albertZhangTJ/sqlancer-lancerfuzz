@@ -66,6 +66,15 @@ public class ConfigProcessor {
                     Utils.panic("ConfigProcessor::sanity_check : rule "+rule_name+" not found in the AST");
                 }
             }
+            if (stage.get_min()<0 || stage.get_max()<0){
+                Utils.panic("ConfigProcessor::sanity_check : Minimum and maximum number of statements must e non-negative for stage "+stage.get_name());
+            }
+            if (stage.get_min()>stage.get_max()){
+                Utils.panic("ConfigProcessor::sanity_check : Minimum shall not be bigger than maximum for stage "+stage.get_name());
+            }
+            if (stage.get_min()>65535 || stage.get_max()>65535){
+                Utils.panic("ConfigProcessor::sanity_check : For performance consideration, min or max shall not exceed 65535 for stage "+stage.get_name());
+            }
         }
     }
 }
