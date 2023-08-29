@@ -126,11 +126,26 @@ public class MainOptions {
     @Parameter(names = "--use-reducer", description = "EXPERIMENTAL Attempt to reduce queries using a simple reducer")
     private boolean useReducer = false; // NOPMD
 
+    @Parameter(names = "--reduce-ast", description = "EXPERIMENTAL perform AST reduction after statement reduction")
+    private boolean reduceAST = false; // NOPMD
+
     @Parameter(names = "--statement-reducer-max-steps", description = "EXPERIMENTAL Maximum steps the statement reducer will do")
     private long maxStatementReduceSteps = NO_REDUCE_LIMIT; // NOPMD
 
-    @Parameter(names = "--statement-reducer-max-time", description = "EXPERIMENTAL Maximum time duration (secs) the statement reducer will do")
+    @Parameter(names = "--statement-reducer-max-time", description = "EXPERIMENTAL Maximum time duration (secs) the AST-based reducer will do")
+    private long maxASTReduceTime = NO_REDUCE_LIMIT; // NOPMD
+
+    @Parameter(names = "--ast-reducer-max-steps", description = "EXPERIMENTAL Maximum steps the AST-based reducer will do")
+    private long maxASTReduceSteps = NO_REDUCE_LIMIT; // NOPMD
+
+    @Parameter(names = "--ast-reducer-max-time", description = "EXPERIMENTAL Maximum time duration (secs) the statement reducer will do")
     private long maxStatementReduceTime = NO_REDUCE_LIMIT; // NOPMD
+
+    @Parameter(names = "--validate-result-size-only", description = "Should validate result size only and skip comparing content of the result set ", arity = 1)
+    private boolean validateResultSizeOnly = false; // NOPMD
+
+    @Parameter(names = "--canonicalize-sql-strings", description = "Should canonicalize query string (add ';' at the end", arity = 1)
+    private boolean canonicalizeSqlString = true; // NOPMD
 
     public int getMaxExpressionDepth() {
         return maxExpressionDepth;
@@ -293,6 +308,10 @@ public class MainOptions {
         return useReducer;
     }
 
+    public boolean reduceAST() {
+        return reduceAST;
+    }
+
     public long getMaxStatementReduceSteps() {
         return maxStatementReduceSteps;
     }
@@ -300,4 +319,21 @@ public class MainOptions {
     public long getMaxStatementReduceTime() {
         return maxStatementReduceTime;
     }
+
+    public long getMaxASTReduceSteps() {
+        return maxASTReduceSteps;
+    }
+
+    public long getMaxASTReduceTime() {
+        return maxASTReduceTime;
+    }
+
+    public boolean validateResultSizeOnly() {
+        return validateResultSizeOnly;
+    }
+
+    public boolean canonicalizeSqlString() {
+        return canonicalizeSqlString;
+    }
+
 }
