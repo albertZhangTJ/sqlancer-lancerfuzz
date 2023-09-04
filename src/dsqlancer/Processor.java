@@ -7,6 +7,8 @@ import java.util.List;
 import java.io.IOException;
 import java.io.ObjectInputFilter.Config;
 import java.util.regex.Pattern;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 
 import org.antlr.v4.runtime.*;
 import org.json.JSONObject;
@@ -117,6 +119,22 @@ public class Processor {
         List<DBMSOption> dbms_options = ConfigProcessor.get_options(config_file);
         ConfigProcessor.sanity_check(graph, stages);
 
+        List<String> template_files = new ArrayList<>();
+        template_files.add("fuzzer.st");
+        template_files.add("schema_node.st");
+        template_files.add("stage.st");
+        template_files.add("stage_call_rule.st");
+
+        TemplateRenderer template = new TemplateRenderer(template_files);
+
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(graph.get_name()+"Fuzzer.java"));
+            writer.write(template.render(graph, stages, dbms_options));
+            writer.close();
+        }
+        catch (IOException e) {
+            Utils.panic("Processor::generate_fuzzer : IOException, cannot write to file\n"+e.toString());
+        }
         // TODO: analyze graph
         
 

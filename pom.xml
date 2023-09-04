@@ -40,6 +40,11 @@
   <build>
     <sourceDirectory>src</sourceDirectory>
     <testSourceDirectory>test</testSourceDirectory>
+    <resources>
+      <resource>
+        <directory>src/dsqlancer/resources</directory>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -316,7 +321,7 @@
       
     </plugins>
   </build>
-
+  
   <dependencies>
     <dependency>
       <groupId>com.google.auto.service</groupId>
@@ -424,11 +429,6 @@
       <groupId>org.antlr</groupId>
       <artifactId>antlr4-runtime</artifactId>
       <version>4.13.0</version>
-    </dependency>
-    <dependency>
-      <groupId>org.antlr</groupId>
-      <artifactId>stringtemplate</artifactId>
-      <version>4.0.2</version>
     </dependency>
     <dependency>
       <groupId>com.github.jsqlparser</groupId>
