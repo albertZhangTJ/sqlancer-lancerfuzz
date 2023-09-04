@@ -4,3 +4,6 @@
             int index = random(0, <NUM_RULES\>);
             <STAGE_CALL_RULE\>
         }
+
+
+        

@@ -53,3 +53,4 @@ public class <graph_name\>Fuzzer {
     //This flag will be commented out during post-processing
     <RULE_NODE\>
 }
+

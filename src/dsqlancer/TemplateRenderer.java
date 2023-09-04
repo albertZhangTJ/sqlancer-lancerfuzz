@@ -44,6 +44,12 @@ public class TemplateRenderer {
         }
     }
 
+    private String replace_tag(String template, String key, String value){
+        String tag = "<"+key+"/>";
+        int length = tag.length()+value.length();
+        return null;
+    }
+
     public String render(GrammarGraph graph, List<Stage> stages, List<DBMSOption> options){
         return null; //TODO
     }
