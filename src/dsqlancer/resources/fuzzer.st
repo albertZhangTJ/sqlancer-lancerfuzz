@@ -1,11 +1,11 @@
 //FUZZER
-public class <graph_name\>Fuzzer {
+public class <graph_name/>Fuzzer {
     private SQLConnection con;
     private List<String> test_case_buffer;
     private int test_case_cursor;
     private List<String> expected_error_buffer;
 
-    public <graph_name\>Fuzzer(SQLConnection con){
+    public <graph_name/>Fuzzer(SQLConnection con){
         this.con = con;
         this.test_case_buffer = new ArrayList<>();
         this.test_case_cursor = 0;
@@ -36,7 +36,7 @@ public class <graph_name\>Fuzzer {
 
     public void generate(){
         int count = -1;
-        <STAGE\>
+        <STAGE/>
     }
 
     public void reset(){
@@ -47,10 +47,10 @@ public class <graph_name\>Fuzzer {
 
     //This works as a flag to indicate where to insert the methods for schema reference nodes
     //This flag will be commented out during post-processing
-    <SCHEMA_NODE\>
+    <SCHEMA_NODE/>
 
     //This works as a flag to indicate where to insert the method for regular rule nodes
     //This flag will be commented out during post-processing
-    <RULE_NODE\>
+    <RULE_NODE/>
 }
 
