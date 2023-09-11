@@ -46,11 +46,21 @@ public class <graph_name/>Fuzzer {
     }
 
     //This works as a flag to indicate where to insert the methods for schema reference nodes
-    //This flag will be commented out during post-processing
+    //The flag here will be commented out during post-processing
     <SCHEMA_NODE/>
 
     //This works as a flag to indicate where to insert the method for regular rule nodes
-    //This flag will be commented out during post-processing
+    //The flag here will be removed during post-processing
     <RULE_NODE/>
+
+    <LITERAL_NODE/>
+
+    <QUANTIFIER_NODE/>
+
+    <ALTERNATION_NODE/>
+
+    <ALTERNATIVE_NODE/>
+
+    <CHARSET_NODE/>
 }
 

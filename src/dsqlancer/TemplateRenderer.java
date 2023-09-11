@@ -27,6 +27,7 @@ public class TemplateRenderer {
     private void initialize(){
         try {
             for (String filename : this.template_files){
+                // The template files are expected to come within the jar file instead of being provided by the user
                 InputStream in = getClass().getResourceAsStream(filename);
                 String file_content = new String(in.readAllBytes(), StandardCharsets.UTF_8);
                 String template_name = file_content.substring(2, file_content.indexOf('\n')).strip();
@@ -48,7 +49,7 @@ public class TemplateRenderer {
     // It's not "replacing" rather prepending value to each tag, the tags will be removed after the whole template is 
     // The reason for not directly removing the tag is that one tag might be assigned multiple values 
     // e.g. the <SCHEMA_NODE\> tag in the fuzzer template corresponds to not one but multiple functions
-    private String replace_tag(String template, String key, String value){
+    private static String replace_tag(String template, String key, String value){
         String tag = "<"+key+"/>";
         int length = tag.length()+value.length();
         for (int cursor = 0; cursor<template.length()-tag.length(); cursor++){
@@ -63,7 +64,7 @@ public class TemplateRenderer {
     // This is a rather simple String matching (no parsing here)
     // This procedure will look for each occurence of the string "\>" and search back forward for the nearest "<", remove what's between
     // Also for now spaces in tags are disallowed so any occurence of space before finding the corresponding left bracket will be considered as syntax error
-    private String strip_tags(String template){
+    private static String strip_tags(String template){
         String left_bracket = "<";
         String right_bracket = "/>";
         while (template.indexOf(right_bracket)!=-1){
@@ -80,6 +81,55 @@ public class TemplateRenderer {
             template = template.substring(0, left_idx) + template.substring(right_idx+2);
         }
         return template;
+    }
+
+    public String render(Node node){
+        //schema nodes are expected to be terminal nodes
+        if (node instanceof RuleNode && ((RuleNode)node).is_schema_ref()){
+            String template = this.templates.get("SCHEMA_NODE");
+            if (template==null){
+                Utils.panic("No template found for schema nodes");
+            }
+            template = replace_tag(template, "rule_name", ((RuleNode)node).get_name());
+            if (((RuleNode)node).get_parent_type()!=null){
+                template = replace_tag(template, "parent_type", ((RuleNode)node).get_parent_type());
+            }
+            template = replace_tag(template, "query", ((RuleNode)node).get_query_stmt());
+            template = replace_tag(template, "attribute_name", ((RuleNode)node).get_attribute_name());
+            template = strip_tags(template);
+            return template;
+        }
+        if (node instanceof ActionNode){
+            //TODO
+        }
+        if (node instanceof AlternationNode){
+            //TODO
+        }
+        if (node instanceof AlternativeNode){
+            //TODO
+        }
+        if (node instanceof CharsetNode){
+            //TODO
+        }
+        if (node instanceof ImagRuleNode){
+            //TODO
+        }
+        if (node instanceof LambdaNode){
+            //TODO
+        }
+        if (node instanceof LiteralNode){
+            //TODO
+        }
+        if (node instanceof QuantifierNode){
+            //TODO
+        }
+        if (node instanceof UnlexerRuleNode){
+            //TODO
+        }
+        if (node instanceof UnparserRuleNode){
+            //TODO
+        }
+        return null;
     }
 
     public String render(GrammarGraph graph, List<Stage> stages, List<DBMSOption> options){

@@ -12,7 +12,8 @@ public class Node {
     private String identifier;
     private List<Edge> outward_edges;
     private List<String> expected_errors = new ArrayList<>();
-    public boolean walked;
+    public boolean walked; //for debugging purpose only
+    public boolean is_rendered=false; //eaiser for the fuzzer renderer to follow
 
     public Node(){
         this.id = nodes_count;

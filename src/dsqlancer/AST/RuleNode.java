@@ -15,8 +15,7 @@ public class RuleNode extends Node{
     private int min_depth;
 
 
-    // Not entirely sure what these are for and what type should they have
-    // TODO: further investigation needed here
+    
     private HashMap<String, String> labels;
     private HashMap<String, String> args;
     private HashMap<String, String> locals;
@@ -25,6 +24,7 @@ public class RuleNode extends Node{
     private boolean is_schema; // whether the current rule is a schema reference
     private String parent_type;
     private String query;
+    private String attribute_name;
 
     public RuleNode(String name, String label, RuleNodeType type){
         super(name, label);
@@ -39,6 +39,7 @@ public class RuleNode extends Node{
         this.is_schema = false;
         this.parent_type = null;
         this.query = null;
+        this.attribute_name = null;
     } 
 
     public boolean has_var(){
@@ -106,9 +107,10 @@ public class RuleNode extends Node{
         Set<String> key_set = this.locals.keySet();
         Pattern pq = Pattern.compile("String\\s{1,}query");
         Pattern pp = Pattern.compile("String\\s{1,}parent_type");
+        Pattern pa = Pattern.compile("String\\s{1,}attribute_name");
         Pattern ps = Pattern.compile("boolean\\s{1,}is_schema");
         for (String key : key_set){
-            if (pq.matcher(key.strip()).find() || pp.matcher(key.strip()).find() || ps.matcher(key.strip()).find()){
+            if (pq.matcher(key.strip()).find() || pp.matcher(key.strip()).find() || ps.matcher(key.strip()).find() || pa.matcher(key.strip()).find()){
                 this.locals.remove(key);
             }
         }
@@ -116,10 +118,11 @@ public class RuleNode extends Node{
 
     // The handling of find these is done at the graph level since we also want a sanity check
     // to make sure that parent_type exists in the AST
-    public void set_schema_reference(String parent_type, String schema_query){
+    public void set_schema_reference(String parent_type, String schema_query, String attribute_name){
         this.is_schema = true;
         this.parent_type = parent_type;
         this.query = schema_query;
+        this.attribute_name = attribute_name;
         this.remove_schema_locals();
     }
 
@@ -133,6 +136,10 @@ public class RuleNode extends Node{
 
     public String get_query_stmt(){
         return this.query;
+    }
+
+    public String get_attribute_name(){
+        return this.attribute_name;
     }
 
 
