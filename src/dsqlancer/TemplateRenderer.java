@@ -92,9 +92,13 @@ public class TemplateRenderer {
             }
             template = replace_tag(template, "rule_name", ((RuleNode)node).get_name());
             if (((RuleNode)node).get_parent_type()!=null){
-                template = replace_tag(template, "parent_type", ((RuleNode)node).get_parent_type());
+                template = replace_tag(template, "parent_name", ", String parent_name");
             }
-            template = replace_tag(template, "query", ((RuleNode)node).get_query_stmt());
+            String query = ((RuleNode)node).get_query_stmt();
+            while (query.contains("$parent_name$")){
+                query = query.substring(0, query.indexOf("$parent_name$")) +"\" + parent_name + \"" + query.substring(query.indexOf("$parent_name$")+"$parent_name$".length());
+            }
+            template = replace_tag(template, "query", query);
             template = replace_tag(template, "attribute_name", ((RuleNode)node).get_attribute_name());
             template = strip_tags(template);
             return template;
@@ -128,6 +132,8 @@ public class TemplateRenderer {
         }
         if (node instanceof UnparserRuleNode){
             //TODO
+
+            //Handling of schema node identifiers needed here
         }
         return null;
     }
