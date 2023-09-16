@@ -22,11 +22,14 @@ public class ConfigProcessor {
         return null;
     }
 
-    public static List<Stage> get_stages(JSONObject config){
+    public static List<Stage> get_stages(JSONObject config, String default_rule){
         JSONArray stages = config.getJSONArray("stages");
         List<Stage> ans = new ArrayList<>();
         if (stages==null){
-            Utils.panic("ConfigProcessor::get_stages : cannot find stage configuration in JSON file");
+            Utils.oops("ConfigProcessor::get_stages : No stage configuration found, will generate single default rule");
+            if (default_rule == null){
+                Utils.panic("ConfigProcessor::get_stages : default rule is also not set, exiting");
+            }
         }
         for (int i=0; i<stages.length(); i++){
             JSONObject stage = stages.getJSONObject(i);

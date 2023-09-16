@@ -1,5 +1,7 @@
 package dsqlancer.AST;
 
+
+//Defines how many repetition a rule should have
 public class QuantifierNode extends Node{
     private int rule_id;
     private int index;
@@ -34,4 +36,6 @@ public class QuantifierNode extends Node{
     public int get_min_depth(){
         return this.min_depth;
     }
+
+    
 }

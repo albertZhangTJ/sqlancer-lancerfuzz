@@ -214,6 +214,10 @@ public class GrammarGraph{
         return parent;
     }
 
+    public Node get_defaut_rule(){
+        return this.default_rule;
+    }
+
      // Going through all ActionNodes and add the expected errors to the parent nodes
     // Remove the expected error specifications from the source in the ActionNode
     // For simplicity, we do not remove any ActionNode left empty after the removal
@@ -316,6 +320,21 @@ public class GrammarGraph{
                     rn.set_schema_reference(parent_type, query, attribute_name);
                 }
             }
+        }
+    }
+
+    //calculate the min depth for each node
+    //The result is stored in the each node object
+    //pre-compute to detected unsolvable cycles early and save time for the rendering process
+    public void calc_depth(){
+        for (Integer i: this.vertices.keySet()){
+            this.vertices.get(i).get_min_depth();
+        }
+        if (this.default_rule!=null){
+            System.out.println("Minimal expansion depth from default rule: "+this.default_rule.get_min_depth());
+        }
+        else {
+            System.out.println("Minimal expansion depth not available, default_rule not set");
         }
     }
 }

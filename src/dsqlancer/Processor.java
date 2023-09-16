@@ -107,15 +107,17 @@ public class Processor {
                 }
             }
             else {
-                System.out.println("Expecting ANTLRv4 grammar file(s) with .g4 file extension");
+                Utils.panic("Expecting ANTLRv4 grammar file(s) with .g4 file extension");
             }
         }
 
         GrammarGraph graph = GrammarGraphBuilder.build_grammar_graph(lexer_root, parser_root, options);
         graph.handle_schema_locals();
+        graph.calc_depth();
         graph.walk_print(); //for debugging
+
         JSONObject config_file = ConfigProcessor.read_json_file(options.config);
-        List<Stage> stages = ConfigProcessor.get_stages(config_file);
+        List<Stage> stages = ConfigProcessor.get_stages(config_file, graph.get_defaut_rule()==null ? null : graph.get_defaut_rule().get_identifier());
         List<DBMSOption> dbms_options = ConfigProcessor.get_options(config_file);
         ConfigProcessor.sanity_check(graph, stages);
 

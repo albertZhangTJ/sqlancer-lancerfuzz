@@ -2,6 +2,7 @@ package dsqlancer.AST;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import dsqlancer.Utils;
 
@@ -14,6 +15,9 @@ public class Node {
     private List<String> expected_errors = new ArrayList<>();
     public boolean walked; //for debugging purpose only
     public boolean is_rendered=false; //eaiser for the fuzzer renderer to follow
+
+    protected int min_depth=-1;
+    protected boolean depth_visited = false;
 
     public Node(){
         this.id = nodes_count;
@@ -78,5 +82,30 @@ public class Node {
         if (content!=null && content.length()>0){
             this.expected_errors.add(content);
         }
+    }
+
+    public int get_min_depth(){
+        if (this.min_depth!=-1){
+            return this.min_depth;
+        }
+        // cycles found
+        if (this.depth_visited){
+            return Integer.MAX_VALUE;
+        }
+        List<Integer> child_depths = new ArrayList<>();
+        this.depth_visited = true;
+        for (Edge e: this.outward_edges){
+            child_depths.add(e.get_dest().get_min_depth());
+        }
+        Collections.sort(child_depths);
+        //terminal node
+        if (child_depths.size()==0){
+            return 1;
+        }
+        if (child_depths.get(0).intValue()==Integer.MAX_VALUE){
+            Utils.panic("Node::get_min_depth : Cycle found on minimal expansion path, no valid finite expansion possible for Node "+this.toString());
+        }
+        this.min_depth = child_depths.get(0);
+        return this.min_depth;
     }
 }

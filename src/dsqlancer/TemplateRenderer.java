@@ -84,6 +84,7 @@ public class TemplateRenderer {
     }
 
     public String render(Node node){
+        node.is_rendered = true;
         //schema nodes are expected to be terminal nodes
         if (node instanceof RuleNode && ((RuleNode)node).is_schema_ref()){
             String template = this.templates.get("SCHEMA_NODE");
@@ -104,7 +105,7 @@ public class TemplateRenderer {
             return template;
         }
         if (node instanceof ActionNode){
-            //TODO
+            return ((ActionNode)node).get_src();
         }
         if (node instanceof AlternationNode){
             //TODO
