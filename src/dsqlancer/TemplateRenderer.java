@@ -106,7 +106,7 @@ public class TemplateRenderer {
         if (node instanceof RuleNode && ((RuleNode)node).is_schema_ref()){
             String template = this.templates.get("SCHEMA_NODE");
             if (template==null){
-                Utils.panic("No template found for schema nodes");
+                Utils.panic("TemplateRenderer::render : No template found for schema nodes");
             }
             template = replace_tag(template, "rule_name", ((RuleNode)node).get_name());
             if (((RuleNode)node).get_parent_type()!=null){
@@ -140,13 +140,19 @@ public class TemplateRenderer {
             //TODO
         }
         if (node instanceof LiteralNode){
-            
+            String template = this.templates.get("LITERAL_NODE");
+            if (template==null){
+                Utils.panic("TemplateRenderer::render : No template found for quantifier nodes");
+            }
+            template = replace_tag(template, "NAME", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
+            template = replace_tag(template, "SRC", ((LiteralNode)node).get_src());
+            return strip_tags(template);
         }
         if (node instanceof QuantifierNode){
             QuantifierNode n = (QuantifierNode)node;
             String template = this.templates.get("QUANTIFIER_NODE");
             if (template==null){
-                Utils.panic("No template found for quantifier nodes");
+                Utils.panic("TemplateRenderer::render : No template found for quantifier nodes");
             }
             template = replace_tag(template, "NAME", n.get_identifier()==null ? "Node"+n.get_id() : n.get_identifier());
             template = replace_tag(template, "MIN_DEPTH", ""+n.get_min_depth());
