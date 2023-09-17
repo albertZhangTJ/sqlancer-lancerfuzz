@@ -83,6 +83,23 @@ public class TemplateRenderer {
         return template;
     }
 
+    public static String gen_function_call(Node callee, Edge call){
+        //for simplicity reasons, we are not doing a name matching for parameters
+        //instead, we are just providing the parameters in the order specified
+        String name = callee.get_identifier()==null ? "Node"+callee.get_id() : callee.get_identifier();
+        name = name + "(depth-1";
+        HashMap<String, String> args = call.get_args();
+        if (args==null || args.size()==0){
+            name = name +")";
+            return name;
+        }
+        for (String key: args.keySet()){
+            name = name + ", " + args.get(key);
+        }
+        name = name + ")";
+        return name;
+    }
+
     public String render(Node node){
         node.is_rendered = true;
         //schema nodes are expected to be terminal nodes
@@ -123,10 +140,25 @@ public class TemplateRenderer {
             //TODO
         }
         if (node instanceof LiteralNode){
-            //TODO
+            
         }
         if (node instanceof QuantifierNode){
-            //TODO
+            QuantifierNode n = (QuantifierNode)node;
+            String template = this.templates.get("QUANTIFIER_NODE");
+            if (template==null){
+                Utils.panic("No template found for quantifier nodes");
+            }
+            template = replace_tag(template, "NAME", n.get_identifier()==null ? "Node"+n.get_id() : n.get_identifier());
+            template = replace_tag(template, "MIN_DEPTH", ""+n.get_min_depth());
+            template = replace_tag(template, "QUAN_MIN", ""+n.get_min());
+            template = replace_tag(template, "QUAN_MAX", ""+n.get_max());
+
+            //Quantifier Nodes are only expected to have one child
+            Edge to_child = n.get_outward_edges().get(0);
+            Node child = to_child.get_dest(); 
+            template = replace_tag(template, "CHILD_NODE_REF", gen_function_call(child, to_child));
+
+            return strip_tags(template);
         }
         if (node instanceof UnlexerRuleNode){
             //TODO

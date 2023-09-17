@@ -1,7 +1,7 @@
 //SCHEMA_NODE
 //MIN_DEPTH = 1
     private int <rule_name/>_count = 0;
-    private String <rule_name/>(SQLConnection con, boolean is_new, <parent_name/>){
+    private String <rule_name/>(int depth, boolean is_new<parent_name/>){
         if (is_new){
             <rule_name/>_count++;
             return "<rule_name/>"+<rule_name/>_count;
