@@ -60,4 +60,9 @@ public class AlternationNode extends Node {
     public String toString(){
         return super.toString() + "\n    type: AlternationNode\n    weights: "+this.weights.toString();
     }
+
+    // @Override
+    // public int get_min_depth(){
+    //     return super.get_min_depth()-1;
+    // }
 }

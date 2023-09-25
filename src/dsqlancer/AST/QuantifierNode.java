@@ -37,5 +37,9 @@ public class QuantifierNode extends Node{
         return this.min_depth;
     }
 
+    // @Override
+    // public int get_min_depth(){
+    //     return super.get_min_depth()-1;
+    // }
     
 }

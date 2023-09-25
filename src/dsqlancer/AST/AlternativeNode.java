@@ -22,4 +22,9 @@ public class AlternativeNode extends Node{
     public int get_index(){
         return this.index;
     }
+
+    // @Override
+    // public int get_min_depth(){
+    //     return super.get_min_depth()-1;
+    // }
 }

@@ -50,10 +50,10 @@ public class TemplateRenderer {
     // The reason for not directly removing the tag is that one tag might be assigned multiple values 
     // e.g. the <SCHEMA_NODE\> tag in the fuzzer template corresponds to not one but multiple functions
     private static String replace_tag(String template, String key, String value){
-        String tag = "<"+key+"/>";
+        String tag = "<"+key.toUpperCase()+"/>";
         int length = tag.length()+value.length();
         for (int cursor = 0; cursor<template.length()-tag.length(); cursor++){
-            if (template.substring(cursor, cursor+tag.length()).equals(tag)){
+            if (template.substring(cursor, cursor+tag.length()).toUpperCase().equals(tag)){
                 template = template.substring(0,cursor) + value + template.substring(cursor);
                 cursor += value.length();
             }
@@ -86,7 +86,14 @@ public class TemplateRenderer {
     public static String gen_function_call(Node callee, Edge call){
         //for simplicity reasons, we are not doing a name matching for parameters
         //instead, we are just providing the parameters in the order specified
-        String name = callee.get_identifier()==null ? "Node"+callee.get_id() : callee.get_identifier();
+        String name = "";
+        //ImagRuleNodes are guaranteed to have non-null identifiers
+        if (callee instanceof ImagRuleNode){
+            name  = callee.get_identifier();
+        }
+        else{
+            name  = callee.get_identifier()==null ? "Node"+callee.get_id() : callee.get_identifier();
+        }
         name = name + "(depth-1";
         HashMap<String, String> args = call.get_args();
         if (args==null || args.size()==0){
@@ -133,16 +140,25 @@ public class TemplateRenderer {
         if (node instanceof CharsetNode){
             //TODO
         }
+        //ImagRuleNode are just placeholders
+        //there will be another node with same identifier 
+        //no need to do anything here
+        //the call generator will wire the function call to the actual node
         if (node instanceof ImagRuleNode){
-            //TODO
+            return "";
         }
         if (node instanceof LambdaNode){
-            //TODO
+            String template = this.templates.get("LAMBDA_NODE");
+            if (template==null){
+                Utils.panic("TemplateRenderer::render : No template found for lambda nodes");
+            }
+            template = replace_tag(template, "name", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
+            return strip_tags(template);
         }
         if (node instanceof LiteralNode){
             String template = this.templates.get("LITERAL_NODE");
             if (template==null){
-                Utils.panic("TemplateRenderer::render : No template found for quantifier nodes");
+                Utils.panic("TemplateRenderer::render : No template found for literal nodes");
             }
             template = replace_tag(template, "NAME", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
             template = replace_tag(template, "SRC", ((LiteralNode)node).get_src());

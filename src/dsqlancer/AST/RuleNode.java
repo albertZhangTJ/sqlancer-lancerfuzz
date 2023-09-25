@@ -25,7 +25,7 @@ public class RuleNode extends Node{
     private String parent_type;
     private String query;
     private String attribute_name;
-
+    
     public RuleNode(String name, String label, RuleNodeType type){
         super(name, label);
         this.name = name;

@@ -153,12 +153,19 @@ public class GrammarGraph{
     }
 
     public int get_node_id_with_identifier(String identifier){
+        int imag_id = -1;
         for (Integer key : this.vertices.keySet()){
             if (Utils.null_safe_equals(identifier, this.vertices.get(key).get_identifier())){
-                return key;
+                if (this.vertices.get(key) instanceof ImagRuleNode){
+                    imag_id = key;
+                }
+                else {
+                    return key;
+                }
             }
         }
-        return -1;
+        
+        return imag_id;
     }
 
     public void set_default_rule(String rule_name){
@@ -335,6 +342,25 @@ public class GrammarGraph{
         }
         else {
             System.out.println("Minimal expansion depth not available, default_rule not set");
+        }
+    }
+
+    //Image rule nodes are nodes that are references to rules defined outside the file
+    //as this is just referring to an identifier in the grammar file
+    //it should not have an children nodes
+    //we will record the id of the actual rule node 
+    //this should only be called after the entire graph is built so that the referred node is guaranteed to be there
+    //but before rendering the fuzzer template so that the renderer can find the real node
+    public void check_imag_rules(){
+        for (Integer key : this.vertices.keySet()){
+            if (this.vertices.get(key) instanceof ImagRuleNode){
+                ImagRuleNode i_node = (ImagRuleNode)(this.vertices.get(key));
+                int real_id = this.get_node_id_with_identifier(i_node.get_identifier());
+                if (real_id==key.intValue()){
+                    Utils.panic("GrammarGraph::check_imag_rules : cannot find referred node with identifier: " + i_node.get_identifier());
+                }
+                i_node.set_real_id(real_id);
+            }
         }
     }
 }
