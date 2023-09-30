@@ -135,7 +135,16 @@ public class TemplateRenderer {
             //TODO
         }
         if (node instanceof AlternativeNode){
-            //TODO
+            String template = this.templates.get("ALTERNATIVE_NODE");
+             if (template==null){
+                Utils.panic("TemplateRenderer::render : No template found for alternative nodes");
+            }
+            template = replace_tag(template, "name", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
+            for (Edge e : node.get_outward_edges()){
+                template = replace_tag(template, "call_children", "ans = ans + " + gen_function_call(e.get_dest(), e) + ";\n");
+            }
+            template = replace_tag(template, "MIN_DEPTH", ""+node.get_min_depth());
+            return strip_tags(template);
         }
         if (node instanceof CharsetNode){
             String template = this.templates.get("CHARSET_NODE");
@@ -145,7 +154,7 @@ public class TemplateRenderer {
             template = replace_tag(template, "name", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
             CharsetNode cnode = (CharsetNode)node;
             for (Integer idx : CharSet.get_encoding_characters(cnode.get_charset())){
-                template = replace_tag(template, "add_indices", "indices.add("+idx+");");
+                template = replace_tag(template, "add_indices", "indices.add("+idx+");\n");
             }
             return strip_tags(template);
         }
