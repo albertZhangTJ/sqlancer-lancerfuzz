@@ -138,7 +138,16 @@ public class TemplateRenderer {
             //TODO
         }
         if (node instanceof CharsetNode){
-            //TODO
+            String template = this.templates.get("CHARSET_NODE");
+            if (template==null){
+                Utils.panic("TemplateRenderer::render : No template found for charset nodes");
+            }
+            template = replace_tag(template, "name", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
+            CharsetNode cnode = (CharsetNode)node;
+            for (Integer idx : CharSet.get_encoding_characters(cnode.get_charset())){
+                template = replace_tag(template, "add_indices", "indices.add("+idx+");");
+            }
+            return strip_tags(template);
         }
         //ImagRuleNode are just placeholders
         //there will be another node with same identifier 
