@@ -54,8 +54,19 @@ public class AlternationNode extends Node {
         }
         Utils.oops("AlternationNode::set_weight : Cannot find child "+child.toString());
     }
-    // TODO: translate simple_alternatives 
-    // 
+    
+
+    public List<Double> get_weights(){
+        return Utils.copy_list(this.weights);
+    }
+
+    public Double get_total_weight(){
+        double ans = 0;
+        for (Double d : this.weights){
+            ans = ans + d;
+        }
+        return ans;
+    }
 
     public String toString(){
         return super.toString() + "\n    type: AlternationNode\n    weights: "+this.weights.toString();

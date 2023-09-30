@@ -36,7 +36,7 @@ public class <graph_name/>Fuzzer {
 
     public void generate(){
         int count = -1;
-        <STAGE/>
+<STAGE/>
     }
 
     public void reset(){
@@ -45,8 +45,8 @@ public class <graph_name/>Fuzzer {
         this.expected_error_buffer = new ArrayList<>();
     }
 
-    //This works as a flag to indicate where to insert the method for regular rule nodes
-    //The flag here will be removed during post-processing
-    <RULE/>
+//This works as a flag to indicate where to insert the method for regular rule nodes
+//The flag here will be removed during post-processing
+<RULE/>
 }
 

@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import dsqlancer.AST.*;
+import net.sf.jsqlparser.statement.alter.Alter;
 
 @SuppressWarnings("unused")
 public class TemplateRenderer {
@@ -132,7 +133,40 @@ public class TemplateRenderer {
             return ((ActionNode)node).get_src();
         }
         if (node instanceof AlternationNode){
-            //TODO
+            String template = this.templates.get("ALTERNATION_NODE");
+            if (template==null){
+                Utils.panic("TemplateRenderer::render : No template found for alternation nodes");
+            }
+            template = replace_tag(template, "name", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
+            template = replace_tag(template, "MIN_DEPTH", ""+node.get_min_depth());
+            AlternationNode anode = (AlternationNode)node;
+            template = replace_tag(template, "TOTAL_WEIGHT", ""+anode.get_total_weight());
+            // select one sub-paths for minimal expansion
+            // This is not optimal but since this is only a corner case (where the user provided an unreasonable depth limit value)
+            // For simplicity reasons we will only do a rendering time designation
+            // The rationale here is that there must exist at least one node whose min expansion depth is 
+            for (Edge e : anode.get_outward_edges()){
+                if (e.get_dest().get_min_depth() == anode.get_min_depth()-1){
+                    template = replace_tag(template, "call_min_child", gen_function_call(e.get_dest(), e));
+                    break; //there might be multiple possible min-expansions, however we just need one
+                }
+            }
+            List<Edge> branches = anode.get_outward_edges();
+            List<Double> weights = anode.get_weights();
+            if (branches.size()!=weights.size()){
+                Utils.panic("TemplateRenderer::render : alternation node weights vector size does not match ");
+            }
+            for (int i=0; i<branches.size(); i++){
+                String s_template = this.templates.get("ALTERNATION_NODE_SUB_OPTION");
+                if (s_template==null){
+                    Utils.panic("TemplateRenderer::render : No template found for alternation nodes sub options");
+                }
+                s_template = replace_tag(s_template, "WEIGHT", ""+weights.get(i));
+                s_template = replace_tag(s_template, "child_depth", ""+branches.get(i).get_dest().get_min_depth());
+                s_template = replace_tag(s_template, "call_child", gen_function_call(branches.get(i).get_dest(), branches.get(i)));
+                template = replace_tag(template, "sub_option", strip_tags(s_template));
+            }
+            return strip_tags(template);
         }
         if (node instanceof AlternativeNode){
             String template = this.templates.get("ALTERNATIVE_NODE");
@@ -141,7 +175,7 @@ public class TemplateRenderer {
             }
             template = replace_tag(template, "name", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
             for (Edge e : node.get_outward_edges()){
-                template = replace_tag(template, "call_children", "ans = ans + " + gen_function_call(e.get_dest(), e) + ";\n");
+                template = replace_tag(template, "call_children", "ans = ans + " + gen_function_call(e.get_dest(), e) + ";\n        ");
             }
             template = replace_tag(template, "MIN_DEPTH", ""+node.get_min_depth());
             return strip_tags(template);
@@ -154,7 +188,7 @@ public class TemplateRenderer {
             template = replace_tag(template, "name", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
             CharsetNode cnode = (CharsetNode)node;
             for (Integer idx : CharSet.get_encoding_characters(cnode.get_charset())){
-                template = replace_tag(template, "add_indices", "indices.add("+idx+");\n");
+                template = replace_tag(template, "add_indices", "indices.add("+idx+");\n        ");
             }
             return strip_tags(template);
         }

@@ -3,4 +3,3 @@
                 this.test_case_buffer.add(<RULE_NAME/>());
             }
 
-            
