@@ -1,5 +1,5 @@
 //STAGE_CALL_RULE
             if (index==<INDEX/>){
-                this.test_case_buffer.add(<RULE_NAME/>());
+                this.test_case_buffer.add(<RULE_NAME/>(fuzzing_depth));
             }
 

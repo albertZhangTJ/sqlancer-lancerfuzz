@@ -1,15 +1,20 @@
 //FUZZER
+@SuppressWarnings("unused")
 public class <graph_name/>Fuzzer {
     private SQLConnection con;
     private List<String> test_case_buffer;
     private int test_case_cursor;
     private List<String> expected_error_buffer;
+    private int fuzzing_depth;
 
-    public <graph_name/>Fuzzer(SQLConnection con){
+<DBMS_OPTIONS/>
+
+    public <graph_name/>Fuzzer(SQLConnection con, int fuzzing_depth){
         this.con = con;
         this.test_case_buffer = new ArrayList<>();
         this.test_case_cursor = 0;
         this.expected_error_buffer = new ArrayList<>();
+        this.fuzzing_depth = fuzzing_depth;
     }
 
     public String get_next_statement(){

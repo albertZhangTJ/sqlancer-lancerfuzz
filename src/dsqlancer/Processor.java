@@ -113,6 +113,8 @@ public class Processor {
 
         GrammarGraph graph = GrammarGraphBuilder.build_grammar_graph(lexer_root, parser_root, options);
         graph.handle_schema_locals();
+        graph.check_imag_rules();
+        graph.check_for_duplicate_identifier();
         graph.calc_depth();
         graph.walk_print(); //for debugging
 

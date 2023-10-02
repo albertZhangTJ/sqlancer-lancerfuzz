@@ -28,8 +28,11 @@ public class Utils {
     }
 
     // Print error message and shutdown
+    // Also print the the stack trace so tof help debugging
     public static void panic(String message){
         System.out.println("["+ANSI_RED+"ERROR"+ANSI_RESET+"] "+message);
+        Exception e = new Exception();
+        e.printStackTrace();
         System.exit(-1);
     }
 

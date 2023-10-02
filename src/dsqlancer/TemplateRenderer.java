@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import dsqlancer.AST.*;
+import io.questdb.std.Hash;
 import net.sf.jsqlparser.statement.alter.Alter;
 
 @SuppressWarnings("unused")
@@ -170,7 +171,7 @@ public class TemplateRenderer {
         }
         if (node instanceof AlternativeNode){
             String template = this.templates.get("ALTERNATIVE_NODE");
-             if (template==null){
+            if (template==null){
                 Utils.panic("TemplateRenderer::render : No template found for alternative nodes");
             }
             template = replace_tag(template, "name", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
@@ -235,17 +236,65 @@ public class TemplateRenderer {
             return strip_tags(template);
         }
         if (node instanceof UnlexerRuleNode){
-            //TODO
+            String template = this.templates.get("UNLEXER_RULE_NODE");
+            if (template==null){
+                Utils.panic("TemplateRenderer::render : No template found for unlexer rule nodes");
+            }
+            template = replace_tag(template, "name", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
+            for (Edge e : node.get_outward_edges()){
+                template = replace_tag(template, "call_children", "ans = ans + " + gen_function_call(e.get_dest(), e) + ";\n        ");
+            }
+            template = replace_tag(template, "MIN_DEPTH", ""+node.get_min_depth());
+            return strip_tags(template);
         }
         if (node instanceof UnparserRuleNode){
             //TODO
 
             //Handling of schema node identifiers needed here
         }
-        return null;
+        return "";
     }
 
     public String render(GrammarGraph graph, List<Stage> stages, List<DBMSOption> options){
-        return null; //TODO
+        String template = this.templates.get("FUZZER");
+        if (template==null){
+            Utils.panic("TemplateRenderer::render : No template found for FUZZER");
+        }
+        template = replace_tag(template, "graph_name", graph.get_name());
+        for (DBMSOption opt : options){
+            String val = opt.get_type()+" "+opt.get_name();
+            if (opt.get_default()!=null){
+                val = val + " = " + opt.get_default();
+            }
+            val = val + ";";
+            template = replace_tag(template, "DBMS_OPTIONS", val);
+        }
+        for (Stage stage : stages){
+            String st_template = this.templates.get("STAGE");
+            if (st_template==null){
+                Utils.panic("TemplateRenderer::render : No template found for stage");
+            }
+            st_template = replace_tag(st_template, "NAME", stage.get_name());
+            st_template = replace_tag(st_template, "STAGE_MIN", ""+stage.get_min());
+            st_template = replace_tag(st_template, "STAGE_MAX", ""+stage.get_max());
+            st_template = replace_tag(st_template, "NUM_RULES", ""+stage.get_num_rules());
+            List<String> rules = stage.get_rules();
+            for (int i=0; i<rules.size(); i++){
+                String stc_template = this.templates.get("STAGE_CALL_RULE");
+                if (stc_template==null){
+                    Utils.panic("TemplateRenderer::render : No template found for stage calling rule");
+                }
+                stc_template = replace_tag(stc_template, "INDEX", ""+i);
+                stc_template = replace_tag(stc_template, "RULE_NAME", rules.get(i));
+                stc_template = strip_tags(stc_template);
+                st_template = replace_tag(st_template, "STAGE_CALL_RULE", stc_template);
+            }
+            template = replace_tag(template, "STAGE", strip_tags(st_template));
+        }
+        HashMap<Integer, Node> vertices = graph.get_vertices();
+        for (Integer i : vertices.keySet()){
+            template = replace_tag(template, "RULE", render(vertices.get(i)));
+        }
+        return strip_tags(template); //TODO
     }
 }

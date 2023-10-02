@@ -32,6 +32,10 @@ public class Stage{
         return this.max_statements;
     }
 
+    public int get_num_rules(){
+        return this.rules.size();
+    }
+
     public String toString(){
         return "[Stage]\n    name: "+this.name+"\n    rules: "+this.rules+"\n    min: "+this.min_statements+"\n    max: "+this.max_statements;
     }

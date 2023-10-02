@@ -1,10 +1,13 @@
 package dsqlancer.AST;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import javax.imageio.ImageIO;
 
 import dsqlancer.Utils;
 import dsqlancer.ANTLR.ANTLRv4Parser;
@@ -360,6 +363,26 @@ public class GrammarGraph{
                     Utils.panic("GrammarGraph::check_imag_rules : cannot find referred node with identifier: " + i_node.get_identifier());
                 }
                 i_node.set_real_id(real_id);
+            }
+        }
+    }
+
+    public void check_for_duplicate_identifier(){
+        //despite this is O(N^2), since the number of nodes are not expected to be large
+        //this is fine 
+        List<Integer> indices = new ArrayList<>(this.vertices.keySet());
+        for (int i=0; i<indices.size(); i++){
+            for (int j=i+1; j<indices.size(); j++){
+                Node a = this.vertices.get(indices.get(i));
+                Node b = this.vertices.get(indices.get(j));
+                //if at least one side is an ImagRuleNode then it is fine
+                //as ImagRuleNodes are pointers to the actual RuleNode
+                //For nodes without identifiers, the mechanism of Node will ensure no two nodes will have the same id
+                if (!(a instanceof ImagRuleNode || b instanceof ImagRuleNode) && 
+                        !(a.get_identifier()==null || b.get_identifier()==null) &&
+                        a.get_identifier().equals(b.get_identifier())){
+                    Utils.panic("GrammarGraph::check_for_duplicate_identifier : Redefinition of rule "+a.get_identifier());
+                }
             }
         }
     }
