@@ -103,7 +103,11 @@ public class TemplateRenderer {
             return name;
         }
         for (String key: args.keySet()){
-            name = name + ", " + args.get(key);
+            String val = args.get(key);
+            if (val==null){
+                val = "null";
+            }
+            name = name + ", " + val;
         }
         name = name + ")";
         return name;
@@ -118,9 +122,6 @@ public class TemplateRenderer {
                 Utils.panic("TemplateRenderer::render : No template found for schema nodes");
             }
             template = replace_tag(template, "rule_name", ((RuleNode)node).get_name());
-            if (((RuleNode)node).get_parent_type()!=null){
-                template = replace_tag(template, "parent_name", ", String parent_name");
-            }
             String query = ((RuleNode)node).get_query_stmt();
             while (query.contains("$parent_name$")){
                 query = query.substring(0, query.indexOf("$parent_name$")) +"\" + parent_name + \"" + query.substring(query.indexOf("$parent_name$")+"$parent_name$".length());

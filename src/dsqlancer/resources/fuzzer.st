@@ -1,11 +1,25 @@
 //FUZZER
+//SINCE THIS CODE IS AUTOMATICALLY GENERATED, IT IS HARD TO DO SOME RESETTING
+//THUS EACH OBJECT OF THIS CLASS IS "ONE-TIME"
+//IE EACH OBJECT CAN ONLY GENERATE ONE TEST CASE
+//FOR GETTING MULTIPLE TEST CASES, NEW MULTIPLE INSTANCES OF THIS CLASS
+import java.util.*;
 @SuppressWarnings("unused")
 public class <graph_name/>Fuzzer {
     private SQLConnection con;
     private List<String> test_case_buffer;
     private int test_case_cursor;
     private List<String> expected_error_buffer;
+
+    //depth limit, passed in by the tester at fuzzing time
     private int fuzzing_depth;
+
+    //Rule-wise identifier cache, must be resetted at the beginning of each rule call
+    private HashMap<String, HashMap<String, String>> identifier_cache;
+
+    //A flag that can be inserted into the output to indicate an error has occured
+    //This pattern is extremely unlikely to appear in a normal output
+    public static final String ERROR_FLAG = "@#$%^&*!.,?()[]{}+-_="; 
 
 <DBMS_OPTIONS/>
 
@@ -44,10 +58,16 @@ public class <graph_name/>Fuzzer {
 <STAGE/>
     }
 
+    /*
     public void reset(){
         this.test_case_buffer = new ArrayList<>();
         this.test_case_cursor = 0;
         this.expected_error_buffer = new ArrayList<>();
+    }
+    */
+
+    public void reset_identifier_cache(){
+        this.identifier_cache.clear();
     }
 
 //This works as a flag to indicate where to insert the method for regular rule nodes
