@@ -2,6 +2,6 @@
 //MIN_DEPTH = <min_depth/>
     public String <name/>(int depth){
         String ans="";
-        <call_children/>
+<call_children/>
         return ans;
     }

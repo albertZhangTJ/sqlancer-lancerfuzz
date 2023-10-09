@@ -243,7 +243,7 @@ public class TemplateRenderer {
             }
             template = replace_tag(template, "name", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
             for (Edge e : node.get_outward_edges()){
-                template = replace_tag(template, "call_children", "ans = ans + " + gen_function_call(e.get_dest(), e) + ";\n        ");
+                template = replace_tag(template, "call_children", "        ans = ans + " + gen_function_call(e.get_dest(), e) + ";\n        ");
             }
             template = replace_tag(template, "MIN_DEPTH", ""+node.get_min_depth());
             return strip_tags(template);
