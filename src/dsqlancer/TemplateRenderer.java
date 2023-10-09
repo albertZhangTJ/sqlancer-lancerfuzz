@@ -249,9 +249,24 @@ public class TemplateRenderer {
             return strip_tags(template);
         }
         if (node instanceof UnparserRuleNode){
-            //TODO
-
-            //Handling of schema node identifiers needed here
+            String template = this.templates.get("UNPARSER_RULE_NODE");
+            if (template==null){
+                Utils.panic("TemplateRenderer::render : No template found for unparser rule nodes");
+            }
+            template = replace_tag(template, "name", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
+            template = replace_tag(template, "MIN_DEPTH", ""+node.get_min_depth());
+            int index = 0;
+            for (Edge e: node.get_outward_edges()){
+                String ct = this.templates.get("UNPARSER_CALL_CHILDREN");
+                if (ct==null){
+                    Utils.panic("TemplateRenderer::render : No template found for unparser rule calling children");
+                }
+                ct = replace_tag(ct, "index", ""+index);
+                ct = replace_tag(ct, "call_child", gen_function_call(e.get_dest(), e));
+                template = replace_tag(template, "unparser_call_children", strip_tags(ct));
+                index++;
+            }
+            return strip_tags(template);
         }
         return "";
     }

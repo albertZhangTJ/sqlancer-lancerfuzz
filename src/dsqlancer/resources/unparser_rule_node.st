@@ -1,6 +1,7 @@
 //UNPARSER_RULE_NODE
 //MIN_DEPTH = <min_depth/>
     public String <name/>(int depth){
+        this.push_identifier_cache();
         List<String> cache = new ArrayList<>();
         boolean is_completed = false;
         int counter = 0;
@@ -16,12 +17,13 @@
             counter++;
             if (counter>this.loop_threshold){
                 System.out.println("ERROR: <name/> cannot deliver a valid result after "+this.loop_threshold+" passes. Aborting");
+                System.exit(1);
             }
         }
         String ans = "";
         for (String s: cache){
             ans = ans + s;
         }
-        
+        this.pop_identifier_cache();
         return ans;
     }
