@@ -278,10 +278,8 @@ public class GrammarGraph{
                 HashMap<String, String> locals = rn.get_locals();
                 Set<String> key_set = locals.keySet();
                 Pattern pq = Pattern.compile("String\\s{1,}query");
-                Pattern pp = Pattern.compile("String\\s{1,}parent_type");
                 Pattern ps = Pattern.compile("boolean\\s{1,}is_schema");
                 Pattern pa = Pattern.compile("String\\s{1,}attribute_name");
-                String parent_type = null;
                 String query = null;
                 boolean is_schema = false;
                 String attribute_name = null;
@@ -298,20 +296,6 @@ public class GrammarGraph{
                             }
                         }
                     }
-                    if (pp.matcher(key.strip()).find()){
-                        parent_type = locals.get(key);
-                        if (parent_type==null){
-                            Utils.panic("GrammarGraph::handle_schema_locals : if parent_type is defined, it must be set to a value that matches another schema reference rule");
-                        }
-                        parent_type = parent_type.strip();
-                        if (parent_type.length()>=2 && parent_type.charAt(0)=='"' && parent_type.charAt(parent_type.length()-1)=='"'){
-                            parent_type=parent_type.substring(1, parent_type.length()-1);
-                        }
-                        if (!this.contains_node_with_identifier(parent_type)){
-                            Utils.panic("GrammarGraph::handle_schema_locals : Cannot find parent type rule "+parent_type);
-                        }
-                        
-                    }
                     if (pa.matcher(key.strip()).find()){
                         attribute_name = locals.get(key);
                         if (attribute_name==null){
@@ -327,7 +311,7 @@ public class GrammarGraph{
                     if (query==null || query.length()==0){
                         Utils.panic("GrammarGraph::handle_schema_locals : For each schema reference rule, a query SQL statement must be provided");
                     }
-                    rn.set_schema_reference(parent_type, query, attribute_name);
+                    rn.set_schema_reference(query, attribute_name);
                 }
             }
         }

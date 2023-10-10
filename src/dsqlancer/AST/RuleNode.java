@@ -22,7 +22,6 @@ public class RuleNode extends Node{
     private HashMap<String, String> returns; 
 
     private boolean is_schema; // whether the current rule is a schema reference
-    private String parent_type;
     private String query;
     private String attribute_name;
     
@@ -37,7 +36,6 @@ public class RuleNode extends Node{
         this.returns = new HashMap<String, String>();
 
         this.is_schema = false;
-        this.parent_type = null;
         this.query = null;
         this.attribute_name = null;
     } 
@@ -106,21 +104,18 @@ public class RuleNode extends Node{
     private void remove_schema_locals(){
         Set<String> key_set = this.locals.keySet();
         Pattern pq = Pattern.compile("String\\s{1,}query");
-        Pattern pp = Pattern.compile("String\\s{1,}parent_type");
         Pattern pa = Pattern.compile("String\\s{1,}attribute_name");
         Pattern ps = Pattern.compile("boolean\\s{1,}is_schema");
         for (String key : key_set){
-            if (pq.matcher(key.strip()).find() || pp.matcher(key.strip()).find() || ps.matcher(key.strip()).find() || pa.matcher(key.strip()).find()){
+            if (pq.matcher(key.strip()).find() || ps.matcher(key.strip()).find() || pa.matcher(key.strip()).find()){
                 this.locals.remove(key);
             }
         }
     }
 
-    // The handling of find these is done at the graph level since we also want a sanity check
-    // to make sure that parent_type exists in the AST
-    public void set_schema_reference(String parent_type, String schema_query, String attribute_name){
+    
+    public void set_schema_reference(String schema_query, String attribute_name){
         this.is_schema = true;
-        this.parent_type = parent_type;
         this.query = schema_query;
         this.attribute_name = attribute_name;
         this.remove_schema_locals();
@@ -128,10 +123,6 @@ public class RuleNode extends Node{
 
     public boolean is_schema_ref(){
         return this.is_schema;
-    }
-
-    public String get_parent_type(){
-        return this.parent_type;
     }
 
     public String get_query_stmt(){
