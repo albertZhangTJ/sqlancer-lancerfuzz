@@ -89,7 +89,7 @@ public class Node {
     }
 
     public int get_min_depth(){
-        if (this.min_depth!=-1){
+        if (this.min_depth!=-1 && this.depth_visited){
             return this.min_depth;
         }
         // cycles found
@@ -104,12 +104,13 @@ public class Node {
         Collections.sort(child_depths);
         //terminal node
         if (child_depths.size()==0){
+            this.min_depth = 1;
             return 1;
         }
         if (child_depths.get(0).intValue()==Integer.MAX_VALUE){
             Utils.panic("Node::get_min_depth : Cycle found on minimal expansion path, no valid finite expansion possible for Node "+this.toString());
         }
-        this.min_depth = child_depths.get(0);
+        this.min_depth = child_depths.get(0)+1;
         return this.min_depth;
     }
 }

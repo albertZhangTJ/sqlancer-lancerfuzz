@@ -30,7 +30,10 @@ public class TemplateRenderer {
         try {
             for (String filename : this.template_files){
                 // The template files are expected to come within the jar file instead of being provided by the user
-                InputStream in = getClass().getResourceAsStream(filename);
+                InputStream in = getClass().getResourceAsStream("/"+filename);
+                if (in==null){
+                    Utils.panic("TemplateRenderer::initialize : cannot get input stream for template "+filename);
+                }
                 String file_content = new String(in.readAllBytes(), StandardCharsets.UTF_8);
                 String template_name = file_content.substring(2, file_content.indexOf('\n')).strip();
                 this.templates.put(template_name, file_content);
@@ -135,7 +138,13 @@ public class TemplateRenderer {
             return template;
         }
         if (node instanceof ActionNode){
-            return ((ActionNode)node).get_src();
+            String template = this.templates.get("ACTION_NODE");
+            if (template==null){
+                Utils.panic("TemplateRenderer::render : No template found for action nodes");
+            }
+            template = replace_tag(template, "name", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
+            template = replace_tag(template, "src", ((ActionNode)node).get_src());
+            return strip_tags(template);
         }
         if (node instanceof AlternationNode){
             String template = this.templates.get("ALTERNATION_NODE");
@@ -155,6 +164,7 @@ public class TemplateRenderer {
             // The rationale here is that there must exist at least one node whose min expansion depth is 
             for (Edge e : anode.get_outward_edges()){
                 if (e.get_dest().get_min_depth() == anode.get_min_depth()-1){
+                    System.out.println("Got to min child");
                     template = replace_tag(template, "call_min_child", gen_function_call(e.get_dest(), e));
                     break; //there might be multiple possible min-expansions, however we just need one
                 }
@@ -302,11 +312,11 @@ public class TemplateRenderer {
         }
         template = replace_tag(template, "graph_name", graph.get_name());
         for (DBMSOption opt : options){
-            String val = opt.get_type()+" "+opt.get_name();
+            String val ="   " + opt.get_type()+" "+opt.get_name();
             if (opt.get_default()!=null){
                 val = val + " = " + opt.get_default();
             }
-            val = val + ";";
+            val = val + ";\n";
             template = replace_tag(template, "DBMS_OPTIONS", val);
         }
         for (Stage stage : stages){

@@ -4,6 +4,7 @@
 //IE EACH OBJECT CAN ONLY GENERATE ONE TEST CASE
 //FOR GETTING MULTIPLE TEST CASES, NEW MULTIPLE INSTANCES OF THIS CLASS
 import java.util.*;
+import java.sql.*;
 @SuppressWarnings("unused")
 public class <graph_name/>Fuzzer {
     private SQLConnection con;

@@ -65,7 +65,7 @@ public class ConfigProcessor {
     public static void sanity_check(GrammarGraph graph, List<Stage> stages){
         for (Stage stage : stages){
             for (String rule_name : stage.get_rules()){
-                if (graph.contains_node_with_identifier(rule_name)){
+                if (!graph.contains_node_with_identifier(rule_name)){
                     Utils.panic("ConfigProcessor::sanity_check : rule "+rule_name+" not found in the AST");
                 }
             }

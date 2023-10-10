@@ -116,7 +116,7 @@ public class Processor {
         graph.check_imag_rules();
         graph.check_for_duplicate_identifier();
         graph.calc_depth();
-        graph.walk_print(); //for debugging
+        //graph.walk_print(); //for debugging
 
         JSONObject config_file = ConfigProcessor.read_json_file(options.config);
         List<Stage> stages = ConfigProcessor.get_stages(config_file, graph.get_defaut_rule()==null ? null : graph.get_defaut_rule().get_identifier());
@@ -124,10 +124,22 @@ public class Processor {
         ConfigProcessor.sanity_check(graph, stages);
 
         List<String> template_files = new ArrayList<>();
+        template_files.add("action_node.st");
+        template_files.add("alternation_node_sub_option.st");
+        template_files.add("alternation_node.st");
+        template_files.add("alternative_node.st");
+        template_files.add("charset_node.st");
         template_files.add("fuzzer.st");
+        template_files.add("lambda_node.st");
+        template_files.add("literal_node.st");
+        template_files.add("quantifier_node.st");
         template_files.add("schema_node.st");
-        template_files.add("stage.st");
         template_files.add("stage_call_rule.st");
+        template_files.add("stage.st");
+        template_files.add("unlexer_rule_node.st");
+        template_files.add("unparser_call_children.st");
+        template_files.add("unparser_rule_node.st");
+
 
         TemplateRenderer template = new TemplateRenderer(template_files);
 

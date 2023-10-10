@@ -14,5 +14,5 @@
         int r = random(0, indices.size()/2);
         int beginning = indices.get(r*2);
         int end = indices.get(r*2+1);
-        return (char)random(beginning, end);
+        return String.valueOf((char)random(beginning, end));
     }

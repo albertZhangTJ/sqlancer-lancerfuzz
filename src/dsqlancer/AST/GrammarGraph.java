@@ -71,9 +71,6 @@ public class GrammarGraph{
     }
 
     public String get_name(){
-        if (this.name.equals("")){
-            return null;
-        }
         return this.name;
     }
 
@@ -323,12 +320,6 @@ public class GrammarGraph{
     public void calc_depth(){
         for (Integer i: this.vertices.keySet()){
             this.vertices.get(i).get_min_depth();
-        }
-        if (this.default_rule!=null){
-            System.out.println("Minimal expansion depth from default rule: "+this.default_rule.get_min_depth());
-        }
-        else {
-            System.out.println("Minimal expansion depth not available, default_rule not set");
         }
     }
 

@@ -106,10 +106,14 @@ public class RuleNode extends Node{
         Pattern pq = Pattern.compile("String\\s{1,}query");
         Pattern pa = Pattern.compile("String\\s{1,}attribute_name");
         Pattern ps = Pattern.compile("boolean\\s{1,}is_schema");
+        List<String> keys_to_remove = new ArrayList<>();
         for (String key : key_set){
             if (pq.matcher(key.strip()).find() || ps.matcher(key.strip()).find() || pa.matcher(key.strip()).find()){
-                this.locals.remove(key);
+                keys_to_remove.add(key);
             }
+        }
+        for (String key : keys_to_remove){
+            this.locals.remove(key);
         }
     }
 
