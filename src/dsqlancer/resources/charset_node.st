@@ -1,6 +1,7 @@
 //CHARSET_NODE
 //MIN_DEPTH = 1
     public String <NAME/>(int depth){
+<ee/>
         List<Integer> indices = new ArrayList<>();
         <add_indices/>
         if (indices.size()==0){

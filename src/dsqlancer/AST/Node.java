@@ -84,6 +84,10 @@ public class Node {
         }
     }
 
+    public List<String> get_expected_errors(){
+        return Utils.copy_list(this.expected_errors);
+    }
+
     public int get_min_depth(){
         if (this.min_depth!=-1){
             return this.min_depth;

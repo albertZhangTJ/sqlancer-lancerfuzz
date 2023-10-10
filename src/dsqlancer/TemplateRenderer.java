@@ -121,6 +121,9 @@ public class TemplateRenderer {
             if (template==null){
                 Utils.panic("TemplateRenderer::render : No template found for schema nodes");
             }
+            for (String ee : node.get_expected_errors()){
+                template = replace_tag(template, "ee", "        this.expected_error_buffer.add(\""+ee+"\");\n");
+            }
             template = replace_tag(template, "rule_name", ((RuleNode)node).get_name());
             String query = ((RuleNode)node).get_query_stmt();
             while (query.contains("$parent_name$")){
@@ -138,6 +141,9 @@ public class TemplateRenderer {
             String template = this.templates.get("ALTERNATION_NODE");
             if (template==null){
                 Utils.panic("TemplateRenderer::render : No template found for alternation nodes");
+            }
+            for (String ee : node.get_expected_errors()){
+                template = replace_tag(template, "ee", "        this.expected_error_buffer.add(\""+ee+"\");\n");
             }
             template = replace_tag(template, "name", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
             template = replace_tag(template, "MIN_DEPTH", ""+node.get_min_depth());
@@ -175,6 +181,9 @@ public class TemplateRenderer {
             if (template==null){
                 Utils.panic("TemplateRenderer::render : No template found for alternative nodes");
             }
+            for (String ee : node.get_expected_errors()){
+                template = replace_tag(template, "ee", "        this.expected_error_buffer.add(\""+ee+"\");\n");
+            }
             template = replace_tag(template, "name", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
             for (Edge e : node.get_outward_edges()){
                 template = replace_tag(template, "call_children", "ans = ans + " + gen_function_call(e.get_dest(), e) + ";\n        ");
@@ -206,6 +215,9 @@ public class TemplateRenderer {
             if (template==null){
                 Utils.panic("TemplateRenderer::render : No template found for lambda nodes");
             }
+            for (String ee : node.get_expected_errors()){
+                template = replace_tag(template, "ee", "        this.expected_error_buffer.add(\""+ee+"\");\n");
+            }
             template = replace_tag(template, "name", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
             return strip_tags(template);
         }
@@ -213,6 +225,9 @@ public class TemplateRenderer {
             String template = this.templates.get("LITERAL_NODE");
             if (template==null){
                 Utils.panic("TemplateRenderer::render : No template found for literal nodes");
+            }
+            for (String ee : node.get_expected_errors()){
+                template = replace_tag(template, "ee", "        this.expected_error_buffer.add(\""+ee+"\");\n");
             }
             template = replace_tag(template, "NAME", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
             template = replace_tag(template, "SRC", ((LiteralNode)node).get_src());
@@ -223,6 +238,9 @@ public class TemplateRenderer {
             String template = this.templates.get("QUANTIFIER_NODE");
             if (template==null){
                 Utils.panic("TemplateRenderer::render : No template found for quantifier nodes");
+            }
+            for (String ee : node.get_expected_errors()){
+                template = replace_tag(template, "ee", "        this.expected_error_buffer.add(\""+ee+"\");\n");
             }
             template = replace_tag(template, "NAME", n.get_identifier()==null ? "Node"+n.get_id() : n.get_identifier());
             template = replace_tag(template, "MIN_DEPTH", ""+n.get_min_depth());
@@ -241,6 +259,9 @@ public class TemplateRenderer {
             if (template==null){
                 Utils.panic("TemplateRenderer::render : No template found for unlexer rule nodes");
             }
+            for (String ee : node.get_expected_errors()){
+                template = replace_tag(template, "ee", "        this.expected_error_buffer.add(\""+ee+"\");\n");
+            }
             template = replace_tag(template, "name", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
             for (Edge e : node.get_outward_edges()){
                 template = replace_tag(template, "call_children", "        ans = ans + " + gen_function_call(e.get_dest(), e) + ";\n        ");
@@ -252,6 +273,9 @@ public class TemplateRenderer {
             String template = this.templates.get("UNPARSER_RULE_NODE");
             if (template==null){
                 Utils.panic("TemplateRenderer::render : No template found for unparser rule nodes");
+            }
+            for (String ee : node.get_expected_errors()){
+                template = replace_tag(template, "ee", "        this.expected_error_buffer.add(\""+ee+"\");\n");
             }
             template = replace_tag(template, "name", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
             template = replace_tag(template, "MIN_DEPTH", ""+node.get_min_depth());
