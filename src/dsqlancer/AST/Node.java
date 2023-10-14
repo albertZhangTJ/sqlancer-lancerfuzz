@@ -104,6 +104,7 @@ public class Node {
         Collections.sort(child_depths);
         //terminal node
         if (child_depths.size()==0){
+            // System.out.println("Terminal Node found node "+this.id);
             this.min_depth = 1;
             return 1;
         }
@@ -111,6 +112,7 @@ public class Node {
             Utils.panic("Node::get_min_depth : Cycle found on minimal expansion path, no valid finite expansion possible for Node "+this.toString());
         }
         this.min_depth = child_depths.get(0)+1;
+        // System.out.println("Depth calculated for node "+this.id+" depth: "+this.min_depth);
         return this.min_depth;
     }
 }

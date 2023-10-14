@@ -288,9 +288,9 @@ public class GrammarGraph{
                         query = locals.get(key);
                         if (query!=null){
                             query = query.strip();
-                            if (query.length()>=2 && query.charAt(0)=='"' && query.charAt(query.length()-1)=='"'){
-                                query=query.substring(1, query.length()-1);
-                            }
+                            // if (query.length()>=2 && query.charAt(0)=='"' && query.charAt(query.length()-1)=='"'){
+                            //     query=query.substring(1, query.length()-1);
+                            // }
                         }
                     }
                     if (pa.matcher(key.strip()).find()){

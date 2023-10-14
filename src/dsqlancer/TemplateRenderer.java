@@ -164,7 +164,6 @@ public class TemplateRenderer {
             // The rationale here is that there must exist at least one node whose min expansion depth is 
             for (Edge e : anode.get_outward_edges()){
                 if (e.get_dest().get_min_depth() == anode.get_min_depth()-1){
-                    System.out.println("Got to min child");
                     template = replace_tag(template, "call_min_child", gen_function_call(e.get_dest(), e));
                     break; //there might be multiple possible min-expansions, however we just need one
                 }

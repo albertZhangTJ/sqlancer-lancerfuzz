@@ -7,14 +7,12 @@ public class QuantifierNode extends Node{
     private int index;
     private int min;
     private int max;
-    private int min_depth;
     
     public QuantifierNode(int rule_id, int index, int min, int max){
         this.rule_id = rule_id;
         this.index = index;
         this.min = min;
         this.max = max;
-        this.min_depth = -1;
     }
 
     public int get_rule_id(){
@@ -31,10 +29,6 @@ public class QuantifierNode extends Node{
 
     public int get_max(){
         return this.max;
-    }
-
-    public int get_min_depth(){
-        return this.min_depth;
     }
 
     // @Override

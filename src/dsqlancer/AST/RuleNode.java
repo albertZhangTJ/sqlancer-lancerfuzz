@@ -12,7 +12,6 @@ public class RuleNode extends Node{
     public static enum RuleNodeType {UNLEXER, UNPARSER};
     private String name;
     private RuleNodeType type;
-    private int min_depth;
 
 
     
@@ -64,9 +63,6 @@ public class RuleNode extends Node{
         return this.type;
     }
 
-    public int get_min_depth(){
-        return this.min_depth;
-    }
 
     public HashMap<String, String> get_labels(){
         return Utils.copy_map(this.labels);
