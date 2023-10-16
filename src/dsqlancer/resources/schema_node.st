@@ -22,7 +22,7 @@
             while (rs.next()){
                 values.add(rs.getString("<attribute_name/>"));
             }
-            ans = Randomly.fromList(values);
+            ans = random_from_list(values);
         }
         if (sub!=null){
             this.identifier_cache.put(sub, ans);

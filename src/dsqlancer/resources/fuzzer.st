@@ -74,6 +74,10 @@ public class <graph_name/>Fuzzer {
         return ((int)(Math.random()*(max-min)))+min;
     }
 
+    private <T> T random_from_list(List<T> l){
+        return l.get(random(0, l.size()));
+    }
+
     public void generate(){
         int count = -1;
 <STAGE/>

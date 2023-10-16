@@ -256,10 +256,9 @@ public class TemplateRenderer {
             template = replace_tag(template, "QUAN_MIN", ""+n.get_min());
             template = replace_tag(template, "QUAN_MAX", ""+n.get_max());
 
-            //Quantifier Nodes are only expected to have one child
-            Edge to_child = n.get_outward_edges().get(0);
-            Node child = to_child.get_dest(); 
-            template = replace_tag(template, "CHILD_NODE_REF", gen_function_call(child, to_child));
+            for (Edge e : n.get_outward_edges()){
+                template = replace_tag(template, "CHILD_NODE_REF", "            ans = ans + " + gen_function_call(e.get_dest(), e)+ ";\n");
+            }
 
             return strip_tags(template);
         }

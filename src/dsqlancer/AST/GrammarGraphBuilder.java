@@ -375,13 +375,13 @@ public class GrammarGraphBuilder {
                 build_expr(graph, rule, (FlexibleParserRuleContext)(node.children.get(0)), quant_id, indices, options);
             }
             else if (suf.equals("*")){
-                int quant_id = graph.add_node(new QuantifierNode(rule.get_id(), indices.get(1), 0, 65535)); //using 65535 instead of Integer.MAX_VALUE to prevent overflow
+                int quant_id = graph.add_node(new QuantifierNode(rule.get_id(), indices.get(1), 0, 8)); 
                 indices.set(1, indices.get(1)+1);
                 graph.add_edge(parent_id, quant_id, null);
-                build_expr(graph, rule, (FlexibleParserRuleContext)(node.children.get(0)), quant_id, indices, options); //using 65535 instead of Integer.MAX_VALUE to prevent overflow
+                build_expr(graph, rule, (FlexibleParserRuleContext)(node.children.get(0)), quant_id, indices, options); 
             }
             else if (suf.equals("+")){
-                int quant_id = graph.add_node(new QuantifierNode(rule.get_id(), indices.get(1), 1, 65535));
+                int quant_id = graph.add_node(new QuantifierNode(rule.get_id(), indices.get(1), 1, 8));
                 indices.set(1, indices.get(1)+1);
                 graph.add_edge(parent_id, quant_id, null);
                 build_expr(graph, rule, (FlexibleParserRuleContext)(node.children.get(0)), quant_id, indices, options);
