@@ -20,6 +20,9 @@ public class <graph_name/>Fuzzer {
     private List<HashMap<String, String>> identifier_cache_stack;
     private HashMap<String, String> identifier_cache;
 
+    private List<List<String>> used_identifier_stack;
+    private List<String> used_identifier; // When null, not within any quantifier nodes
+
     //A flag that can be inserted into the output to indicate an error has occured
     //Usually due to an identifier has yet to be initialized
     //This pattern is extremely unlikely to appear in a normal output
@@ -36,6 +39,8 @@ public class <graph_name/>Fuzzer {
         this.loop_threshold = loop_threshold;
         this.identifier_cache_stack = new ArrayList<>();
         this.identifier_cache = new HashMap<>();
+        this.used_identifier_stack = new ArrayList<>();
+        this.used_identifier = null;
     }
 
     public String get_next_statement(){
@@ -61,6 +66,20 @@ public class <graph_name/>Fuzzer {
         this.identifier_cache_stack.remove(this.identifier_cache_stack.size()-1);
     }
 
+    public void push_used_identifier(){
+        this.used_identifier_stack.add(this.used_identifier);
+        this.used_identifier = new ArrayList<>();
+    }
+
+    public void pop_used_identifier(){
+        if (this.used_identifier_stack.size()==0){
+            System.out.println("ERROR: used identifier stack underflow");
+            System.exit(1);
+        }
+        this.used_identifier = this.used_identifier_stack.get(this.used_identifier_stack.size()-1);
+        this.used_identifier_stack.remove(this.used_identifier_stack.size()-1);
+    }
+
     public List<String> get_test_case(){
         return this.test_case_buffer;
     }
@@ -71,7 +90,17 @@ public class <graph_name/>Fuzzer {
 
 
     private int random(int min, int max){
-        return ((int)(Math.random()*(max-min)))+min;
+        if (max-min==2){
+            return Math.random() > 0.5 ? min : min+1;
+        }
+        int i=min;
+        while (i<max){
+            if (Math.random()<0.9){
+                return i;
+            }
+            i = i + 1;
+        }
+        return max-1;
     }
 
     private <T> T random_from_list(List<T> l){

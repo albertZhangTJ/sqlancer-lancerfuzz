@@ -22,7 +22,19 @@
             while (rs.next()){
                 values.add(rs.getString("<attribute_name/>"));
             }
-            ans = random_from_list(values);
+            for (int i = 0; i < loop_threshold; i++){
+                ans = random_from_list(values);
+                if (this.used_identifier!=null && this.used_identifier.contains(ans)){
+                    if (i==loop_threshold-1){
+                        return ""; //gave up, usually because the number of repetitions is greater than the number available identifiers
+                    }
+                    continue;
+                }
+                else {
+                    break;
+                }
+            }
+            
         }
         if (sub!=null){
             this.identifier_cache.put(sub, ans);
