@@ -88,8 +88,11 @@ public class <graph_name/>Fuzzer {
         return this.expected_error_buffer;
     }
 
-
     private int random(int min, int max){
+        return (int)(Math.random()*(max-min))+min;
+    }
+
+    private int exp_decay_random(int min, int max){
         if (max-min==2){
             return Math.random() > 0.5 ? min : min+1;
         }
