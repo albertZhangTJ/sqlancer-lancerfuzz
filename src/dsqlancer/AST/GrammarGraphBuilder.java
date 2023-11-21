@@ -105,22 +105,24 @@ public class GrammarGraphBuilder {
         if (escaped=='u'){
             int hex_start_offset = -1;
             int hex_end_offset = -1;
+            int end_offset = -1;
             //u{....}
             if (s.charAt(offset)=='{'){
                 hex_start_offset = offset+1;
-                hex_end_offset = s.substring(hex_start_offset).indexOf('}');
+                hex_end_offset = s.substring(hex_start_offset).indexOf('}')+hex_start_offset;
                 if (hex_end_offset==-1){
                     Utils.panic("GrammarGraphBuilder::process_lexer_char : Missing right bracket for unicode value");
                 }
                 if (hex_end_offset==hex_start_offset){
                     Utils.panic("GrammarGraphBuilder::process_lexer_char : Missing code point for unicode value");
                 }
-                offset = hex_end_offset + 1;
+                end_offset = hex_end_offset + 1;
             }
             //uXXXX
             else {
                 hex_start_offset = offset;
                 hex_end_offset = hex_start_offset+4;
+                end_offset = hex_end_offset;
                 if (hex_end_offset>s.length()){
                     Utils.panic("GrammarGraphBuilder::process_lexer_char : Unbracketed unicode escape must be in the form of \\uXXXX");
                 }
@@ -133,7 +135,7 @@ public class GrammarGraphBuilder {
                     Utils.panic("GrammarGraphBuilder::process_lexer_char : invalid or unsupported unicode hex value "+codepoint);
                 }
                 ans.add(codepoint);
-                ans.add(offset); 
+                ans.add(end_offset); 
             }
             catch (Exception e){
                 Utils.panic("GrammarGraphBuilder::process_lexer_char : invalid hex value\n"+e.toString());
@@ -172,6 +174,7 @@ public class GrammarGraphBuilder {
         List<Integer> ranges = new ArrayList<>();
         int offset = 0;
         while (offset<s.length()){
+            
             boolean in_range = (s.charAt(offset)=='-' && offset!=0 && offset!=s.length()-1); // x-y format, covering all intermediate values
             if (in_range){
                 offset++;
