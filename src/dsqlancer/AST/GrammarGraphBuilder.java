@@ -439,11 +439,13 @@ public class GrammarGraphBuilder {
                 String s = ((LexerAtomContext)node).LEXER_CHAR_SET().toString();
                 s = s.substring(1, s.length()-1);
                 List<Integer> vals = lexer_charset_interval(s);
+                //System.out.println(s+" "+vals);
                 if (rule instanceof UnlexerRuleNode){
                     ((UnlexerRuleNode)rule).append_start_ranges(vals);
                 }
                 //TODO didn't sort as in grammarinator
                 int charset_id = CharSet.register_custom_charset(vals, false, graph.get_encoding());
+                //System.out.println(CharSet.get_encoding_characters(charset_id));
                 graph.add_edge(parent_id, graph.add_node(new CharsetNode(rule.get_id(), indices.get(2), charset_id)), null);
                 indices.set(2, indices.get(2)+1);
             }
