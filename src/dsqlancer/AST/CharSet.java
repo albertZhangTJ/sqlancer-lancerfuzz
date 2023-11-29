@@ -23,13 +23,9 @@ public class CharSet {
         ascii_letters.add((int)'a');
         ascii_letters.add(((int)'z')+1);
 
-        List<Integer> ascii_characters = new ArrayList<>();
-        ascii_characters.add(0);
-        ascii_characters.add(0x80);
+        List<Integer> ascii_characters = AstUtils.printable_ranges(0, 0x80);
 
-        List<Integer> unicode_characters = new ArrayList<>();
-        unicode_characters.add(0);
-        unicode_characters.add(65536);
+        List<Integer> unicode_characters = AstUtils.printable_ranges(0, 65536);
 
         char_sets = new ArrayList<>();
         char_sets.add(ascii_characters);

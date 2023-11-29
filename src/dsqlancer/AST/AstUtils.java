@@ -16,9 +16,13 @@ public class AstUtils {
     // with modifications
     public static boolean is_printable(char c){
         Character.UnicodeBlock block = Character.UnicodeBlock.of(c);
-        return (!Character.isISOControl(c)) &&
+        return c==0 || //Allows for generating null bytes
+                "\r\t\n".contains(""+c) || 
+                (
+                    (!Character.isISOControl(c)) &&
                     block != null &&
-                    block != Character.UnicodeBlock.SPECIALS;
+                    block != Character.UnicodeBlock.SPECIALS
+                );
     }
 
     // return the ranges of printable characters (represented as Integers)
