@@ -91,9 +91,6 @@ public class Processor {
         GrammarSpecContext lexer_root = null;
         GrammarSpecContext parser_root = null;
 
-        // TODO: one thing i don't really get here in the grammarinator implementation
-        // is that they are updating these in a loop?
-        // For multiple grammars this will only keep the last one (or two) right?
         for (String grammar: options.grammarRules){
             if (grammar.endsWith(".g4")){
                 List<String> work_list = new ArrayList<>();
