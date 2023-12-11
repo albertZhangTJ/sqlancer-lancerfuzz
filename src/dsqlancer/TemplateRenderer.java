@@ -310,9 +310,17 @@ public class TemplateRenderer {
         }
         template = replace_tag(template, "graph_name", graph.get_name());
         for (DBMSOption opt : options){
-            String val ="   " + opt.get_type()+" "+opt.get_name();
+            String val = "        this.dbms_options.put(\""+opt.get_name()+"\",";
             if (opt.get_default()!=null){
-                val = val + " = " + opt.get_default();
+                if (opt.get_default().startsWith("\"") && opt.get_default().endsWith("\"")){
+                    val = val + opt.get_default()+")";
+                }
+                else {
+                    val = val + "\"" + opt.get_default()+"\")";
+                }
+            }
+            else {
+                val = val + "null)";
             }
             val = val + ";\n";
             template = replace_tag(template, "DBMS_OPTIONS", val);

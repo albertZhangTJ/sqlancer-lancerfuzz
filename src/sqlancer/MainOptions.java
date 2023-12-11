@@ -16,6 +16,12 @@ public class MainOptions {
     @Parameter(names = { "--help", "-h" }, description = "Lists all supported options and commands", help = true)
     private boolean help; // NOPMD
 
+    @Parameter(names = { "--use-grammar", "-g" }, description = "Use grammar based fuzzers")
+    private boolean grammar = false; // NOPMD
+
+    @Parameter(names = { "--connection-string" }, description = "Define the format of the JDBC connection string")
+    private String connStr = "jdbc:($db-prefix$)://($host$)($port$)"; // NOPMD
+
     @Parameter(names = {
             "--num-threads" }, description = "How many threads should run concurrently to test separate databases")
     private int nrConcurrentThreads = 16; // NOPMD
@@ -146,6 +152,14 @@ public class MainOptions {
 
     @Parameter(names = "--canonicalize-sql-strings", description = "Should canonicalize query string (add ';' at the end", arity = 1)
     private boolean canonicalizeSqlString = true; // NOPMD
+
+    public boolean useGrammar(){
+        return this.grammar;
+    }
+
+    public String getConnectionString(){
+        return this.connStr;
+    }
 
     public int getMaxExpressionDepth() {
         return maxExpressionDepth;

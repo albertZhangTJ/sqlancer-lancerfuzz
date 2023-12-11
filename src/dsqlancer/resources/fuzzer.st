@@ -28,7 +28,7 @@ public class <graph_name/>Fuzzer {
     //This pattern is extremely unlikely to appear in a normal output
     public static final String ERROR_FLAG = "@#$%^&*!.,?()[]{}+-_="; 
 
-<DBMS_OPTIONS/>
+    private HashMap<String, String> dbms_options;
 
     public <graph_name/>Fuzzer(SQLConnection con, int fuzzing_depth, int loop_threshold){
         this.con = con;
@@ -41,6 +41,8 @@ public class <graph_name/>Fuzzer {
         this.identifier_cache = new HashMap<>();
         this.used_identifier_stack = new ArrayList<>();
         this.used_identifier = null;
+        this.dbms_options = new HashMap<>();
+<DBMS_OPTIONS/>
     }
 
     public String get_next_statement(){
@@ -50,6 +52,10 @@ public class <graph_name/>Fuzzer {
             return res;
         }
         return "";
+    }
+
+    public String get_dbms_option(String key){
+        return this.dbms_options.get(key);
     }
 
     public void push_identifier_cache(){

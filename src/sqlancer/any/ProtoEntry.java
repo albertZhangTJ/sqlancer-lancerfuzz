@@ -2,10 +2,12 @@ package sqlancer.any;
 
 import java.sql.*;
 import java.util.*;
+import sqlancer.SQLConnection;
 // This is a prototype tester for DSQLancer generated fuzzers
 
 import sqlancer.MainOptions;
 
+@SuppressWarnings("unused")
 public class ProtoEntry {
     public static void log_failed(String test_case, String error){
         //TODO
@@ -30,9 +32,9 @@ public class ProtoEntry {
         //TODO: also allow searching from rendered fuzzer code for DBMS specific options
 
         String url = null; //TODO automatically generate url with correct format
-        Connection con = null;
+        SQLConnection con = null;
         try{
-            con = DriverManager.getConnection(url, username, password);
+            con = new SQLConnection(DriverManager.getConnection(url, username, password));
         }
         catch (SQLException e){
             System.out.println("Error when establishing connection to the DBMS");
@@ -47,15 +49,22 @@ public class ProtoEntry {
             List<String> test_case = fz.get_test_case();
             List<String> eerrs = fz.get_expected_errors();
             String executed = "";
+
+            
             try {
+                //generating database phase
                 for (String stmt : test_case){
                     executed = executed + stmt + "\n";
                     con.createStatement().execute(stmt);
                 }
+
+                //if all terminates successfully, log passed case if needed
                 if (log_each_select){
                     log_case(executed);
                 }
             }
+            //if an error is thrown, check if it is an expected error
+            //if not, log as a failed case
             catch (Exception e){
                 boolean is_expected = false;
                 String content = e.toString();
