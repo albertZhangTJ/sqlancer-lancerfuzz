@@ -26,9 +26,9 @@ public class <graph_name/>Fuzzer {
     //A flag that can be inserted into the output to indicate an error has occured
     //Usually due to an identifier has yet to be initialized
     //This pattern is extremely unlikely to appear in a normal output
-    public static final String ERROR_FLAG = "@#$%^&*!.,?()[]{}+-_="; 
+    public static final String ERROR_FLAG = "PbEMuNhfsedBcVpUrBb2ZkWzpQkCkM5jTOCnUCTrYE9LgUpR2nZU45UgGHb3OS9NOrAUnWgrfvwUfGGmE0wdagXkOjv6psM4U9QnMWu75iFkgR5icHxm6xHtlpvQTy1OscMVNISBbaFLsNmYqzcHlpovwFtLJOlx0t7paPhOyTXQWuFjoGBgiQhWENvt116uaXQK9P0YO8ZkIVYOUcb1GzDh9G5Arns5guX8cqdTbDJdzWfvCalMevPYVXB7bAtwH8ZcyCNfabjt1ot8Wpj6xuCsn6u9WFuYao9enmV2tevt2DCqGlKfzA4ZZGuFev9M"; 
 
-    private HashMap<String, String> dbms_options;
+    private static HashMap<String, String> dbms_options = new HashMap<>();
 
     public <graph_name/>Fuzzer(SQLConnection con, int fuzzing_depth, int loop_threshold){
         this.con = con;
@@ -41,7 +41,9 @@ public class <graph_name/>Fuzzer {
         this.identifier_cache = new HashMap<>();
         this.used_identifier_stack = new ArrayList<>();
         this.used_identifier = null;
-        this.dbms_options = new HashMap<>();
+    }
+
+    public static void init(){
 <DBMS_OPTIONS/>
     }
 

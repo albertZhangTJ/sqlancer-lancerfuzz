@@ -310,7 +310,7 @@ public class TemplateRenderer {
         }
         template = replace_tag(template, "graph_name", graph.get_name());
         for (DBMSOption opt : options){
-            String val = "        this.dbms_options.put(\""+opt.get_name()+"\",";
+            String val = "        dbms_options.put(\""+opt.get_name()+"\",";
             if (opt.get_default()!=null){
                 if (opt.get_default().startsWith("\"") && opt.get_default().endsWith("\"")){
                     val = val + opt.get_default()+")";
