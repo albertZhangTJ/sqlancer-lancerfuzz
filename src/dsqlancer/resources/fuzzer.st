@@ -1,10 +1,11 @@
+package sqlancer.any;
 //FUZZER
 //SINCE THIS CODE IS AUTOMATICALLY GENERATED, IT IS HARD TO DO SOME RESETTING
 //THUS EACH OBJECT OF THIS CLASS IS "ONE-TIME"
 //IE EACH OBJECT CAN ONLY GENERATE ONE TEST CASE
 //FOR GETTING MULTIPLE TEST CASES, NEW MULTIPLE INSTANCES OF THIS CLASS
 import java.util.*;
-import java.sql.*;
+import sqlancer.SQLConnection;
 @SuppressWarnings("unused")
 public class <graph_name/>Fuzzer {
     private SQLConnection con;
@@ -56,8 +57,8 @@ public class <graph_name/>Fuzzer {
         return "";
     }
 
-    public String get_dbms_option(String key){
-        return this.dbms_options.get(key);
+    public static String get_dbms_option(String key){
+        return dbms_options.get(key);
     }
 
     public void push_identifier_cache(){
