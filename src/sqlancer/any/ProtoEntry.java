@@ -1,8 +1,14 @@
 package sqlancer.any;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.Writer;
+import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.sql.*;
 import java.util.*;
-
+import java.nio.file.Paths;
+import java.nio.file.Files;
 
 import sqlancer.SQLConnection;
 // This is a prototype tester for DSQLancer generated fuzzers
@@ -11,16 +17,36 @@ import sqlancer.MainOptions;
 
 @SuppressWarnings("unused")
 public class ProtoEntry {
-    public static void log_failed(String test_case, String error){
-        //TODO
+    private static int failed_log_counter;
+    private static void log_failed(String test_case, String error) throws Exception{
+        String file_path = "log/database"+failed_log_counter+".log";
+        File f = new File(file_path);
+        f.createNewFile();
+        Writer w = new PrintWriter(new FileOutputStream(f));
+        w.write(error+"\n"+test_case);
+        failed_log_counter++;
+        w.close();
     }
 
-    public static void log_case(String test_case){
-        //TODO
+    private static int case_log_counter;
+    private static void log_case(String test_case) throws Exception{
+        String file_path = "log/database"+case_log_counter+"-passed.log";
+        File f = new File(file_path);
+        f.createNewFile();
+        Writer w = new PrintWriter(new FileOutputStream(f));
+        w.write(test_case);
+        case_log_counter++;
+        w.close();
+    }
+
+    private static void init_logger() throws Exception{
+        failed_log_counter = 0;
+        case_log_counter = 0;
+        Files.createDirectory(Paths.get("./log"));
     }
 
     //TODO
-    public static void test(MainOptions options){
+    public static void test(MainOptions options) throws Exception{
         //extract the needed info from MainOption class
         int depth_limit = options.getMaxExpressionDepth();
         boolean log_each_select = options.logEachSelect();
@@ -34,6 +60,7 @@ public class ProtoEntry {
         int max_test_cases = options.getMaxGeneratedDatabases()<1 ? Integer.MAX_VALUE : options.getMaxGeneratedDatabases();
 
         Fuzzer.init();
+        init_logger();
 
         //TODO: also allow searching from rendered fuzzer code for DBMS specific options
         // Priority: CLI parameter > DBMS options in renderred fuzzer > MainOptions default
