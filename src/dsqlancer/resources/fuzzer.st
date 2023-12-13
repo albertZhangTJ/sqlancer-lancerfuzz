@@ -1,5 +1,5 @@
-package sqlancer.any;
 //FUZZER
+package sqlancer.any;
 //SINCE THIS CODE IS AUTOMATICALLY GENERATED, IT IS HARD TO DO SOME RESETTING
 //THUS EACH OBJECT OF THIS CLASS IS "ONE-TIME"
 //IE EACH OBJECT CAN ONLY GENERATE ONE TEST CASE
@@ -31,6 +31,10 @@ public class <graph_name/>Fuzzer {
 
     private static HashMap<String, String> dbms_options = new HashMap<>();
 
+    private static int rep_a; //number of repetition for "?" type quantifier nodes, update at each rule
+    private static int rep_b; //number of repetition for "*" type quantifier nodes, update at each rule
+    private static int rep_c; //number of repetition for "+" type quantifier nodes, update at each rule
+
     public <graph_name/>Fuzzer(SQLConnection con, int fuzzing_depth, int loop_threshold){
         this.con = con;
         this.test_case_buffer = new ArrayList<>();
@@ -46,6 +50,9 @@ public class <graph_name/>Fuzzer {
 
     public static void init(){
 <DBMS_OPTIONS/>
+        rep_a = -1;
+        rep_b = -1;
+        rep_c = -1;
     }
 
     public String get_next_statement(){
