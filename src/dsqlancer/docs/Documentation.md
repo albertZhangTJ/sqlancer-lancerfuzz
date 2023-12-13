@@ -88,7 +88,7 @@ In this example `"t"` is to specify `table_name` as parent of `column_name`.
 
 Some parts of the AST might need to be generated more often than others. To specify this kind of weighted branching, the tester can use a reserved function in ANTLR Action `BRANCH_W(double)`. If a branch has no weight specified, the weight will be set to default value 1.
 
-At runtime, the possibility of going down a branch is $$\frac{current\_weight}{total\_weight}$$. Therefore, the larger the weight is, the higher the possibility that the branch is walked.
+At runtime, the possibility of going down a branch is $$\frac{current\_ weight}{total\_ weight}$$. Therefore, the larger the weight is, the higher the possibility that the branch is walked.
 
 Below is an example of specifying branch weights.
 
