@@ -161,10 +161,101 @@ TODO
 
 ## Configuration File
 
-TODO
+An extra configuration file is needed for DSQLancer to acquire knowledge about other non-syntactical information such as DBMS default port or order in which statements shall be executed.
+
+The file shall be in JSON format.
 
 ### DBMS-Specific Options
 
-TODO
+Six optional parameters, `host`, `port`, `db_prefix`, `username`, `password`, and `conn_str` can be set in this JSON file.
+The user can also provide any additional parameters for use with their own ANTLR Actions. 
+These parameters will be stored as key-value pairs of Strings and can be accessed by calling `get_dbms_option(String key)`.
+
+Alternatively, the user can also provide these parameters at fuzzer runtime as CLI parameters.
+
+- `host` should be a string to the location the target DBMS, default value is `"localhost"`
+- `port` should be string representation of an integer, indicating which port the target DBMS is running on
+- `db_prefix` is the prefix used in JDBC connection string (e.g. `"mysql"` in `"jdbc:mysql://localhost:3306"`)
+- `conn_str` is the JDBC connection string. The user can use tags in the format of `($param_name$)` (e.g. `($username$)` for `username`) in the connection string. These tags will be match-and-replaced with real parameter values at fuzzer runtime
+
+An example of the configuration file can be found below.
 
 ### Testing Stages
+
+SQL statements cannot be generated in random orders (e.g. you have to create a table before inserting into it).
+The tester will have to specify the order in which different rules are fuzzed.
+
+This information shall be specified as a JSON array.
+Each entry in the array shall contain the following attributes.
+
+- `name` is the name of the stage. This is simply for bookkeeping purposes and can be set to anything at the tester's will
+- `rules` is a JSON array of strings containing the name of rules to be generated in this stage. Each of these rule names must be defined as a parser rule in the grammar file provided to DSQLancer
+- `min` is an integer representing the minimum number of statements need to be generated in this stage 
+- `max` is an integer representing the maximum number of statements need to be generated in this stage 
+
+Below is an example of configuration file.
+
+<pre><code>
+{   
+    "options" : [
+        {
+            "name" : "host", 
+            "default" : "localhost"
+        },
+        {
+            "name" : "port", 
+            "default" : "3306"
+        },
+        {
+            "name" : "username", 
+            "default" : "Username"
+        },
+        {
+            "name" : "password", 
+            "default" : "Password"
+        },
+        {
+            "name" : "db_prefix", 
+            "default" : "mysql"
+        },
+        {
+            "name" : "conn_str", 
+            "default" : "jdbc:($db_prefix$)://($host$):($port$)"
+        }
+    ],
+    "stages" : [
+    	{
+            "name" : "create",
+            "rules" : [
+                "create_table_stmt"
+            ],
+            "min" : 1,
+            "max" : 3
+        },
+   		{
+            "name" : "insert",
+            "rules" : [
+                "insert_stmt"
+            ],
+            "min" : 5,
+            "max" : 7
+        },
+        {
+            "name" : "update",
+            "rules" : [
+                "update_stmt"
+            ],
+            "min" : 1,
+            "max" : 5
+        },
+        {
+            "name" : "select",
+            "rules" : [
+                "select_core"
+            ],
+            "min" : 1,
+            "max" : 5
+        }
+    ]
+}
+</code></pre>
