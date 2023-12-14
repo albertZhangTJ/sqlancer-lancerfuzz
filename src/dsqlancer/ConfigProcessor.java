@@ -55,7 +55,7 @@ public class ConfigProcessor {
         }
         for (int i=0; i<options.length(); i++){
             JSONObject option = options.getJSONObject(i);
-            ans.add(new DBMSOption(option.getString("name"), option.getString("type"), option.getString("default"), option.getBoolean("connection_parameter")));
+            ans.add(new DBMSOption(option.getString("name"), option.getString("default")));
         }
         return ans;
     }
