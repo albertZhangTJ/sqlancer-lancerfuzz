@@ -4,7 +4,9 @@ DSQLancer is a grammar-based fuzzing framework for SQLancer.
 It takes in a grammar file in ANTLR syntax, a configuration file and outputs a fuzzer than can be used by SQLancer to test DBMSs.
 
 This project is still work in progress at relatively early stage.
-Features described might still be un-implemented or buggy.  
+Features described might still be un-implemented or buggy.
+
+This work is inspired by [Grammarinator](https://github.com/renatahodovan/grammarinator) for AST generation and [StringTemplate](https://github.com/antlr/stringtemplate4) for fuzzer rendering.
 
 
 ## Quick Start
@@ -35,8 +37,8 @@ When the current schema reference belongs to some parent reference (e.g. a colum
 
 Below is an example of declaring table name references for SQLite.
 
-```
-table_name locals [boolean is_schema=true, 
+<pre><code>
+table_name locals <strong>[boolean is_schema=true, 
     String query="
         SELECT name, type as category, sql
         FROM sqlite_master 
@@ -48,8 +50,8 @@ table_name locals [boolean is_schema=true,
         SELECT name, 'view' as category, sql
         FROM sqlite_temp_master
         WHERE type='view' GROUP BY name;",
-    String attribute_name="name"] : K_STUB;
-```
+    String attribute_name="name"]</strong> : K_STUB;
+</code></pre>
 
 When such a schema reference rule is referred to in other rules, several parameters needs to be provided. `boolean is_new` must be specified to indicate whether the identifier shall be generated (e.g. table name for create table statement) or queried from target DBMS (e.g. table name for insert statement). Another two parameters `String sup` and `String sub` are used to specify the relationship between different identifiers within the same rule. `sup` is used to declare the current reference as parent of other references. `sub` is used to declare the current reference as child of other references. For all references to schema rules, these two parameters needs to be explicitly set to null when they are not used.
 
@@ -57,9 +59,78 @@ Do notice that multiple parent SQL identifiers can be mapped to a single grammar
 
 Below is an example of referring to schema reference rules.
 
-```
+<pre><code>
 insert_stmt : with_clause?  
-    ( K_INSERT { BRANCH_W(10); }
+    ( K_INSERT 
+                | K_REPLACE
+                | K_INSERT K_OR K_IGNORE ) 
+    K_INTO
+    table_name<strong>[boolean is_new=false, 
+            String sup=null, 
+            String sub="t"]</strong>
+    ( '(' 
+        column_name<strong>[boolean is_new=false, 
+                    String sup="t", 
+                    String sub=null] </strong>
+        ( ',' 
+        column_name<strong>[boolean is_new=false, 
+                    String sup="t", 
+                    String sub=null] </strong>
+        )* 
+    ')' )?
+    ( K_VALUES '(' expr ( ',' expr )* ')' 
+        ( ',' '(' expr ( ',' expr )* ')' )* 
+        | K_DEFAULT K_VALUES 
+    );
+</code></pre>
+
+In this example `"t"` is to specify `table_name` as parent of `column_name`. 
+
+### Branch Weights
+
+Some parts of the AST might need to be generated more often than others. To specify this kind of weighted branching, the tester can use a reserved function in ANTLR Action `BRANCH_W(double)`. If a branch has no weight specified, the weight will be set to default value 1.
+
+At runtime, the possibility of going down a branch is $$\frac{current\_ weight}{total\_ weight}$$. Therefore, the larger the weight is, the higher the possibility that the branch is walked.
+
+Below is an example of specifying branch weights.
+
+<pre><code>
+insert_stmt : with_clause?  
+    ( K_INSERT <strong>{ BRANCH_W(10); }</strong>
+                | K_REPLACE <strong>{ BRANCH_W(0.5); }</strong>
+                | K_INSERT K_OR K_IGNORE ) 
+    K_INTO
+    table_name[boolean is_new=false, 
+            String sup=null, 
+            String sub="t"]
+    ( '(' 
+        column_name[boolean is_new=false, 
+                    String sup="t", 
+                    String sub=null] 
+        ( ',' 
+        column_name[boolean is_new=false, 
+                    String sup="t", 
+                    String sub=null] 
+        )* 
+    ')' )?
+    ( K_VALUES '(' expr ( ',' expr )* ')' 
+        ( ',' '(' expr ( ',' expr )* ')' )* 
+        | K_DEFAULT K_VALUES 
+    );
+</code></pre>
+
+### Expected Errors
+
+Despite our effort to reduce invalid test cases and improve the semantic validity of generated statements, DSQLancer is far from semantically secure. 
+
+In order to separate error messages that are known to be triggered by invalid test cases from error messages that potentially indicate bugs, the tester needs to specify a list of error messages fragments that are known to be triggered by invalid test cases. Any error messages that contains fragments in this list will be ignored.
+
+Below is an example of specifying expected error.
+
+<pre><code>
+insert_stmt : with_clause?  
+    <strong>{ E_ERR("Unique constraint violation"); }</strong>
+    ( K_INSERT 
                 | K_REPLACE
                 | K_INSERT K_OR K_IGNORE ) 
     K_INTO
@@ -80,46 +151,12 @@ insert_stmt : with_clause?
         ( ',' '(' expr ( ',' expr )* ')' )* 
         | K_DEFAULT K_VALUES 
     );
-```
+</code></pre>
 
-In this example `"t"` is to specify `table_name` as parent of `column_name`. 
-
-### Branch Weights
-
-Some parts of the AST might need to be generated more often than others. To specify this kind of weighted branching, the tester can use a reserved function in ANTLR Action `BRANCH_W(double)`. If a branch has no weight specified, the weight will be set to default value 1.
-
-At runtime, the possibility of going down a branch is $$\frac{current\_ weight}{total\_ weight}$$. Therefore, the larger the weight is, the higher the possibility that the branch is walked.
-
-Below is an example of specifying branch weights.
-
-```
-insert_stmt : with_clause?  
-    ( K_INSERT { BRANCH_W(10); }
-                | K_REPLACE { BRANCH_W(0.5); }
-                | K_INSERT K_OR K_IGNORE ) 
-    K_INTO
-    table_name[boolean is_new=false, 
-            String sup=null, 
-            String sub="t"]
-    ( '(' 
-        column_name[boolean is_new=false, 
-                    String sup="t", 
-                    String sub=null] 
-        ( ',' 
-        column_name[boolean is_new=false, 
-                    String sup="t", 
-                    String sub=null] 
-        )* 
-    ')' )?
-    ( K_VALUES '(' expr ( ',' expr )* ')' 
-        ( ',' '(' expr ( ',' expr )* ')' )* 
-        | K_DEFAULT K_VALUES 
-    );
-```
-
-### Expected Errors
+### Quantifier Nodes
 
 TODO
+
 
 
 ## Configuration File
