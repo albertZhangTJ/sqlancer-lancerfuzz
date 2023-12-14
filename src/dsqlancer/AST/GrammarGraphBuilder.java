@@ -378,13 +378,13 @@ public class GrammarGraphBuilder {
                 build_expr(graph, rule, (FlexibleParserRuleContext)(node.children.get(0)), quant_id, indices, options);
             }
             else if (suf.equals("*")){
-                int quant_id = graph.add_node(new QuantifierNode(rule.get_id(), indices.get(1), 0, 8)); 
+                int quant_id = graph.add_node(new QuantifierNode(rule.get_id(), indices.get(1), 0, QuantifierNode.DEFAULT_MAX_REP)); 
                 indices.set(1, indices.get(1)+1);
                 graph.add_edge(parent_id, quant_id, null);
                 build_expr(graph, rule, (FlexibleParserRuleContext)(node.children.get(0)), quant_id, indices, options); 
             }
             else if (suf.equals("+")){
-                int quant_id = graph.add_node(new QuantifierNode(rule.get_id(), indices.get(1), 1, 8));
+                int quant_id = graph.add_node(new QuantifierNode(rule.get_id(), indices.get(1), 1, QuantifierNode.DEFAULT_MAX_REP));
                 indices.set(1, indices.get(1)+1);
                 graph.add_edge(parent_id, quant_id, null);
                 build_expr(graph, rule, (FlexibleParserRuleContext)(node.children.get(0)), quant_id, indices, options);
@@ -649,6 +649,7 @@ public class GrammarGraphBuilder {
         }
         graph.process_expected_errors();
         graph.process_weights();
+        graph.process_repetitions();
         // Ignored the options for the graph, not entirely sure why grammar graph need info on options
         // Will come back to implement if later found needed
         // TODO

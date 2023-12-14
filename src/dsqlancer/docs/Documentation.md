@@ -11,7 +11,7 @@ This work is inspired by [Grammarinator](https://github.com/renatahodovan/gramma
 
 ## Quick Start
 
-TODO
+_TODO_
 
 
 
@@ -155,7 +155,36 @@ insert_stmt : with_clause?
 
 ### Quantifier Nodes
 
-TODO
+Quantifier nodes are nodes that handles multiplications. 
+For example a number can be defined as multiple digits with the help of quantifier nodes.
+
+#### A more precise definition of repetitions
+
+In ANTLR, granularity of repetition definition is pretty coarse (only allows 3 options, `?` for 0 or 1, `*` for 0 or more, `+` for one or more).
+Sometimes it is more desirable to have a finer-granularity.
+
+In DSQLancer, we allow for such fine-grained definition using a reserved function `RP_LIMIT(int min, int max);` that can be placed into ANTLR actions.
+
+Below is an example of the usage of this function which will output a list of 3 to 6 columns (note the first column is defined separately).
+
+<pre><code>
+column_name ( ',' column_name { RP_LIMIT(2, 5); } )*
+</code></pre>
+
+The minimum and maximum (both inclusive) must be within the limits specified by the EBNF suffix. 
+For example, the example below __WILL TRIGGER AN ERROR__ due to the lower limit 0 specified using `RP_LIMIT` is below the one specified by EBNF suffix (1 for `+`).
+
+<pre><code>
+column_name ( ',' column_name { RP_LIMIT(0, 3); } )+
+</code></pre>
+
+#### Repetition ID
+
+_TODO_
+
+#### Used Identifier List ID
+
+_TODO_
 
 
 

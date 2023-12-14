@@ -10,7 +10,10 @@ public class AstUtils {
     public static final String EERR_DECL = "E_ERR(";
     public static final int EERR_MIN_LENGTH = 10; // E_ERR("");
     public static final String WGHT_DECL = "BRANCH_W(";
-    public static final int WGHT_MIN_LENGTH = 13;  // BRANCH_W("");
+    public static final int WGHT_MIN_LENGTH = 11;  // BRANCH_W();
+    public static final String RPLM_DECL = "RP_LIMIT(";
+    public static final int RPLM_MIN_LENGTH = 11;  // RP_LIMIT();
+
 
     // Implementation acquired from https://stackoverflow.com/q/220547
     // with modifications
@@ -58,9 +61,9 @@ public class AstUtils {
     // This is not actually parsing but simply a string matching
     // The result list of strings start with the stripped src with all the declaration removed
     // then starting from index 1 the content of declared expected errors
-    public static List<String> get_decl_from_action(String src, boolean is_eerr){
-        int MIN_LENGTH = is_eerr ? EERR_MIN_LENGTH : WGHT_MIN_LENGTH;
-        String DECL = is_eerr ? EERR_DECL : WGHT_DECL;
+    public static List<String> get_decl_from_action(String src, boolean is_eerr, boolean is_wght){
+        int MIN_LENGTH = is_eerr ? EERR_MIN_LENGTH :  is_wght ? WGHT_MIN_LENGTH : RPLM_MIN_LENGTH;
+        String DECL = is_eerr ? EERR_DECL : is_wght ? WGHT_DECL : RPLM_DECL;
         List<String> ans = new ArrayList<>();
         int start_index = 0;
         // An empty expected error declaration E_ERR(""); is 10 chars long
@@ -117,10 +120,14 @@ public class AstUtils {
     }
 
     public static List<String> get_expected_errors(String src){
-        return get_decl_from_action(src, true);
+        return get_decl_from_action(src, true, false);
     }
 
     public static List<String> get_weight_decl(String src){
-        return get_decl_from_action(src, false);
+        return get_decl_from_action(src, false, true);
+    }
+
+    public static List<String> get_rep_limit_decl(String src){
+        return get_decl_from_action(src, false, false);
     }
 }
