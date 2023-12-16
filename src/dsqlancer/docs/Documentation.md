@@ -172,7 +172,7 @@ column_name ( ',' column_name { RP_LIMIT(2, 5); } )*
 </code></pre>
 
 The minimum and maximum (both inclusive) must be within the limits specified by the EBNF suffix. 
-For example, the example below __WILL TRIGGER AN ERROR__ due to the lower limit 0 specified using `RP_LIMIT` is below the one specified by EBNF suffix (1 for `+`).
+For example, the grammar snippet below __WILL TRIGGER AN ERROR__ due to the lower limit 0 specified using `RP_LIMIT` is below the one specified by EBNF suffix (1 for `+`).
 
 <pre><code>
 column_name ( ',' column_name { RP_LIMIT(0, 3); } )+
@@ -180,9 +180,52 @@ column_name ( ',' column_name { RP_LIMIT(0, 3); } )+
 
 #### Repetition ID
 
+While AST for parsing can be "stateless", that will not work out when it comes to fuzzing.
+A counter example is `INSERT INTO T0(C0, C1) VALUES (1)`, which is not valid due to different quantifier nodes generating different repetitions of sub-nodes.
+
+To handle this, DSQLancer needs to know which quantifier nodes needs to generate same number of repetitions (for the example above, the quantifier node responsible for generating list of columns must match with the quantifier node responsible for generating values).
+
+
 _TODO_
 
 #### Used Identifier List ID
+
+For many DBMSs, having a same identifier showing up twice at the same spot is not allowed. A simple example is `INSERT INTO t0(c0, c0) VALUES (1, 2);`, which will cause error in most cases due to `c0` appeared twice.
+
+To avoid producing such invalid test case, DSQLancer needs to know which parts of the grammar cannot contain duplicate identifiers.
+
+For specifying the locations in a grammar rule that cannot contain duplicates, the tester need to set a parameter `String iid="some_identifier_at_users_choice"`. These identifiers (`iid`s) are rule-wise. 
+
+An example is as below.
+
+<pre><code>
+insert_stmt : with_clause?  
+    ( K_INSERT { BRANCH_W(10); }
+                | K_REPLACE { BRANCH_W(0.5); }
+                | K_INSERT K_OR K_IGNORE ) 
+    K_INTO
+    table_name[boolean is_new=false, 
+            String sup=null, 
+            String sub="t", 
+            <strong>String iid="a"</strong>]
+    ( '(' 
+        column_name[boolean is_new=false, 
+                    String sup="t", 
+                    String sub=null, 
+                    <strong>String iid="a"</strong>] 
+        ( ',' 
+        column_name[boolean is_new=false, 
+                    String sup="t", 
+                    String sub=null, 
+                    <strong>String iid="a"</strong>] 
+        )* 
+    ')' )?
+    ( K_VALUES '(' expr ( ',' expr )* ')' 
+        ( ',' '(' expr ( ',' expr )* ')' )* 
+        | K_DEFAULT K_VALUES 
+    );
+</code></pre>
+
 
 _TODO_
 
