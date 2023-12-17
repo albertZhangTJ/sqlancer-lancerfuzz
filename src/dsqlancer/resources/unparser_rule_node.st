@@ -1,6 +1,6 @@
 //UNPARSER_RULE_NODE
 //MIN_DEPTH = <min_depth/>
-    public String <name/>(int depth){
+    public String <name/>(int depth) throws Exception{
 <ee/>
         //save previous identifier context
         this.push_identifier_cache();

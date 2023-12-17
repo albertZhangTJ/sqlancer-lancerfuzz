@@ -1,6 +1,6 @@
 //QUANTIFIER_NODE
 //MIN_DEPTH = <MIN_DEPTH/>
-    public String <NAME/>(int depth){
+    public String <NAME/>(int depth) throws Exception{
 <ee/>
         String ans = "";
         int count = -1;

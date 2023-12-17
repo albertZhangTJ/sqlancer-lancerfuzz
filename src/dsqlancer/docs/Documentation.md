@@ -65,17 +65,20 @@ insert_stmt : with_clause?
                 | K_REPLACE
                 | K_INSERT K_OR K_IGNORE ) 
     K_INTO
-    table_name<strong>[boolean is_new=false, 
+    table_name[<strong>boolean is_new=false, 
             String sup=null, 
-            String sub="t"]</strong>
+            String sub="t",</strong>
+            String iid=null]
     ( '(' 
-        column_name<strong>[boolean is_new=false, 
+        column_name[<strong>boolean is_new=false, 
                     String sup="t", 
-                    String sub=null] </strong>
+                    String sub=null,</strong>
+                    String iid="a"] 
         ( ',' 
-        column_name<strong>[boolean is_new=false, 
+        column_name[<strong>boolean is_new=false, 
                     String sup="t", 
-                    String sub=null] </strong>
+                    String sub=null,</strong>
+                    String iid="a"] 
         )* 
     ')' )?
     ( K_VALUES '(' expr ( ',' expr )* ')' 
@@ -85,6 +88,46 @@ insert_stmt : with_clause?
 </code></pre>
 
 In this example `"t"` is to specify `table_name` as parent of `column_name`. 
+
+
+### Used Identifier List ID
+
+For many DBMSs, having a same identifier showing up twice at the same spot is not allowed. A simple example is `INSERT INTO t0(c0, c0) VALUES (1, 2);`, which will cause error in most cases due to `c0` appeared twice.
+
+To avoid producing such invalid test case, DSQLancer needs to know which parts of the grammar cannot contain duplicate identifiers.
+
+For specifying the locations in a grammar rule that cannot contain duplicates, the tester need to set a parameter `String iid="some_identifier_at_users_choice"`. These identifiers (`iid`s) are rule-wise and must be explicitly set to `null` when not used. 
+
+An example is as below.
+
+<pre><code>
+insert_stmt : with_clause?  
+    ( K_INSERT { BRANCH_W(10); }
+                | K_REPLACE { BRANCH_W(0.5); }
+                | K_INSERT K_OR K_IGNORE ) 
+    K_INTO
+    table_name[boolean is_new=false, 
+            String sup=null, 
+            String sub="t", 
+            <strong>String iid=null</strong>]
+    ( '(' 
+        column_name[boolean is_new=false, 
+                    String sup="t", 
+                    String sub=null, 
+                    <strong>String iid="a"</strong>] 
+        ( ',' 
+        column_name[boolean is_new=false, 
+                    String sup="t", 
+                    String sub=null, 
+                    <strong>String iid="a"</strong>] 
+        )* 
+    ')' )?
+    ( K_VALUES '(' expr ( ',' expr )* ')' 
+        ( ',' '(' expr ( ',' expr )* ')' )* 
+        | K_DEFAULT K_VALUES 
+    );
+</code></pre>
+
 
 ### Branch Weights
 
@@ -102,15 +145,18 @@ insert_stmt : with_clause?
     K_INTO
     table_name[boolean is_new=false, 
             String sup=null, 
-            String sub="t"]
+            String sub="t",
+            String iid=null]
     ( '(' 
         column_name[boolean is_new=false, 
                     String sup="t", 
-                    String sub=null] 
+                    String sub=null,
+                    String iid="a"] 
         ( ',' 
         column_name[boolean is_new=false, 
                     String sup="t", 
-                    String sub=null] 
+                    String sub=null,
+                    String iid="a"] 
         )* 
     ')' )?
     ( K_VALUES '(' expr ( ',' expr )* ')' 
@@ -136,15 +182,18 @@ insert_stmt : with_clause?
     K_INTO
     table_name[boolean is_new=false, 
             String sup=null, 
-            String sub="t"]
+            String sub="t",
+            String iid=null]
     ( '(' 
         column_name[boolean is_new=false, 
                     String sup="t", 
-                    String sub=null] 
+                    String sub=null,
+                    String iid="a"] 
         ( ',' 
         column_name[boolean is_new=false, 
                     String sup="t", 
-                    String sub=null] 
+                    String sub=null,
+                    String iid="a"] 
         )* 
     ')' )?
     ( K_VALUES '(' expr ( ',' expr )* ')' 
@@ -199,15 +248,18 @@ insert_stmt : with_clause?
     K_INTO
     table_name[boolean is_new=false, 
             String sup=null, 
-            String sub="t"]
+            String sub="t",
+            String iid=null]
     ( '(' 
         column_name[boolean is_new=false, 
                     String sup="t", 
-                    String sub=null] 
+                    String sub=null,
+                    String iid="a"] 
         ( ',' 
         column_name[boolean is_new=false, 
                     String sup="t", 
-                    String sub=null]
+                    String sub=null,
+                    String iid="a"]
             <strong>{ RP_LIMIT(2, 5);  RP_ID("id1"); }</strong> 
         )* 
     ')' )?
@@ -222,44 +274,6 @@ insert_stmt : with_clause?
 
 In the example above, both quantifier nodes with `RP_ID` set to `"id1"` has `RP_LIMIT` set to `(2, 5)` and EBNF suffix `*`.
 
-
-#### Used Identifier List ID
-
-For many DBMSs, having a same identifier showing up twice at the same spot is not allowed. A simple example is `INSERT INTO t0(c0, c0) VALUES (1, 2);`, which will cause error in most cases due to `c0` appeared twice.
-
-To avoid producing such invalid test case, DSQLancer needs to know which parts of the grammar cannot contain duplicate identifiers.
-
-For specifying the locations in a grammar rule that cannot contain duplicates, the tester need to set a parameter `String iid="some_identifier_at_users_choice"`. These identifiers (`iid`s) are rule-wise and must be explicitly set to `null` when not used. 
-
-An example is as below.
-
-<pre><code>
-insert_stmt : with_clause?  
-    ( K_INSERT { BRANCH_W(10); }
-                | K_REPLACE { BRANCH_W(0.5); }
-                | K_INSERT K_OR K_IGNORE ) 
-    K_INTO
-    table_name[boolean is_new=false, 
-            String sup=null, 
-            String sub="t", 
-            <strong>String iid="a"</strong>]
-    ( '(' 
-        column_name[boolean is_new=false, 
-                    String sup="t", 
-                    String sub=null, 
-                    <strong>String iid="a"</strong>] 
-        ( ',' 
-        column_name[boolean is_new=false, 
-                    String sup="t", 
-                    String sub=null, 
-                    <strong>String iid="a"</strong>] 
-        )* 
-    ')' )?
-    ( K_VALUES '(' expr ( ',' expr )* ')' 
-        ( ',' '(' expr ( ',' expr )* ')' )* 
-        | K_DEFAULT K_VALUES 
-    );
-</code></pre>
 
 
 

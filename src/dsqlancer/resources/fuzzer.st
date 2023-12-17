@@ -175,7 +175,7 @@ public class <graph_name/>Fuzzer {
         return l.get(random(0, l.size()));
     }
 
-    public void generate(){
+    public void generate() throws Exception{
         int count = -1;
 <STAGE/>
     }

@@ -1,6 +1,6 @@
 //ALTERNATION_NODE
 //MIN_DEPTH = <MIN_DEPTH/>
-    public String <name/>(int depth){
+    public String <name/>(int depth) throws Exception{
 <ee/>
         double total_weight = <TOTAL_WEIGHT/>;
         if (depth < <MIN_DEPTH/>){
