@@ -13,7 +13,7 @@
                 this.rpid_cache.put(rpid, Integer.valueOf(count));
         }
         else {
-                count = this.rpid.get(rpid).intValue();
+                count = this.rpid_cache.get(rpid).intValue();
         }
         for (int i=0; i<count; i++){
 <CHILD_NODE_REF/>
