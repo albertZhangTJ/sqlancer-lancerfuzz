@@ -8,6 +8,7 @@ public class QuantifierNode extends Node{
     private int index;
     private int min;
     private int max;
+    private String rp_id;
 
     // The max repetition when RP_LIMIT is not set
     // Not a hard upper limit (as in, upper limit set by RP_LIMIT can be higher than this)
@@ -18,6 +19,7 @@ public class QuantifierNode extends Node{
         this.index = index;
         this.min = min;
         this.max = max;
+        rp_id = null;
     }
 
     public int get_rule_id(){
@@ -40,10 +42,25 @@ public class QuantifierNode extends Node{
         if (min<this.min){
             Utils.panic("QuantifierNode::update_repetition : repetition lower limit set by RP_LIMIT is smaller than original one");
         }
+        if (this.max==1 && max>this.max){
+            Utils.panic("QuantifierNode::update_repetition : Original repetition upper limit is 1, new upper limit is "+max+", which is likely a violation of the EBNF suffix");
+
+        }
         this.min = min;
         this.max = max;
     }
 
+    public void set_rp_id(String rp_id){
+        if (this.rp_id!=null){
+            Utils.panic("QuantifierNode::set_rp_id : Redefinition of RP_ID, new RP_ID is \""+rp_id+"\", original one was \""+this.rp_id+"\"");
+        }
+        this.rp_id = rp_id;
+
+    }
+
+    public String get_rp_id(){
+        return this.rp_id;
+    }
     // @Override
     // public int get_min_depth(){
     //     return super.get_min_depth()-1;

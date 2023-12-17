@@ -21,6 +21,9 @@ public class <graph_name/>Fuzzer {
     private List<HashMap<String, String>> identifier_cache_stack;
     private HashMap<String, String> identifier_cache;
 
+    private List<HashMap<String, Integer>> rpid_stack;
+    private HashMap<String, Integer> rpid_cache;
+
     private List<List<String>> used_identifier_stack;
     private List<String> used_identifier; // When null, not within any quantifier nodes
 
@@ -30,10 +33,6 @@ public class <graph_name/>Fuzzer {
     public static final String ERROR_FLAG = "PbEMuNhfsedBcVpUrBb2ZkWzpQkCkM5jTOCnUCTrYE9LgUpR2nZU45UgGHb3OS9NOrAUnWgrfvwUfGGmE0wdagXkOjv6psM4U9QnMWu75iFkgR5icHxm6xHtlpvQTy1OscMVNISBbaFLsNmYqzcHlpovwFtLJOlx0t7paPhOyTXQWuFjoGBgiQhWENvt116uaXQK9P0YO8ZkIVYOUcb1GzDh9G5Arns5guX8cqdTbDJdzWfvCalMevPYVXB7bAtwH8ZcyCNfabjt1ot8Wpj6xuCsn6u9WFuYao9enmV2tevt2DCqGlKfzA4ZZGuFev9M"; 
 
     private static HashMap<String, String> dbms_options = new HashMap<>();
-
-    private static int rep_a; //number of repetition for "?" type quantifier nodes, update at each rule
-    private static int rep_b; //number of repetition for "*" type quantifier nodes, update at each rule
-    private static int rep_c; //number of repetition for "+" type quantifier nodes, update at each rule
 
     public <graph_name/>Fuzzer(SQLConnection con, int fuzzing_depth, int loop_threshold){
         this.con = con;
@@ -46,13 +45,12 @@ public class <graph_name/>Fuzzer {
         this.identifier_cache = new HashMap<>();
         this.used_identifier_stack = new ArrayList<>();
         this.used_identifier = null;
+        this.rpid_stack = new ArrayList<>();
+        this.rpid_cache = new HashMap<>();
     }
 
     public static void init(){
 <DBMS_OPTIONS/>
-        rep_a = -1;
-        rep_b = -1;
-        rep_c = -1;
     }
 
     public String get_next_statement(){
@@ -80,6 +78,20 @@ public class <graph_name/>Fuzzer {
         }
         this.identifier_cache = this.identifier_cache_stack.get(this.identifier_cache_stack.size()-1);
         this.identifier_cache_stack.remove(this.identifier_cache_stack.size()-1);
+    }
+
+    public void push_rpid(){
+        this.rpid_stack.add(this.rpid_cache);
+        this.rpid_cache = new HashMap<>();
+    }
+
+    public void pop_rpid(){
+        if (this.rpid_stack.size()==0){
+            System.out.println("ERROR: rpid stack underflow");
+            System.exit(1);
+        }
+        this.rpid_cache = this.rpid_stack.get(this.rpid_stack.size()-1);
+        this.rpid_stack.remove(this.rpid_stack.size()-1);
     }
 
     public void push_used_identifier(){

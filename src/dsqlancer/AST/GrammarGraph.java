@@ -268,7 +268,7 @@ public class GrammarGraph{
         }
     }
 
-    public void process_repetitions(){
+    public void process_repetition_limits(){
         for (Integer idx : this.vertices.keySet()){
             if (this.vertices.get(idx) instanceof ActionNode){
                 ActionNode an = (ActionNode)this.vertices.get(idx);
@@ -283,6 +283,26 @@ public class GrammarGraph{
                         Utils.panic("GrammarGraph::process_weights : expect parent node of the RP_LIMIT definition to be an QuantifierNode");
                     }
                     ((QuantifierNode)alt).update_repetition(Integer.valueOf(res.get(1).split(",")[0].strip()), Integer.valueOf(res.get(1).split(",")[1].strip()));
+                }
+            }
+        }
+    }
+
+    public void process_repetition_ids(){
+        for (Integer idx : this.vertices.keySet()){
+            if (this.vertices.get(idx) instanceof ActionNode){
+                ActionNode an = (ActionNode)this.vertices.get(idx);
+                List<String> res = AstUtils.get_rep_id_decl(an.get_src());
+                if (res==null || res.size()<1){
+                    continue;
+                }
+                an.update_src(res.get(0));
+                if (res.size()==2){
+                    Node alt = this.parent_of(an);
+                    if (!(alt instanceof QuantifierNode)){
+                        Utils.panic("GrammarGraph::process_weights : expect parent node of the RP_ID definition to be an QuantifierNode");
+                    }
+                    ((QuantifierNode)alt).set_rp_id(res.get(1));
                 }
             }
         }
