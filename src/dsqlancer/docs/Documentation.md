@@ -185,8 +185,43 @@ A counter example is `INSERT INTO T0(C0, C1) VALUES (1)`, which is not valid due
 
 To handle this, DSQLancer needs to know which quantifier nodes needs to generate same number of repetitions (for the example above, the quantifier node responsible for generating list of columns must match with the quantifier node responsible for generating values).
 
+This shall be specified using a reserved function `RP_ID(String ID);` in ANTLR Action. The ANTLR Action containing this reserved function must be a direct sub-node of a quantifier node otherwise error will be thrown. 
 
-_TODO_
+These IDs are rule-wise. All quantifier nodes that have the same `RP_ID` within the same rule must have the same `RP_LIMIT` and EBNF suffix. Violation of this might lead to undefined behavior including but not limited to invalid output or error.
+
+An example of defining `RP_ID` is as follows.
+
+<pre><code>
+insert_stmt : with_clause?  
+    ( K_INSERT 
+                | K_REPLACE
+                | K_INSERT K_OR K_IGNORE ) 
+    K_INTO
+    table_name[boolean is_new=false, 
+            String sup=null, 
+            String sub="t"]
+    ( '(' 
+        column_name[boolean is_new=false, 
+                    String sup="t", 
+                    String sub=null] 
+        ( ',' 
+        column_name[boolean is_new=false, 
+                    String sup="t", 
+                    String sub=null]
+            <strong>{ RP_LIMIT(2, 5);  RP_ID("id1"); }</strong> 
+        )* 
+    ')' )?
+    ( K_VALUES '(' expr 
+                (  ',' expr  
+                    <strong>{ RP_LIMIT(2, 5);  RP_ID("id1"); } </strong>
+                )* 
+                ')' 
+        | K_DEFAULT K_VALUES 
+    );
+</code></pre>
+
+In the example above, both quantifier nodes with `RP_ID` set to `"id1"` has `RP_LIMIT` set to `(2, 5)` and EBNF suffix `*`.
+
 
 #### Used Identifier List ID
 
