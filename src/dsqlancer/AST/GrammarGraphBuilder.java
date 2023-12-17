@@ -650,6 +650,7 @@ public class GrammarGraphBuilder {
         graph.process_expected_errors();
         graph.process_weights();
         graph.process_repetition_limits();
+        graph.process_repetition_ids();
         // Ignored the options for the graph, not entirely sure why grammar graph need info on options
         // Will come back to implement if later found needed
         // TODO
