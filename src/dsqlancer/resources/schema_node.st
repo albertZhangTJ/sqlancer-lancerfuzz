@@ -2,7 +2,7 @@
 //MIN_DEPTH = 1
 //IT IS THE TESTER'S RESPONSIBILITY TO ENSURE THE PROPER PARAMETERS ARE SPECIFIED IN THE GRAMMAR FILE
     private int <rule_name/>_count = 0;
-    private String <rule_name/>(int depth, boolean is_new, String sup, String sub, String iid){
+    private String <rule_name/>(int depth, boolean is_new, String sup, String sub, String iid) throws Exception{
 <ee/>
         String ans = "";
         if (is_new){
@@ -17,24 +17,20 @@
                     return ERROR_FLAG;
                 }
             }
-            ResultSet rs = con.createStatement().executeQuery(<query/>);
+            ResultSet rs = con.createStatement().executeQuery("<query/>");
             List<String> values = new ArrayList<>();
             while (rs.next()){
-                values.add(rs.getString("<attribute_name/>"));
-            }
-            for (int i = 0; i < loop_threshold; i++){
-                ans = random_from_list(values);
-                if (this.used_identifier!=null && this.used_identifier.contains(ans)){
-                    if (i==loop_threshold-1){
-                        return ""; //gave up, usually because the number of repetitions is greater than the number available identifiers
-                    }
-                    continue;
-                }
-                else {
-                    break;
+                if (iid==null || this.is_identifier_available(iid, rs.getString("<attribute_name/>") )){
+                    values.add(rs.getString("<attribute_name/>"));
                 }
             }
-            
+            if (values.size()==0){
+                throw new Exception("IgnoreMe: quantifier node multiplier cannot be satisfied");
+            }
+            ans = random_from_list(values);
+            if (iid!=null){
+                this.mark_identifier_used(iid, ans);
+            }
         }
         if (sub!=null){
             this.identifier_cache.put(sub, ans);

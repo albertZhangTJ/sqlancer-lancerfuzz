@@ -24,8 +24,9 @@ public class <graph_name/>Fuzzer {
     private List<HashMap<String, Integer>> rpid_stack;
     private HashMap<String, Integer> rpid_cache;
 
-    private List<List<String>> used_identifier_stack;
-    private List<String> used_identifier; // When null, not within any quantifier nodes
+    private List<HashMap<String, List<String>>> used_identifier_stack;
+    private HashMap<String, List<String>> used_identifier; 
+    private HashMap<String, List<String>> used_identifier_snapshot;
 
     //A flag that can be inserted into the output to indicate an error has occured
     //Usually due to an identifier has yet to be initialized
@@ -44,7 +45,7 @@ public class <graph_name/>Fuzzer {
         this.identifier_cache_stack = new ArrayList<>();
         this.identifier_cache = new HashMap<>();
         this.used_identifier_stack = new ArrayList<>();
-        this.used_identifier = null;
+        this.used_identifier = new HashMap<>();
         this.rpid_stack = new ArrayList<>();
         this.rpid_cache = new HashMap<>();
     }
@@ -66,12 +67,12 @@ public class <graph_name/>Fuzzer {
         return dbms_options.get(key);
     }
 
-    public void push_identifier_cache(){
+    private void push_identifier_cache(){
         this.identifier_cache_stack.add(this.identifier_cache);
         this.identifier_cache = new HashMap<>();
     }
 
-    public void pop_identifier_cache(){
+    private void pop_identifier_cache(){
         if (this.identifier_cache_stack.size()==0){
             System.out.println("ERROR: identifier stack underflow");
             System.exit(1);
@@ -80,12 +81,12 @@ public class <graph_name/>Fuzzer {
         this.identifier_cache_stack.remove(this.identifier_cache_stack.size()-1);
     }
 
-    public void push_rpid(){
+    private void push_rpid(){
         this.rpid_stack.add(this.rpid_cache);
         this.rpid_cache = new HashMap<>();
     }
 
-    public void pop_rpid(){
+    private void pop_rpid(){
         if (this.rpid_stack.size()==0){
             System.out.println("ERROR: rpid stack underflow");
             System.exit(1);
@@ -94,18 +95,54 @@ public class <graph_name/>Fuzzer {
         this.rpid_stack.remove(this.rpid_stack.size()-1);
     }
 
-    public void push_used_identifier(){
+    private void push_used_identifier(){
         this.used_identifier_stack.add(this.used_identifier);
-        this.used_identifier = new ArrayList<>();
+        this.used_identifier = new HashMap<>();
     }
 
-    public void pop_used_identifier(){
+    private void pop_used_identifier(){
         if (this.used_identifier_stack.size()==0){
             System.out.println("ERROR: used identifier stack underflow");
             System.exit(1);
         }
         this.used_identifier = this.used_identifier_stack.get(this.used_identifier_stack.size()-1);
         this.used_identifier_stack.remove(this.used_identifier_stack.size()-1);
+    }
+
+    private boolean is_identifier_available(String iid, String identifier){
+        if (this.used_identifier.get(iid)==null || !this.used_identifier.get(iid).contains(identifier)){
+            return true;
+        }
+        return false;
+    }
+
+    private void mark_identifier_used(String iid, String identifier){
+        if (this.used_identifier.get(iid)==null){
+            this.used_identifier.put(iid, new ArrayList<>());
+        }
+        this.used_identifier.get(iid).add(identifier);
+    }
+
+    private static <T> List<T> copy_list(List<T> ori){
+        if (ori==null){
+            return null;
+        }
+        List<T> res = new ArrayList<>();
+        for (T item: ori){
+            res.add(item);
+        }
+        return res;
+    }
+
+    private void snapshot_used_identifier(){
+        this.used_identifier_snapshot = new HashMap<>();
+        for (HashMap.Entry<String, List<String>> entry: this.used_identifier.entrySet()){
+            this.used_identifier_snapshot.put(entry.getKey(), copy_list(entry.getValue()));
+        }
+    }
+
+    private void rollback_used_identifier(){
+        this.used_identifier = this.used_identifier_snapshot;
     }
 
     public List<String> get_test_case(){

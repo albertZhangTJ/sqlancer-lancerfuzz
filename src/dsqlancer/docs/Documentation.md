@@ -229,7 +229,7 @@ For many DBMSs, having a same identifier showing up twice at the same spot is no
 
 To avoid producing such invalid test case, DSQLancer needs to know which parts of the grammar cannot contain duplicate identifiers.
 
-For specifying the locations in a grammar rule that cannot contain duplicates, the tester need to set a parameter `String iid="some_identifier_at_users_choice"`. These identifiers (`iid`s) are rule-wise. 
+For specifying the locations in a grammar rule that cannot contain duplicates, the tester need to set a parameter `String iid="some_identifier_at_users_choice"`. These identifiers (`iid`s) are rule-wise and must be explicitly set to `null` when not used. 
 
 An example is as below.
 
