@@ -227,9 +227,6 @@ insert_stmt : with_clause?
 </code></pre>
 
 
-_TODO_
-
-
 
 ## Configuration File
 

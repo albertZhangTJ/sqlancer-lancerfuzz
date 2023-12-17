@@ -91,6 +91,8 @@ public class TemplateRenderer {
     public static String gen_function_call(Node callee, Edge call){
         //for simplicity reasons, we are not doing a name matching for parameters
         //instead, we are just providing the parameters in the order specified
+        //UPDATE: This idea sounds to sounds worse when I'm started to toss more things here
+        //Prolly gotta add more logic here
         String name = "";
         //ImagRuleNodes are guaranteed to have non-null identifiers
         if (callee instanceof ImagRuleNode){
