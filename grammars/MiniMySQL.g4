@@ -1,56 +1,66 @@
-/*
-MySQL (Positive Technologies) grammar
-The MIT License (MIT).
-Copyright (c) 2015-2017, Ivan Kochurkin (kvanttt@gmail.com), Positive Technologies.
-Copyright (c) 2017, Ivan Khudyashev (IHudyashov@ptsecurity.com)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-*/
-
 parser grammar MySqlParser;
 
 createDatabase
-    : CREATE (DATABASE | SCHEMA) ifNotExists? dbName SC
+    : CREATE (DATABASE | SCHEMA) ifNotExists? dbName[boolean is_new=true, 
+            String sup=null, 
+            String sub=null,
+            String iid=null] SC
     ;
 
 createTable
-    : CREATE TEMPORARY? TABLE ifNotExists? tableName LB
-    	columnName INT (',' columnName INT { RP_LIMIT(1,3); })* RB SC
+    : CREATE TEMPORARY? TABLE ifNotExists? tableName[boolean is_new=true, 
+            String sup=null, 
+            String sub=null,
+            String iid=null] LB
+    	columnName[boolean is_new=true, 
+            String sup=null, 
+            String sub=null,
+            String iid="a"] INT (',' columnName[boolean is_new=true, 
+            String sup=null, 
+            String sub=null,
+            String iid="a"] INT { RP_LIMIT(1,3); })* RB SC
     ;
     
 insertStatement
-    : INSERT (LOW_PRIORITY | DELAYED | HIGH_PRIORITY)? IGNORE? INTO? tableName  (
-        ('(' columnName ( ',' columnName { RP_LIMIT(0, 2); RP_ID("a"); })* ')')? VALUES '(' INT_VAL (',' INT_VAL { RP_LIMIT(0, 2); RP_ID("a"); })*
+    : INSERT (LOW_PRIORITY | DELAYED | HIGH_PRIORITY)? IGNORE? INTO? tableName[boolean is_new=false, 
+            String sup=null, 
+            String sub="t",
+            String iid=null]  (
+        ('(' columnName[boolean is_new=false, 
+            String sup="t", 
+            String sub=null,
+            String iid="id1"] ( ',' columnName[boolean is_new=false, 
+            String sup="t", 
+            String sub=null,
+            String iid="id1"] { RP_LIMIT(0, 2); RP_ID("a"); })* ')')? VALUES '(' INT_VAL (',' INT_VAL { RP_LIMIT(0, 2); RP_ID("a"); })*
     ) SC
     ;
 
 updateStatement
-    : UPDATE priority = LOW_PRIORITY? IGNORE? tableName SET columnName '=' INT_VAL (
-        ',' columnName '=' INT_VAL
-    )* (WHERE columnName '=' INT_VAL)?
+    : UPDATE LOW_PRIORITY? IGNORE? tableName[boolean is_new=false, 
+            String sup=null, 
+            String sub="t",
+            String iid=null] SET columnName[boolean is_new=false, 
+            String sup="t", 
+            String sub=null,
+            String iid="id1"] '=' INT_VAL (
+        ',' columnName[boolean is_new=false, 
+            String sup="t", 
+            String sub=null,
+            String iid="id1"] '=' INT_VAL
+    )* (WHERE columnName[boolean is_new=false, 
+            String sup="t", 
+            String sub=null,
+            String iid=null] '=' INT_VAL)?
     ;
 
 INT_VAL : (DIGIT {RP_LIMIT(1,4); })+ ;
 
-dbName locals [boolean is_schema=true, String query="todo", String attribute_name="name"] : STUB {};
+dbName locals [boolean is_schema=true, String query="todo", String attribute_name="name"] : STUB ;
 tableName locals [boolean is_schema=true, String query="todo", String attribute_name="name"] : STUB;
 columnName locals [boolean is_schema=true, String query="todo", String attribute_name="name"] : STUB;
+
+
     
 ifNotExists : IF NOT EXISTS;
 
