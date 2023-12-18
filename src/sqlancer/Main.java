@@ -51,6 +51,7 @@ import sqlancer.tidb.TiDBProvider;
 import sqlancer.timescaledb.TimescaleDBProvider;
 import sqlancer.yugabyte.ycql.YCQLProvider;
 import sqlancer.yugabyte.ysql.YSQLProvider;
+import sqlancer.any.ProtoEntry;
 
 public final class Main {
 
@@ -567,6 +568,19 @@ public final class Main {
     }
 
     public static int executeMain(String... args) throws AssertionError {
+        //for the prototype of grammar based fuzzer
+        //we will try to hijack the control flow at the very beginning 
+        //this is just a temporary setting at the POC stage, will update this to full support at production stage
+        for (String arg : args){
+            if (arg.equals("-g") || arg.equals("--use-grammar")){
+                MainOptions options = new MainOptions();
+                Builder commandBuilder = JCommander.newBuilder().addObject(options);
+                JCommander jc = commandBuilder.programName("SQLancer").build();
+                jc.parse(args);
+                ProtoEntry.test(options);
+                return 0;
+            }
+        }
         List<DatabaseProvider<?, ?, ?>> providers = getDBMSProviders();
         Map<String, DBMSExecutorFactory<?, ?, ?>> nameToProvider = new HashMap<>();
         MainOptions options = new MainOptions();
