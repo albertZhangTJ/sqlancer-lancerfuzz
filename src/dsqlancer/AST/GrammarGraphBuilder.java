@@ -479,7 +479,7 @@ public class GrammarGraphBuilder {
                 graph.add_edge(parent_id, graph.add_node(new LiteralNode(src)), null);
             }
         }
-        else if (node.getChildCount()>0){
+        else if (node!=null && node.getChildCount()>0){
             for (ParseTree child : node.children){
                 if (child instanceof FlexibleParserRuleContext){
                     build_expr(graph, rule, ((FlexibleParserRuleContext)child), parent_id, indices, options);

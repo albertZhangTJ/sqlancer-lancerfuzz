@@ -5,6 +5,7 @@ package sqlancer.any;
 //IE EACH OBJECT CAN ONLY GENERATE ONE TEST CASE
 //FOR GETTING MULTIPLE TEST CASES, NEW MULTIPLE INSTANCES OF THIS CLASS
 import java.util.*;
+import java.sql.*;
 import sqlancer.SQLConnection;
 @SuppressWarnings("unused")
 public class <graph_name/>Fuzzer {

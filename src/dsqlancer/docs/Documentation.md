@@ -25,6 +25,12 @@ In order to improve semantic validity of the generated test cases, DSQLancer nee
 
 The extra semantic information shall be provided in [ANTLR Action](https://github.com/antlr/antlr4/blob/master/doc/actions.md). Details described below.
 
+### TL;DR
+
+Below are the extra information in the grammar file (compared to plain ANTLR grammar file) need by DSQLancer and things in normal ANTLR grammar file that we do not support.
+
+_TODO_
+
 
 ### Schema References
 

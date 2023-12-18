@@ -31,20 +31,26 @@ createDatabase
 
 createTable
     : CREATE TEMPORARY? TABLE ifNotExists? tableName LB
-    	columnName INT (',' columnName INT)* RB SC
+    	columnName INT (',' columnName INT { RP_LIMIT(1,3); })* RB SC
     ;
     
 insertStatement
     : INSERT (LOW_PRIORITY | DELAYED | HIGH_PRIORITY)? IGNORE? INTO? tableName  (
-        ('(' columns = fullColumnNameList? ')')? insertStatementValue 
+        ('(' columnName ( ',' columnName { RP_LIMIT(0, 2); RP_ID("a"); })* ')')? VALUES '(' INT_VAL (',' INT_VAL { RP_LIMIT(0, 2); RP_ID("a"); })*
     ) SC
     ;
 
 updateStatement
-    : UPDATE priority = LOW_PRIORITY? IGNORE? tableName SET updatedElement (
-        ',' updatedElement
-    )* (WHERE expression)?
+    : UPDATE priority = LOW_PRIORITY? IGNORE? tableName SET columnName '=' INT_VAL (
+        ',' columnName '=' INT_VAL
+    )* (WHERE columnName '=' INT_VAL)?
     ;
+
+INT_VAL : (DIGIT {RP_LIMIT(1,4); })+ ;
+
+dbName locals [boolean is_schema=true, String query="todo", String attribute_name="name"] : STUB {};
+tableName locals [boolean is_schema=true, String query="todo", String attribute_name="name"] : STUB;
+columnName locals [boolean is_schema=true, String query="todo", String attribute_name="name"] : STUB;
     
 ifNotExists : IF NOT EXISTS;
 
@@ -73,6 +79,7 @@ UPDATE : SPACE U P D A T E SPACE;
 VALUES : SPACE V A L U E S SPACE;
 VIEW : SPACE V I E W SPACE;
 WHERE : SPACE W H E R E SPACE;
+STUB : SPACE S T U B SPACE;
 
 
 LB : '(';

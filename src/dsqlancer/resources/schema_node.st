@@ -2,7 +2,7 @@
 //MIN_DEPTH = 1
 //IT IS THE TESTER'S RESPONSIBILITY TO ENSURE THE PROPER PARAMETERS ARE SPECIFIED IN THE GRAMMAR FILE
     private int <rule_name/>_count = 0;
-    private String <rule_name/>(int depth, boolean is_new, String sup, String sub, String iid) throws Exception{
+    private String <rule_name/>(int depth, String iid, boolean is_new, String sub, String sup) throws Exception{
 <ee/>
         String ans = "";
         if (is_new){
