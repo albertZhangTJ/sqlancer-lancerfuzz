@@ -317,9 +317,12 @@ public class GrammarGraph{
                 Pattern pq = Pattern.compile("String\\s{1,}query");
                 Pattern ps = Pattern.compile("boolean\\s{1,}is_schema");
                 Pattern pa = Pattern.compile("String\\s{1,}attribute_name");
+                Pattern pd = Pattern.compile("String\\s{1,}delimiter");
                 String query = null;
                 boolean is_schema = false;
                 String attribute_name = null;
+                String delimiter = ",";
+
                 for (String key : key_set){
                     if (ps.matcher(key.strip()).find()){
                         is_schema = true;
@@ -332,6 +335,9 @@ public class GrammarGraph{
                                 query=query.substring(1, query.length()-1);
                             }
                         }
+                        else {
+                            Utils.panic("GrammarGraph::handle_schema_locals : for schema nodes, query must not be null");
+                        }
                     }
                     if (pa.matcher(key.strip()).find()){
                         attribute_name = locals.get(key);
@@ -343,12 +349,24 @@ public class GrammarGraph{
                             attribute_name=attribute_name.substring(1, attribute_name.length()-1);
                         }
                     }
+                    if (pd.matcher(key.strip()).find()){
+                        delimiter = locals.get(key);
+                        if (delimiter!=null){
+                            delimiter = delimiter.strip();
+                            if (delimiter.length()>=2 && delimiter.charAt(0)=='"' && delimiter.charAt(delimiter.length()-1)=='"'){
+                                delimiter=delimiter.substring(1, delimiter.length()-1);
+                            }
+                        }
+                        else {
+                            Utils.oops("GrammarGraph::handle_schema_locals : Delimiter not set for schema node, using default \",\"");
+                        }
+                    }
                 }
                 if (is_schema){
                     if (query==null || query.length()==0){
                         Utils.panic("GrammarGraph::handle_schema_locals : For each schema reference rule, a query SQL statement must be provided");
                     }
-                    rn.set_schema_reference(query, attribute_name);
+                    rn.set_schema_reference(query, attribute_name, delimiter);
                 }
             }
         }

@@ -2,8 +2,6 @@
 //MIN_DEPTH = <min_depth/>
     public String <name/>(int depth) throws Exception{
 <ee/>
-        //save previous identifier context
-        this.push_identifier_cache();
         this.push_rpid();
         List<String> cache = new ArrayList<>();
         boolean is_completed = false;
@@ -28,7 +26,6 @@
             ans = ans + s;
         }
         //restore previous identifier context
-        this.pop_identifier_cache();
         this.pop_rpid();
         return ans;
     }

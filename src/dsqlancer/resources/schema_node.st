@@ -2,12 +2,26 @@
 //MIN_DEPTH = 1
 //IT IS THE TESTER'S RESPONSIBILITY TO ENSURE THE PROPER PARAMETERS ARE SPECIFIED IN THE GRAMMAR FILE
     private int <rule_name/>_count = 0;
-    private String <rule_name/>(int depth, String iid, boolean is_new, String sub, String sup) throws Exception{
+    private String <rule_name/>(int depth, boolean is_list, boolean is_new, String rp_id, int rp_limit_h, int rp_limit_l, String sub, String sup) throws Exception{
 <ee/>
         String ans = "";
+        int count=1;
+        if (is_list){
+            if (rp_id==null){
+                count = exp_decay_random(rp_limit_l, rp_limit_h);
+            }
+            else if (this.rpid_cache.get(rp_id)==null){
+                count = exp_decay_random(rp_limit_l, rp_limit_h);
+                this.rpid_cache.put(rp_id, Integer.valueOf(count));
+            }
+        }
         if (is_new){
-            <rule_name/>_count++;
-            ans = "<rule_name/>"+<rule_name/>_count;
+            for (int i=0; i<count; i++){
+                <rule_name/>_count++;
+                ans = "<rule_name/>"+<rule_name/>_count+delimiter;
+            }
+            //remove the last delimiter at the end
+            ans = ans.substring(0, ans.length()-delimiter.length())
         }
         else {
             String parent_name = "";
@@ -19,22 +33,24 @@
             }
             ResultSet rs = con.createStatement().executeQuery("<query/>");
             List<String> values = new ArrayList<>();
+
             while (rs.next()){
-                if (iid==null || this.is_identifier_available(iid, rs.getString("<attribute_name/>") )){
-                    values.add(rs.getString("<attribute_name/>"));
+                values.add(rs.getString("<attribute_name/>"));
+            }
+            for (int i=0; i<count; i++){
+                if (values.size()==0){
+                    throw new Exception("IgnoreMe: quantifier node multiplier cannot be satisfied");
+                }
+                String ide = random_from_list(values);
+                values.remove(ide);
+                ans = ans + ide + delimiter;
+                if (sub!=null){
+                    this.identifier_cache.put(sub, ide);
                 }
             }
-            if (values.size()==0){
-                throw new Exception("IgnoreMe: quantifier node multiplier cannot be satisfied");
-            }
-            ans = random_from_list(values);
-            if (iid!=null){
-                this.mark_identifier_used(iid, ans);
-            }
+            ans = ans.substring(0, ans.length()-delimiter.length());
         }
-        if (sub!=null){
-            this.identifier_cache.put(sub, ans);
-        }
+        
         return ans;
     }
 

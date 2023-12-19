@@ -23,6 +23,7 @@ public class RuleNode extends Node{
     private boolean is_schema; // whether the current rule is a schema reference
     private String query;
     private String attribute_name;
+    private String delimiter; //delimiter used when generating a list of identifiers instead of a single one
     
     public RuleNode(String name, String label, RuleNodeType type){
         super(name, label);
@@ -102,9 +103,14 @@ public class RuleNode extends Node{
         Pattern pq = Pattern.compile("String\\s{1,}query");
         Pattern pa = Pattern.compile("String\\s{1,}attribute_name");
         Pattern ps = Pattern.compile("boolean\\s{1,}is_schema");
+        Pattern pd = Pattern.compile("String\\s{1,}delimiter");
         List<String> keys_to_remove = new ArrayList<>();
         for (String key : key_set){
-            if (pq.matcher(key.strip()).find() || ps.matcher(key.strip()).find() || pa.matcher(key.strip()).find()){
+            if (pq.matcher(key.strip()).find() || 
+                ps.matcher(key.strip()).find() || 
+                pa.matcher(key.strip()).find() ||
+                pd.matcher(key.strip()).find() ){
+
                 keys_to_remove.add(key);
             }
         }
@@ -114,10 +120,11 @@ public class RuleNode extends Node{
     }
 
     
-    public void set_schema_reference(String schema_query, String attribute_name){
+    public void set_schema_reference(String schema_query, String attribute_name, String delimiter){
         this.is_schema = true;
         this.query = schema_query;
         this.attribute_name = attribute_name;
+        this.delimiter = delimiter;
         this.remove_schema_locals();
     }
 
@@ -133,6 +140,9 @@ public class RuleNode extends Node{
         return this.attribute_name;
     }
 
+    public String get_delimiter(){
+        return this.delimiter;
+    }
 
     public String toString(){
         String label="\n";

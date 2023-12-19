@@ -25,10 +25,6 @@ public class <graph_name/>Fuzzer {
     private List<HashMap<String, Integer>> rpid_stack;
     private HashMap<String, Integer> rpid_cache;
 
-    private List<HashMap<String, List<String>>> used_identifier_stack;
-    private HashMap<String, List<String>> used_identifier; 
-    private HashMap<String, List<String>> used_identifier_snapshot;
-
     //A flag that can be inserted into the output to indicate an error has occured
     //Usually due to an identifier has yet to be initialized
     //This pattern is extremely unlikely to appear in a normal output
@@ -96,34 +92,6 @@ public class <graph_name/>Fuzzer {
         this.rpid_stack.remove(this.rpid_stack.size()-1);
     }
 
-    private void push_used_identifier(){
-        this.used_identifier_stack.add(this.used_identifier);
-        this.used_identifier = new HashMap<>();
-    }
-
-    private void pop_used_identifier(){
-        if (this.used_identifier_stack.size()==0){
-            System.out.println("ERROR: used identifier stack underflow");
-            System.exit(1);
-        }
-        this.used_identifier = this.used_identifier_stack.get(this.used_identifier_stack.size()-1);
-        this.used_identifier_stack.remove(this.used_identifier_stack.size()-1);
-    }
-
-    private boolean is_identifier_available(String iid, String identifier){
-        if (this.used_identifier.get(iid)==null || !this.used_identifier.get(iid).contains(identifier)){
-            return true;
-        }
-        return false;
-    }
-
-    private void mark_identifier_used(String iid, String identifier){
-        if (this.used_identifier.get(iid)==null){
-            this.used_identifier.put(iid, new ArrayList<>());
-        }
-        this.used_identifier.get(iid).add(identifier);
-    }
-
     private static <T> List<T> copy_list(List<T> ori){
         if (ori==null){
             return null;
@@ -133,17 +101,6 @@ public class <graph_name/>Fuzzer {
             res.add(item);
         }
         return res;
-    }
-
-    private void snapshot_used_identifier(){
-        this.used_identifier_snapshot = new HashMap<>();
-        for (HashMap.Entry<String, List<String>> entry: this.used_identifier.entrySet()){
-            this.used_identifier_snapshot.put(entry.getKey(), copy_list(entry.getValue()));
-        }
-    }
-
-    private void rollback_used_identifier(){
-        this.used_identifier = this.used_identifier_snapshot;
     }
 
     public List<String> get_test_case(){
