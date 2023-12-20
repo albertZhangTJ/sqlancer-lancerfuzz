@@ -173,6 +173,9 @@ public class TemplateRenderer {
                     template = replace_tag(template, "call_min_child", gen_function_call(e.get_dest(), e));
                     break; //there might be multiple possible min-expansions, however we just need one
                 }
+                if (((e.get_dest()) instanceof AlternativeNode) && ((AlternativeNode)e.get_dest()).get_is_var()){
+                    template = replace_tag(template, "call_var_ref", gen_function_call(e.get_dest(), e));
+                }
             }
             List<Edge> branches = anode.get_outward_edges();
             List<Double> weights = anode.get_weights();
@@ -196,6 +199,7 @@ public class TemplateRenderer {
             if (template==null){
                 Utils.panic("TemplateRenderer::render : No template found for alternative nodes");
             }
+            AlternativeNode an = (AlternativeNode)node;
             for (String ee : node.get_expected_errors()){
                 template = replace_tag(template, "ee", "        this.expected_error_buffer.add(\""+ee+"\");\n");
             }
@@ -204,6 +208,9 @@ public class TemplateRenderer {
                 template = replace_tag(template, "call_children", "ans = ans + " + gen_function_call(e.get_dest(), e) + ";\n        ");
             }
             template = replace_tag(template, "MIN_DEPTH", ""+node.get_min_depth());
+            template = replace_tag(template, "IS_VAR", ""+an.get_is_var());
+            template = replace_tag(template, "IS_STATIC", ""+an.get_is_static());
+            template = replace_tag(template, "VAR_ID", an.get_var_id());
             return strip_tags(template);
         }
         if (node instanceof CharsetNode){

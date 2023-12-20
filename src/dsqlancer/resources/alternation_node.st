@@ -2,6 +2,7 @@
 //MIN_DEPTH = <MIN_DEPTH/>
     public String <name/>(int depth) throws Exception{
 <ee/>
+        <call_var_ref/>
         double total_weight = <TOTAL_WEIGHT/>;
         if (depth < <MIN_DEPTH/>){
             return <call_min_child/>;

@@ -3,6 +3,9 @@
                 if (depth-1 < <child_depth/>){
                     continue;
                 }
-                return <call_child/>;
+                String temp = <call_child/>;
+                if (temp!=null){
+                    return temp;
+                }
             }
             r = r - <WEIGHT/>;

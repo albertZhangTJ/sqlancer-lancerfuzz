@@ -92,6 +92,11 @@ public class Node {
         if (this.min_depth!=-1 && this.depth_visited){
             return this.min_depth;
         }
+        if (this instanceof AlternativeNode && ((AlternativeNode)this).get_is_var()){
+            this.depth_visited = true;
+            this.min_depth = 65535; //Some large enough number than won't cause overflow
+            return this.min_depth;
+        }
         // cycles found
         if (this.depth_visited){
             return Integer.MAX_VALUE;
