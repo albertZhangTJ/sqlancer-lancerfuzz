@@ -268,6 +268,37 @@ public class GrammarGraph{
         }
     }
 
+    public void process_var_refs(){
+        for (Integer idx : this.vertices.keySet()){
+            if (this.vertices.get(idx) instanceof ActionNode){
+                ActionNode an = (ActionNode)this.vertices.get(idx);
+                List<String> res = AstUtils.get_var_decl(an.get_src());
+                boolean is_static = false;
+                if (res==null || res.size()<1){
+                    res = AstUtils.get_stat_var_decl(an.get_src());
+                    if (res!=null && res.size()>1){
+                        is_static = true;
+                    }
+                    else{
+                        continue;
+                    }
+                }
+                an.update_src(res.get(0));
+                if (res.size()==2){
+                    Node alt = this.parent_of(an);
+                    Node alter = this.parent_of(alt);
+                    if (!(alt instanceof AlternativeNode) || !(alter instanceof AlternationNode)){
+                        Utils.panic("GrammarGraph::process_weights : expect parent node of the weight definition to be an AlternativeNode");
+                    }
+                    AlternativeNode p = (AlternativeNode)alt;
+                    AlternationNode gp = (AlternationNode)alter;
+                    p.set_var_ref(is_static, res.get(1));
+                    gp.set_var_index(p);
+                }
+            }
+        }
+    }
+
     public void process_repetition_limits(){
         for (Integer idx : this.vertices.keySet()){
             if (this.vertices.get(idx) instanceof ActionNode){

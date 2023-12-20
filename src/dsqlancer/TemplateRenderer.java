@@ -134,8 +134,12 @@ public class TemplateRenderer {
             while (query.contains("$parent_name$")){
                 query = query.substring(0, query.indexOf("$parent_name$")) +"\" + parent_name + \"" + query.substring(query.indexOf("$parent_name$")+"$parent_name$".length());
             }
+            String attr_name = ((RuleNode)node).get_attribute_name();
+            while (attr_name.contains("$parent_name$")){
+                attr_name = attr_name.substring(0, attr_name.indexOf("$parent_name$")) +"\" + parent_name + \"" + attr_name.substring(attr_name.indexOf("$parent_name$")+"$parent_name$".length());
+            }
             template = replace_tag(template, "query", query);
-            template = replace_tag(template, "attribute_name", ((RuleNode)node).get_attribute_name());
+            template = replace_tag(template, "attribute_name", attr_name);
             template = strip_tags(template);
             return template;
         }

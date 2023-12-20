@@ -577,7 +577,13 @@ public final class Main {
                 Builder commandBuilder = JCommander.newBuilder().addObject(options);
                 JCommander jc = commandBuilder.programName("SQLancer").build();
                 jc.parse(args);
-                ProtoEntry.test(options);
+                try{
+                    ProtoEntry.test(options);
+                }
+                catch (Exception e){
+                    e.printStackTrace();
+                    return 1;
+                }
                 return 0;
             }
         }

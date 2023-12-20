@@ -26,11 +26,17 @@ THE SOFTWARE.
 
 parser grammar MySqlParser;
 
+dropDatabase
+    : DROP DATABASE ifExists? ( {STATIC_VAR("db");} | dbName[boolean is_new=true, String sup=null, String sub=null, String iid=null]) SC
+    ;
+
+
 createDatabase
-    : CREATE (DATABASE | SCHEMA) ifNotExists? dbName[boolean is_new=true, 
-            String sup=null, 
-            String sub=null,
-            String iid=null] SC
+    : CREATE (DATABASE | SCHEMA) ifNotExists? ( {STATIC_VAR("db");} | dbName[boolean is_new=true, String sup=null, String sub=null, String iid=null]) SC
+    ;
+
+useDatabase
+    : USE ( {STATIC_VAR("db");} | dbName[boolean is_new=true, String sup=null, String sub=null, String iid=null]) SC
     ;
 
 createTable
@@ -82,18 +88,20 @@ updateStatement
 
 INT_VAL : (DIGIT {RP_LIMIT(1,4); })+ ;
 
-dbName locals [boolean is_schema=true, String query="todo", String attribute_name="name"] : STUB ;
-tableName locals [boolean is_schema=true, String query="todo", String attribute_name="name"] : STUB;
-columnName locals [boolean is_schema=true, String query="todo", String attribute_name="name"] : STUB;
+dbName locals [boolean is_schema=true, String query="SHOW DATABASES;", String attribute_name="Database"] : STUB ;
+tableName locals [boolean is_schema=true, String query="SHOW TABLES;", String attribute_name="Tables_in_$parent_name$"] : STUB;
+columnName locals [boolean is_schema=true, String query="SHOW COLUMNS FROM $parent_name$;", String attribute_name="Field"] : STUB;
 
 
     
 ifNotExists : IF NOT EXISTS;
+ifExists : IF EXISTS;
 
 AS : SPACE A S SPACE;
 CREATE : SPACE C R E A T E SPACE;
 DATABASE : SPACE D A T A B A S E SPACE;
 DELAYED : SPACE D E L A Y E D SPACE;
+DROP : SPACE D R O P SPACE;
 EXISTS : SPACE E X I S T S SPACE;
 FROM : SPACE F R O M SPACE;
 HIGH_PRIORITY : SPACE H I G H US P R I O R I T Y SPACE;
@@ -112,6 +120,7 @@ SET : SPACE S E T SPACE;
 TABLE : SPACE T A B L E SPACE;
 TEMPORARY : SPACE T E M P O R A R Y SPACE;
 UPDATE : SPACE U P D A T E SPACE;
+USE : SPACE U S E SPACE;
 VALUES : SPACE V A L U E S SPACE;
 VIEW : SPACE V I E W SPACE;
 WHERE : SPACE W H E R E SPACE;

@@ -14,7 +14,11 @@ public class AstUtils {
     public static final String RPLM_DECL = "RP_LIMIT(";
     public static final int RPLM_MIN_LENGTH = 11;  // RP_LIMIT();
     public static final String RPID_DECL = "RP_ID(";
-    public static final int RPID_MIN_LENGTH = 10;  // RP_LIMIT();
+    public static final int RPID_MIN_LENGTH = 10;  // RP_ID("");
+    public static final String STATIC_VAR_REF_DECL = "STATIC_VAR(";
+    public static final int STATIC_VAR_REF_MIN_LENGTH = 15;  // STATIC_VAR("");
+    public static final String VAR_REF_DECL = "VAR(";
+    public static final int VAR_REF_MIN_LENGTH = 8;  // VAR("");
 
 
     // Implementation acquired from https://stackoverflow.com/q/220547
@@ -63,9 +67,9 @@ public class AstUtils {
     // This is not actually parsing but simply a string matching
     // The result list of strings start with the stripped src with all the declaration removed
     // then starting from index 1 the content of declared expected errors
-    public static List<String> get_decl_from_action(String src, boolean is_eerr, boolean is_wght, boolean is_rplm, boolean is_rpid){
-        int MIN_LENGTH = is_eerr ? EERR_MIN_LENGTH :  is_wght ? WGHT_MIN_LENGTH :  is_rplm ? RPLM_MIN_LENGTH : RPID_MIN_LENGTH;
-        String DECL = is_eerr ? EERR_DECL : is_wght ? WGHT_DECL : is_rplm ? RPLM_DECL : RPID_DECL;
+    public static List<String> get_decl_from_action(String src, boolean is_eerr, boolean is_wght, boolean is_rplm, boolean is_rpid, boolean is_var, boolean is_stat_var){
+        int MIN_LENGTH = is_eerr ? EERR_MIN_LENGTH :  is_wght ? WGHT_MIN_LENGTH :  is_rplm ? RPLM_MIN_LENGTH : is_rpid ? RPID_MIN_LENGTH : is_var ? VAR_REF_MIN_LENGTH : STATIC_VAR_REF_MIN_LENGTH;
+        String DECL = is_eerr ? EERR_DECL : is_wght ? WGHT_DECL : is_rplm ? RPLM_DECL : is_rpid ? RPID_DECL : is_var ? VAR_REF_DECL : STATIC_VAR_REF_DECL;
         List<String> ans = new ArrayList<>();
         int start_index = 0;
         // An empty expected error declaration E_ERR(""); is 10 chars long
@@ -98,7 +102,7 @@ public class AstUtils {
                             Utils.panic("AstUtils::get_decl_from_action : Declaration is not ended with ;\nsrc:\n"+src);
                         }
                         content = content.strip();
-                        if (is_eerr || is_rpid){
+                        if (is_eerr || is_rpid || is_var || is_stat_var){
                             if (content.charAt(0)!='\"' || content.charAt(content.length()-1)!='\"'){
                                 Utils.panic("AstUtils::get_decl_from_action : Declaration content not wrapped with \"\"\nsrc:\n"+src);
                             }
@@ -128,18 +132,26 @@ public class AstUtils {
     }
 
     public static List<String> get_expected_errors(String src){
-        return get_decl_from_action(src, true, false, false, false);
+        return get_decl_from_action(src, true, false, false, false, false, false);
     }
 
     public static List<String> get_weight_decl(String src){
-        return get_decl_from_action(src, false, true, false, false);
+        return get_decl_from_action(src, false, true, false, false, false, false);
     }
 
     public static List<String> get_rep_limit_decl(String src){
-        return get_decl_from_action(src, false, false, true, false);
+        return get_decl_from_action(src, false, false, true, false, false, false);
     }
 
     public static List<String> get_rep_id_decl(String src){
-        return get_decl_from_action(src, false, false, false, true);
+        return get_decl_from_action(src, false, false, false, true, false, false);
+    }
+
+    public static List<String> get_var_decl(String src){
+        return get_decl_from_action(src, false, false, false, false, true, false);
+    }
+
+    public static List<String> get_stat_var_decl(String src){
+        return get_decl_from_action(src, false, false, false, false, false, true);
     }
 }
