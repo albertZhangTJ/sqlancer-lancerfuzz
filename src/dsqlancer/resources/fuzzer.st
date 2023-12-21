@@ -29,6 +29,10 @@ public class <graph_name/>Fuzzer {
     private HashMap<String, List<String>> used_identifier; 
     private HashMap<String, List<String>> used_identifier_snapshot;
 
+    private HashMap<String, String> static_var_ref;
+    private HashMap<String, String> var_ref;
+    private List<HashMap<String, String>> var_ref_stack;
+
     //A flag that can be inserted into the output to indicate an error has occured
     //Usually due to an identifier has yet to be initialized
     //This pattern is extremely unlikely to appear in a normal output
@@ -49,7 +53,12 @@ public class <graph_name/>Fuzzer {
         this.used_identifier = new HashMap<>();
         this.rpid_stack = new ArrayList<>();
         this.rpid_cache = new HashMap<>();
+        this.static_var_ref = new HashMap<>();
+        this.var_ref = new HashMap<>();
+        this.var_ref_stack = new ArrayList<>();
     }
+
+
 
     public static void init(){
 <DBMS_OPTIONS/>
@@ -67,6 +76,24 @@ public class <graph_name/>Fuzzer {
     public static String get_dbms_option(String key){
         return dbms_options.get(key);
     }
+
+
+
+    public void generate() throws Exception{
+        int count = -1;
+<STAGE/>
+    }
+
+    public List<String> get_test_case(){
+        return this.test_case_buffer;
+    }
+
+    public List<String> get_expected_errors(){
+        return this.expected_error_buffer;
+    }
+
+
+
 
     private void push_identifier_cache(){
         this.identifier_cache_stack.add(this.identifier_cache);
@@ -110,6 +137,23 @@ public class <graph_name/>Fuzzer {
         this.used_identifier_stack.remove(this.used_identifier_stack.size()-1);
     }
 
+    //it is the callee's responsibility to create new context for itself at entry
+    //and restore context for caller when exiting
+    private void push_context(){
+        this.push_identifier_cache();
+        this.push_rpid();
+        this.push_used_identifier();
+    }
+    private void pop_context(){
+        this.pop_used_identifier();
+        this.pop_rpid();
+        this.pop_identifier_cache();
+    }
+
+
+
+
+
     private boolean is_identifier_available(String iid, String identifier){
         if (this.used_identifier.get(iid)==null || !this.used_identifier.get(iid).contains(identifier)){
             return true;
@@ -124,17 +168,6 @@ public class <graph_name/>Fuzzer {
         this.used_identifier.get(iid).add(identifier);
     }
 
-    private static <T> List<T> copy_list(List<T> ori){
-        if (ori==null){
-            return null;
-        }
-        List<T> res = new ArrayList<>();
-        for (T item: ori){
-            res.add(item);
-        }
-        return res;
-    }
-
     private void snapshot_used_identifier(){
         this.used_identifier_snapshot = new HashMap<>();
         for (HashMap.Entry<String, List<String>> entry: this.used_identifier.entrySet()){
@@ -146,13 +179,23 @@ public class <graph_name/>Fuzzer {
         this.used_identifier = this.used_identifier_snapshot;
     }
 
-    public List<String> get_test_case(){
-        return this.test_case_buffer;
+    private String get_variable(String key){
+        return this.var_ref.get(key);
     }
 
-    public List<String> get_expected_errors(){
-        return this.expected_error_buffer;
+    private String get_static_variable(String key){
+        return this.static_var_ref.get(key);
     }
+
+    private void set_variable(String key, String value){
+        this.var_ref.put(key, value);
+    }
+
+    private void set_static_variable(String key, String value){
+        this.static_var_ref.put(key, value);
+    }
+
+    
 
     private int random(int min, int max){
         return (int)(Math.random()*(max-min))+min;
@@ -172,26 +215,22 @@ public class <graph_name/>Fuzzer {
         return max-1;
     }
 
+    private static <T> List<T> copy_list(List<T> ori){
+        if (ori==null){
+            return null;
+        }
+        List<T> res = new ArrayList<>();
+        for (T item: ori){
+            res.add(item);
+        }
+        return res;
+    }
+
     private <T> T random_from_list(List<T> l){
         return l.get(random(0, l.size()));
     }
 
-    public void generate() throws Exception{
-        int count = -1;
-<STAGE/>
-    }
-
-    /*
-    public void reset(){
-        this.test_case_buffer = new ArrayList<>();
-        this.test_case_cursor = 0;
-        this.expected_error_buffer = new ArrayList<>();
-    }
-    */
-
-    public void reset_identifier_cache(){
-        this.identifier_cache.clear();
-    }
+    
 
 //This works as a flag to indicate where to insert the method for regular rule nodes
 //The flag here will be removed during post-processing

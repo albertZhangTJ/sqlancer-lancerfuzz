@@ -272,12 +272,12 @@ public class GrammarGraph{
         for (Integer idx : this.vertices.keySet()){
             if (this.vertices.get(idx) instanceof ActionNode){
                 ActionNode an = (ActionNode)this.vertices.get(idx);
-                List<String> res = AstUtils.get_var_decl(an.get_src());
-                boolean is_static = false;
+                List<String> res = AstUtils.get_stat_var_decl(an.get_src());
+                boolean is_static = true;
                 if (res==null || res.size()<1){
-                    res = AstUtils.get_stat_var_decl(an.get_src());
+                    res = AstUtils.get_var_decl(an.get_src());
                     if (res!=null && res.size()>1){
-                        is_static = true;
+                        is_static = false;
                     }
                     else{
                         continue;

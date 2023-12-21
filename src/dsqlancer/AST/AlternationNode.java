@@ -12,6 +12,7 @@ public class AlternationNode extends Node {
     private List<Double> weights;
     private int var_index; //if one of the branches is a var_ref, this is the index to that branch, 0-indexed
 
+
     public AlternationNode(String rule_id, int index, List<String> conditions){
         this.rule_id = rule_id;
         this.index = index;

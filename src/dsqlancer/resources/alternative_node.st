@@ -5,10 +5,10 @@
         String ans=null;
         if (<IS_VAR/>){
             if (<IS_STATIC/>){
-                ans = this.get_static_variable(<VAR_ID/>);
+                ans = this.get_static_variable("<VAR_ID/>");
             }
             else {
-                ans = this.get_variable("<VAR_ID/>")
+                ans = this.get_variable("<VAR_ID/>");
             }
         }
         else {

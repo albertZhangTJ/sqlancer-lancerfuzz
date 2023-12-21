@@ -168,13 +168,19 @@ public class TemplateRenderer {
             // This is not optimal but since this is only a corner case (where the user provided an unreasonable depth limit value)
             // For simplicity reasons we will only do a rendering time designation
             // The rationale here is that there must exist at least one node whose min expansion depth is 
+            boolean has_var = false;
+            String var_id = "";
+            boolean is_static = false;
             for (Edge e : anode.get_outward_edges()){
                 if (e.get_dest().get_min_depth() == anode.get_min_depth()-1){
                     template = replace_tag(template, "call_min_child", gen_function_call(e.get_dest(), e));
                     break; //there might be multiple possible min-expansions, however we just need one
                 }
                 if (((e.get_dest()) instanceof AlternativeNode) && ((AlternativeNode)e.get_dest()).get_is_var()){
-                    template = replace_tag(template, "call_var_ref", gen_function_call(e.get_dest(), e));
+                    template = replace_tag(template, "call_var_ref", "        ans = "+gen_function_call(e.get_dest(), e)+";");
+                    has_var = true;
+                    var_id = ((AlternativeNode)e.get_dest()).get_var_id();
+                    is_static = ((AlternativeNode)e.get_dest()).get_is_static();
                 }
             }
             List<Edge> branches = anode.get_outward_edges();
@@ -190,6 +196,9 @@ public class TemplateRenderer {
                 s_template = replace_tag(s_template, "WEIGHT", ""+weights.get(i));
                 s_template = replace_tag(s_template, "child_depth", ""+branches.get(i).get_dest().get_min_depth());
                 s_template = replace_tag(s_template, "call_child", gen_function_call(branches.get(i).get_dest(), branches.get(i)));
+                s_template = replace_tag(s_template, "HAS_VAR", ""+has_var);
+                s_template = replace_tag(s_template, "VAR_ID", var_id);
+                s_template = replace_tag(s_template, "IS_STATIC", ""+is_static);
                 template = replace_tag(template, "sub_option", strip_tags(s_template));
             }
             return strip_tags(template);
