@@ -8,9 +8,6 @@ import java.util.LinkedHashMap;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-import com.google.protobuf.TextFormat.Parser;
-import com.kenai.jffi.Array;
-
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import dsqlancer.Options;

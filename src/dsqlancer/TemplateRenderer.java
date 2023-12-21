@@ -172,15 +172,24 @@ public class TemplateRenderer {
             String var_id = "";
             boolean is_static = false;
             for (Edge e : anode.get_outward_edges()){
-                if (e.get_dest().get_min_depth() == anode.get_min_depth()-1){
-                    template = replace_tag(template, "call_min_child", gen_function_call(e.get_dest(), e));
-                    break; //there might be multiple possible min-expansions, however we just need one
-                }
                 if (((e.get_dest()) instanceof AlternativeNode) && ((AlternativeNode)e.get_dest()).get_is_var()){
                     template = replace_tag(template, "call_var_ref", "        ans = "+gen_function_call(e.get_dest(), e)+";");
                     has_var = true;
                     var_id = ((AlternativeNode)e.get_dest()).get_var_id();
                     is_static = ((AlternativeNode)e.get_dest()).get_is_static();
+                }
+                
+            }
+            for (Edge e : anode.get_outward_edges()){
+                // for normal alternation node
+                if (!has_var && e.get_dest().get_min_depth() == anode.get_min_depth()-1){
+                    template = replace_tag(template, "call_min_child", gen_function_call(e.get_dest(), e));
+                    break; //there might be multiple possible min-expansions, however we just need one
+                }
+                // if one alternative node is a var_ref, just call one that isn't
+                if (has_var && !(((e.get_dest()) instanceof AlternativeNode) && ((AlternativeNode)e.get_dest()).get_is_var())){
+                    template = replace_tag(template, "call_min_child", gen_function_call(e.get_dest(), e));
+                    break; //there might be multiple possible min-expansions, however we just need one
                 }
             }
             List<Edge> branches = anode.get_outward_edges();

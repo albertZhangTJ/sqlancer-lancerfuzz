@@ -27,7 +27,7 @@ THE SOFTWARE.
 parser grammar MySqlParser;
 
 dropDatabase
-    : DROP DATABASE ifExists? ( {STATIC_VAR("db");} | dbName[boolean is_new=true, String sup=null, String sub=null, String iid=null]) SC
+    : DROP DATABASE ifExists ( {STATIC_VAR("db");} | dbName[boolean is_new=true, String sup=null, String sub=null, String iid=null]) SC
     ;
 
 
@@ -58,13 +58,13 @@ insertStatement
             String sup=null, 
             String sub="t",
             String iid=null]  (
-        ('(' columnName[boolean is_new=false, 
+       '(' columnName[boolean is_new=false, 
             String sup="t", 
             String sub=null,
             String iid="id1"] ( ',' columnName[boolean is_new=false, 
             String sup="t", 
             String sub=null,
-            String iid="id1"] { RP_LIMIT(0, 2); RP_ID("a"); })* ')')? VALUES '(' INT_VAL (',' INT_VAL { RP_LIMIT(0, 2); RP_ID("a"); })*
+            String iid="id1"] { RP_LIMIT(0, 2); RP_ID("a"); })* ')' VALUES '(' INT_VAL (',' INT_VAL { RP_LIMIT(0, 2); RP_ID("a"); })* ')'
     ) SC
     ;
 
@@ -89,7 +89,7 @@ updateStatement
 INT_VAL : (DIGIT {RP_LIMIT(1,4); })+ ;
 
 dbName locals [boolean is_schema=true, String query="SHOW DATABASES;", String attribute_name="Database"] : STUB ;
-tableName locals [boolean is_schema=true, String query="SHOW TABLES;", String attribute_name="Tables_in_$parent_name$"] : STUB;
+tableName locals [boolean is_schema=true, String query="SHOW TABLES;", String attribute_name="Tables_in_dbName1"] : STUB;
 columnName locals [boolean is_schema=true, String query="SHOW COLUMNS FROM $parent_name$;", String attribute_name="Field"] : STUB;
 
 

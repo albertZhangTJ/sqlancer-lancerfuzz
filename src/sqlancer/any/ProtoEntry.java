@@ -19,6 +19,8 @@ import sqlancer.MainOptions;
 public class ProtoEntry {
     private static int failed_log_counter;
     private static void log_failed(String test_case, String error) throws Exception{
+        // System.out.println(test_case);
+        // System.out.println(error);
         String file_path = "log/database"+failed_log_counter+".log";
         File f = new File(file_path);
         f.createNewFile();
@@ -30,6 +32,7 @@ public class ProtoEntry {
 
     private static int case_log_counter;
     private static void log_case(String test_case) throws Exception{
+        // System.out.println(test_case);
         String file_path = "log/database"+case_log_counter+"-passed.log";
         File f = new File(file_path);
         f.createNewFile();
@@ -47,8 +50,10 @@ public class ProtoEntry {
 
     //TODO
     public static void test(MainOptions options) throws Exception{
+        Class.forName("com.mysql.cj.jdbc.Driver");
+
         //extract the needed info from MainOption class
-        int depth_limit = options.getMaxExpressionDepth();
+        int depth_limit = 50;
         boolean log_each_select = options.logEachSelect();
         String username = options.getUserName();
         String password = options.getPassword();
@@ -95,7 +100,7 @@ public class ProtoEntry {
         url = conn_str;
         SQLConnection con = null;
         try{
-            con = new SQLConnection(DriverManager.getConnection(url, username, password));
+            con = new SQLConnection(DriverManager.getConnection("jdbc:mysql://localhost:3306", "new_user", "password"));
         }
         catch (SQLException e){
             System.out.println("Error when establishing connection to the DBMS");
@@ -105,41 +110,15 @@ public class ProtoEntry {
 
         //loop over test cases
         for (int i=0; i<max_test_cases; i++){
-            Fuzzer fz = new Fuzzer(con, depth_limit, 1000);
-            fz.generate();
-            List<String> test_case = fz.get_test_case();
-            List<String> eerrs = fz.get_expected_errors();
-            String executed = "";
-
-            
-            try {
-                //generating database phase
-                for (String stmt : test_case){
-                    executed = executed + stmt + "\n";
-                    con.createStatement().execute(stmt);
-                }
-
-                //TODO: Oracles shld run tests here
-
-                //if all terminates successfully, log passed case if needed
-                if (log_each_select){
-                    log_case(executed);
-                }
+            try{
+                System.out.println("====================================================");
+                Fuzzer fz = new Fuzzer(con, depth_limit, 1000);
+                fz.generate();
             }
             //if an error is thrown, check if it is an expected error
             //if not, log as a failed case
             catch (Exception e){
-                boolean is_expected = false;
-                String content = e.toString();
-                for (String er : eerrs){
-                    if (content.contains(er)){
-                        is_expected = true;
-                        break;
-                    }
-                }
-                if (!is_expected){
-                    log_failed(executed, content);
-                }
+                e.printStackTrace();
             }
         }
     }

@@ -30,6 +30,7 @@ public class AlternativeNode extends Node{
     }
 
     public void set_var_ref(boolean is_static, String var_id){
+        this.is_var = true;
         this.is_static = is_static;
         this.var_id = var_id;
     }
