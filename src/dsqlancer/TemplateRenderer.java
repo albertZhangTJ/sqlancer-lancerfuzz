@@ -171,12 +171,14 @@ public class TemplateRenderer {
             boolean has_var = false;
             String var_id = "";
             boolean is_static = false;
+            boolean is_member = false;
             for (Edge e : anode.get_outward_edges()){
                 if (((e.get_dest()) instanceof AlternativeNode) && ((AlternativeNode)e.get_dest()).get_is_var()){
                     template = replace_tag(template, "call_var_ref", "        ans = "+gen_function_call(e.get_dest(), e)+";");
                     has_var = true;
                     var_id = ((AlternativeNode)e.get_dest()).get_var_id();
                     is_static = ((AlternativeNode)e.get_dest()).get_is_static();
+                    is_member = ((AlternativeNode)e.get_dest()).get_is_member();
                 }
                 
             }
@@ -208,6 +210,7 @@ public class TemplateRenderer {
                 s_template = replace_tag(s_template, "HAS_VAR", ""+has_var);
                 s_template = replace_tag(s_template, "VAR_ID", var_id);
                 s_template = replace_tag(s_template, "IS_STATIC", ""+is_static);
+                s_template = replace_tag(s_template, "IS_MEMBER", ""+is_member);
                 template = replace_tag(template, "sub_option", strip_tags(s_template));
             }
             return strip_tags(template);
@@ -228,6 +231,7 @@ public class TemplateRenderer {
             template = replace_tag(template, "MIN_DEPTH", ""+node.get_min_depth());
             template = replace_tag(template, "IS_VAR", ""+an.get_is_var());
             template = replace_tag(template, "IS_STATIC", ""+an.get_is_static());
+            template = replace_tag(template, "IS_MEMBER", ""+an.get_is_member());
             template = replace_tag(template, "VAR_ID", an.get_var_id());
             return strip_tags(template);
         }

@@ -274,13 +274,21 @@ public class GrammarGraph{
                 ActionNode an = (ActionNode)this.vertices.get(idx);
                 List<String> res = AstUtils.get_stat_var_decl(an.get_src());
                 boolean is_static = true;
+                boolean is_member = false;
                 if (res==null || res.size()<1){
                     res = AstUtils.get_var_decl(an.get_src());
                     if (res!=null && res.size()>1){
                         is_static = false;
                     }
                     else{
-                        continue;
+                        res = AstUtils.get_mem_var_decl(an.get_src());
+                        if (res!=null && res.size()>1){
+                            is_static = false;
+                            is_member = true;
+                        }
+                        else {
+                            continue;
+                        }
                     }
                 }
                 an.update_src(res.get(0));
@@ -292,7 +300,7 @@ public class GrammarGraph{
                     }
                     AlternativeNode p = (AlternativeNode)alt;
                     AlternationNode gp = (AlternationNode)alter;
-                    p.set_var_ref(is_static, res.get(1));
+                    p.set_var_ref(is_static, is_member, res.get(1));
                     gp.set_var_index(p);
                 }
             }

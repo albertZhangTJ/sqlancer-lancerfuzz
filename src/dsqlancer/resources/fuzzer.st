@@ -29,7 +29,8 @@ public class <graph_name/>Fuzzer {
     private HashMap<String, List<String>> used_identifier; 
     private HashMap<String, List<String>> used_identifier_snapshot;
 
-    private HashMap<String, String> static_var_ref;
+    private static HashMap<String, String> static_var_ref;
+    private HashMap<String, String> member_var_ref;
     private HashMap<String, String> var_ref;
     private List<HashMap<String, String>> var_ref_stack;
 
@@ -61,6 +62,7 @@ public class <graph_name/>Fuzzer {
 
 
     public static void init(){
+        static_var_ref = new HashMap<>();
 <DBMS_OPTIONS/>
     }
 
@@ -183,16 +185,24 @@ public class <graph_name/>Fuzzer {
         return this.var_ref.get(key);
     }
 
-    private String get_static_variable(String key){
-        return this.static_var_ref.get(key);
+    private String get_member_variable(String key){
+        return this.member_var_ref.get(key);
+    }
+
+    public static String get_static_variable(String key){
+        return static_var_ref.get(key);
     }
 
     private void set_variable(String key, String value){
         this.var_ref.put(key, value);
     }
 
-    private void set_static_variable(String key, String value){
-        this.static_var_ref.put(key, value);
+    private void set_member_variable(String key, String value){
+        member_var_ref.put(key, value);
+    }
+
+    public static void set_static_variable(String key, String value){
+        static_var_ref.put(key, value);
     }
 
     

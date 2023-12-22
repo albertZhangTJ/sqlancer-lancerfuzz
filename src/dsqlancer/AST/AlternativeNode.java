@@ -6,6 +6,7 @@ public class AlternativeNode extends Node{
     private int index;
     private boolean is_var; //If the current node is referring to a STATIC_VAR declaration or a VAR declaration
     private boolean is_static; //refers to a STATIC_VAR declaration if set to true, VAR declaration otherwise
+    private boolean is_member;
     private String var_id;
 
     public AlternativeNode(String rule_id, int alternative_index, int index){
@@ -29,9 +30,10 @@ public class AlternativeNode extends Node{
         return this.index;
     }
 
-    public void set_var_ref(boolean is_static, String var_id){
+    public void set_var_ref(boolean is_static, boolean is_member, String var_id){
         this.is_var = true;
         this.is_static = is_static;
+        this.is_member = is_member;
         this.var_id = var_id;
     }
 
@@ -41,6 +43,10 @@ public class AlternativeNode extends Node{
 
     public boolean get_is_static(){
         return this.is_static;
+    }
+
+    public boolean get_is_member(){
+        return this.is_member;
     }
 
     public String get_var_id(){
