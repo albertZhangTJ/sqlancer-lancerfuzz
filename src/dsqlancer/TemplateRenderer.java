@@ -134,9 +134,25 @@ public class TemplateRenderer {
             while (query.contains("$parent_name$")){
                 query = query.substring(0, query.indexOf("$parent_name$")) +"\" + parent_name + \"" + query.substring(query.indexOf("$parent_name$")+"$parent_name$".length());
             }
+            while (query.contains("$STATIC_VAR(")){
+                query = query.substring(0, query.indexOf("$STATIC_VAR(")) +"\" + get_static_variable(" + query.substring(query.indexOf("$STATIC_VAR(")+"$STATIC_VAR(".length());
+                query = query.substring(0, query.indexOf("\")$")) +"\") + \"" + query.substring(query.indexOf("\")$")+"\")$".length());
+            }
+            while (query.contains("$MEMBER_VAR(")){
+                query = query.substring(0, query.indexOf("$MEMBER_VAR(")) +"\" + this.get_member_variable(" + query.substring(query.indexOf("$MEMBER_VAR(")+"$MEMBER_VAR(".length());
+                query = query.substring(0, query.indexOf("\")$")) +"\") + \"" + query.substring(query.indexOf("\")$")+"\")$".length());
+            }
             String attr_name = ((RuleNode)node).get_attribute_name();
             while (attr_name.contains("$parent_name$")){
                 attr_name = attr_name.substring(0, attr_name.indexOf("$parent_name$")) +"\" + parent_name + \"" + attr_name.substring(attr_name.indexOf("$parent_name$")+"$parent_name$".length());
+            }
+            while (attr_name.contains("$STATIC_VAR(")){
+                attr_name = attr_name.substring(0, attr_name.indexOf("$STATIC_VAR(")) +"\" + get_static_variable(" + attr_name.substring(attr_name.indexOf("$STATIC_VAR(")+"$STATIC_VAR(".length());
+                attr_name = attr_name.substring(0, attr_name.indexOf("\")$")) +"\") + \"" + attr_name.substring(attr_name.indexOf("\")$")+"\")$".length());
+            }
+            while (attr_name.contains("$MEMBER_VAR(")){
+                attr_name = attr_name.substring(0, attr_name.indexOf("$MEMBER_VAR(")) +"\" + this.get_member_variable(" + attr_name.substring(attr_name.indexOf("$MEMBER_VAR(")+"$MEMBER_VAR(".length());
+                attr_name = attr_name.substring(0, attr_name.indexOf("\")$")) +"\") + \"" + attr_name.substring(attr_name.indexOf("\")$")+"\")$".length());
             }
             template = replace_tag(template, "query", query);
             template = replace_tag(template, "attribute_name", attr_name);
