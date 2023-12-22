@@ -109,10 +109,11 @@ public class ProtoEntry {
         }
 
         //loop over test cases
-        for (int i=0; i<max_test_cases; i++){
+        for (int i=0; i<100; i++){
             try{
                 System.out.println("====================================================");
                 Fuzzer fz = new Fuzzer(con, depth_limit, 1000);
+                Fuzzer.set_static_variable("db", "dbName"+i);
                 fz.generate();
             }
             //if an error is thrown, check if it is an expected error

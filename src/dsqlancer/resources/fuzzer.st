@@ -54,7 +54,7 @@ public class <graph_name/>Fuzzer {
         this.used_identifier = new HashMap<>();
         this.rpid_stack = new ArrayList<>();
         this.rpid_cache = new HashMap<>();
-        this.static_var_ref = new HashMap<>();
+        this.member_var_ref = new HashMap<>();
         this.var_ref = new HashMap<>();
         this.var_ref_stack = new ArrayList<>();
     }
