@@ -95,6 +95,31 @@ insert_stmt : with_clause?
 
 In this example `"t"` is to specify `table_name` as parent of `column_name`. 
 
+### Variable References
+
+There are some spots in the generated test case that must contain the same value. For example, to create a new database and operate in it. The two `<db_name>`s in `CREATE DATABASE <db_name>; USE <db_name>;` must be the same.
+
+DSQLancer offers a mechanism, variable reference, to handle these issues.
+
+Variable references shall be used in the grammar file in the following way:
+
+<pre><code>
+( { VAR("variable_name"); } | <rules to generate when the variable name has not been initialized> )
+</code></pre>
+
+Variable references shall be declared in alternation node with two branches. At runtime, DSQLancer will check whether the variable name referenced has been initialized and render the value of the variable if yes. If the variable has not been initialized, DSQLancer will render the other branch and initialize the variable with the content rendered so that future references to the same variable can render the same content.
+
+The scope of the variable reference can be rule-wise, testcase-wise, or execution-wise. Rule-wise variables shall be called using reserved function `VAR`, as shown above. The syntax for testcase-wise and execution-wise variables are the same, except for the function name for testcase-wise variables is `MEMBER_VAR` and the one for execution-wise variables is `STATIC_VAR`.
+
+All three types of variable references can also be used from schema rule local variables. The example for syntax is as follows.
+<pre><code>
+tableName locals [boolean is_schema=true, String query="SHOW TABLES;", String attribute_name="Tables_in_<strong>$STATIC_VAR("db")$</strong>"] : STUB;
+</code></pre>
+
+Static variable can also be accessed and modified at runtime using Java API `String Fuzzer.get_static_variable(String key);` and `void Fuzzer.set_static_variable(String key, String value);`.
+
+
+
 
 ### Used Identifier List ID
 
