@@ -70,8 +70,10 @@ public class AstUtils {
     // The result list of strings start with the stripped src with all the declaration removed
     // then starting from index 1 the content of declared expected errors
     public static List<String> get_decl_from_action(String src, boolean is_eerr, boolean is_wght, boolean is_rplm, boolean is_rpid, boolean is_var, boolean is_stat_var, boolean is_mem_var){
+        //System.out.println("get_decl called on source:" + src);
         int MIN_LENGTH = is_eerr ? EERR_MIN_LENGTH :  is_wght ? WGHT_MIN_LENGTH :  is_rplm ? RPLM_MIN_LENGTH : is_rpid ? RPID_MIN_LENGTH : is_var ? VAR_REF_MIN_LENGTH : is_stat_var ? STATIC_VAR_REF_MIN_LENGTH : MEMBER_VAR_REF_MIN_LENGTH;
         String DECL = is_eerr ? EERR_DECL : is_wght ? WGHT_DECL : is_rplm ? RPLM_DECL : is_rpid ? RPID_DECL : is_var ? VAR_REF_DECL : is_stat_var ? STATIC_VAR_REF_DECL : MEMBER_VAR_REF_DECL;
+        //System.out.println("looking for DECL: "+DECL);
         List<String> ans = new ArrayList<>();
         int start_index = 0;
         // An empty expected error declaration E_ERR(""); is 10 chars long

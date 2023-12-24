@@ -30,6 +30,10 @@ dropDatabase
     : DROP DATABASE ifExists ( {STATIC_VAR("db");} | dbName[boolean is_new=true, String sup=null, String sub=null, String iid=null]) SC
     ;
 
+dropSchema
+    : DROP SCHEMA ifExists ( {STATIC_VAR("db");} | dbName[boolean is_new=true, String sup=null, String sub=null, String iid=null]) SC
+    ;
+
 
 createDatabase
     : CREATE (DATABASE | SCHEMA) ifNotExists? ( {STATIC_VAR("db");} | dbName[boolean is_new=true, String sup=null, String sub=null, String iid=null]) SC
@@ -40,21 +44,35 @@ useDatabase
     ;
 
 createTable
-    : CREATE TEMPORARY? TABLE ifNotExists? tableName[boolean is_new=true, 
+    : CREATE (' ' {BRANCH_W(9);} | TEMPORARY) TABLE ifNotExists? tableName[boolean is_new=true, 
             String sup=null, 
             String sub=null,
-            String iid=null] LB
-    	columnName[boolean is_new=true, 
+            String iid="b"] (LB
+    	( { VAR("cn");} | columnName[boolean is_new=true, 
             String sup=null, 
             String sub=null,
-            String iid="a"] INT (',' columnName[boolean is_new=true, 
+            String iid="a"]) INT (',' columnName[boolean is_new=true, 
             String sup=null, 
             String sub=null,
-            String iid="a"] INT { RP_LIMIT(1,3); })* RB SC
+            String iid="a"] INT { RP_LIMIT(1,6, true, 0.1); })* RB 
+            (' ' {BRANCH_W(8);} |
+                    PARTITION BY (LINEAR)? 
+                    ( 
+                        'HASH(' ( { VAR("cn");} | columnName[boolean is_new=true, String sup=null, String sub=null, String iid="a"]) ')' |
+                        ' KEY ' ( 'ALGORITHM=' ('1'|'2'))? '(' ( { VAR("cn");} | columnName[boolean is_new=true, String sup=null, String sub=null, String iid="a"]) ')'
+                    )
+            ) {BRANCH_W(9);}
+            | LIKE 
+            tableName[boolean is_new=false, 
+            String sup=null, 
+            String sub=null,
+            String iid="b"])  SC
     ;
+
+truncateTable : TRUNCATE TABLE tableName[boolean is_new=false, String sup=null, String sub="t", String iid=null] ;
     
 insertStatement
-    : INSERT (LOW_PRIORITY | DELAYED | HIGH_PRIORITY)? IGNORE? INTO? tableName[boolean is_new=false, 
+    : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? tableName[boolean is_new=false, 
             String sup=null, 
             String sub="t",
             String iid=null]  (
@@ -64,7 +82,7 @@ insertStatement
             String iid="id1"] ( ',' columnName[boolean is_new=false, 
             String sup="t", 
             String sub=null,
-            String iid="id1"] { RP_LIMIT(0, 2); RP_ID("a"); })* ')' VALUES '(' INT_VAL (',' INT_VAL { RP_LIMIT(0, 2); RP_ID("a"); })* ')'
+            String iid="id1"] { RP_LIMIT(0, 5); RP_ID("a"); })* ')' VALUES '(' INT_VAL (',' INT_VAL { RP_LIMIT(0, 5); RP_ID("a"); })* ')'
     ) SC
     ;
 
@@ -80,16 +98,17 @@ updateStatement
             String sup="t", 
             String sub=null,
             String iid="id1"] '=' INT_VAL
+            {RP_LIMIT(0, 5); }
     )* (WHERE columnName[boolean is_new=false, 
             String sup="t", 
             String sub=null,
             String iid=null] '=' INT_VAL)?
     ;
 
-INT_VAL : (DIGIT {RP_LIMIT(1,4); })+ ;
+INT_VAL : (DIGIT {RP_LIMIT(1,5, false, 0.5); })+ ;
 
 dbName locals [boolean is_schema=true, String query="SHOW DATABASES;", String attribute_name="Database"] : STUB ;
-tableName locals [boolean is_schema=true, String query="SHOW TABLES;", String attribute_name="Tables_in_dbName1"] : STUB;
+tableName locals [boolean is_schema=true, String query="SHOW TABLES;", String attribute_name="Tables_in_$STATIC_VAR("db")$"] : STUB;
 columnName locals [boolean is_schema=true, String query="SHOW COLUMNS FROM $parent_name$;", String attribute_name="Field"] : STUB;
 
 
@@ -98,12 +117,14 @@ ifNotExists : IF NOT EXISTS;
 ifExists : IF EXISTS;
 
 AS : SPACE A S SPACE;
+BY : SPACE B Y SPACE;
 CREATE : SPACE C R E A T E SPACE;
 DATABASE : SPACE D A T A B A S E SPACE;
 DELAYED : SPACE D E L A Y E D SPACE;
 DROP : SPACE D R O P SPACE;
 EXISTS : SPACE E X I S T S SPACE;
 FROM : SPACE F R O M SPACE;
+HASH : SPACE H A S H SPACE;
 HIGH_PRIORITY : SPACE H I G H US P R I O R I T Y SPACE;
 IF : SPACE I F SPACE;
 IGNORE : SPACE I G N O R E SPACE;
@@ -111,14 +132,18 @@ INSERT : SPACE I N S E R T SPACE;
 INT : SPACE I N T SPACE;
 INTO : SPACE I N T O SPACE;
 LIKE : SPACE L I K E SPACE;
+LINEAR : SPACE L I N E A R SPACE;
 LOW_PRIORITY : SPACE L O W US P R I O R I T Y SPACE;
 NOT : SPACE N O T SPACE;
 ON : SPACE O N SPACE;
+PARTITION : SPACE P A R T I T I O N SPACE;
+REPLACE : SPACE R E P L A C E SPACE;
 SCHEMA : SPACE S C H E M A SPACE;
 SELECT : SPACE S E L E C T SPACE;
 SET : SPACE S E T SPACE;
 TABLE : SPACE T A B L E SPACE;
 TEMPORARY : SPACE T E M P O R A R Y SPACE;
+TRUNCATE : SPACE T R U N C A T E SPACE;
 UPDATE : SPACE U P D A T E SPACE;
 USE : SPACE U S E SPACE;
 VALUES : SPACE V A L U E S SPACE;

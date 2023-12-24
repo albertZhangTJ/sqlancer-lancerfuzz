@@ -275,16 +275,16 @@ public class GrammarGraph{
                 List<String> res = AstUtils.get_stat_var_decl(an.get_src());
                 boolean is_static = true;
                 boolean is_member = false;
-                if (res==null || res.size()<1){
-                    res = AstUtils.get_var_decl(an.get_src());
+                if (res==null || res.size()<2){
+                    res = AstUtils.get_mem_var_decl(an.get_src());
                     if (res!=null && res.size()>1){
                         is_static = false;
+                        is_member = true;
                     }
                     else{
-                        res = AstUtils.get_mem_var_decl(an.get_src());
+                        res = AstUtils.get_var_decl(an.get_src());
                         if (res!=null && res.size()>1){
                             is_static = false;
-                            is_member = true;
                         }
                         else {
                             continue;
@@ -321,7 +321,15 @@ public class GrammarGraph{
                     if (!(alt instanceof QuantifierNode)){
                         Utils.panic("GrammarGraph::process_weights : expect parent node of the RP_LIMIT definition to be an QuantifierNode");
                     }
-                    ((QuantifierNode)alt).update_repetition(Integer.valueOf(res.get(1).split(",")[0].strip()), Integer.valueOf(res.get(1).split(",")[1].strip()));
+                    if (res.get(1).split(",").length==2){
+                        ((QuantifierNode)alt).update_repetition(Integer.valueOf(res.get(1).split(",")[0].strip()), Integer.valueOf(res.get(1).split(",")[1].strip()));
+                    }
+                    else if (res.get(1).split(",").length==4){
+                        ((QuantifierNode)alt).update_repetition(Integer.valueOf(res.get(1).split(",")[0].strip()), Integer.valueOf(res.get(1).split(",")[1].strip()), Boolean.parseBoolean(res.get(1).split(",")[2].strip()), Double.valueOf(res.get(1).split(",")[3].strip()));
+                    }
+                    else {
+                        Utils.panic("GrammarGraph::process_weights : check parameters passed to RP_LIMIT, supported formats are RP_LIMIT(int MIN, int MAX) or RP_LIMIT(int MIN, int MAX, boolean USE_UNIFORM, double DECAY_RATE)");
+                    }
                 }
             }
         }

@@ -6,10 +6,10 @@
         int count = -1;
         String rpid = <RPID/>;
         if (rpid==null){
-                count = exp_decay_random(<QUAN_MIN/>, <QUAN_MAX/>);
+                count = <use_uniform/> ? random(<QUAN_MIN/>, <QUAN_MAX/>) : exp_decay_random(<QUAN_MIN/>, <QUAN_MAX/>, <DECAY_RATE/>);
         }
         else if (this.rpid_cache.get(rpid)==null){
-                count = exp_decay_random(<QUAN_MIN/>, <QUAN_MAX/>);
+                count = <use_uniform/> ? random(<QUAN_MIN/>, <QUAN_MAX/>) : exp_decay_random(<QUAN_MIN/>, <QUAN_MAX/>, <DECAY_RATE/>);
                 this.rpid_cache.put(rpid, Integer.valueOf(count));
         }
         else {

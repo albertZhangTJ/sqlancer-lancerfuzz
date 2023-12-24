@@ -60,15 +60,15 @@ public class Fuzzer {
         return null;
     }
 
-    public static void set_static_variable(String key, String value){
-        System.out.println("This is template code, to use grammar based fuzzer, generate fuzzer code with DSQLancer first");
-        System.exit(1);
-    }
-
     public static String get_static_variable(String key){
         System.out.println("This is template code, to use grammar based fuzzer, generate fuzzer code with DSQLancer first");
         System.exit(1);
         return null;
+    }
+
+    public static void set_static_variable(String key, String value){
+        System.out.println("This is template code, to use grammar based fuzzer, generate fuzzer code with DSQLancer first");
+        System.exit(1);
     }
 
     public void generate(){

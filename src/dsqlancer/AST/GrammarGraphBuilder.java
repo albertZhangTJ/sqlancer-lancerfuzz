@@ -369,19 +369,19 @@ public class GrammarGraphBuilder {
             int min=-1;
             int max=-1;
             if (suf.equals("?")){
-                int quant_id = graph.add_node(new QuantifierNode(rule.get_id(), indices.get(1), 0, 1));
+                int quant_id = graph.add_node(new QuantifierNode(rule.get_id(), indices.get(1), 0, 2));
                 indices.set(1, indices.get(1)+1);
                 graph.add_edge(parent_id, quant_id, null);
                 build_expr(graph, rule, (FlexibleParserRuleContext)(node.children.get(0)), quant_id, indices, options);
             }
             else if (suf.equals("*")){
-                int quant_id = graph.add_node(new QuantifierNode(rule.get_id(), indices.get(1), 0, QuantifierNode.DEFAULT_MAX_REP)); 
+                int quant_id = graph.add_node(new QuantifierNode(rule.get_id(), indices.get(1), 0, QuantifierNode.DEFAULT_MAX_REP+1)); 
                 indices.set(1, indices.get(1)+1);
                 graph.add_edge(parent_id, quant_id, null);
                 build_expr(graph, rule, (FlexibleParserRuleContext)(node.children.get(0)), quant_id, indices, options); 
             }
             else if (suf.equals("+")){
-                int quant_id = graph.add_node(new QuantifierNode(rule.get_id(), indices.get(1), 1, QuantifierNode.DEFAULT_MAX_REP));
+                int quant_id = graph.add_node(new QuantifierNode(rule.get_id(), indices.get(1), 1, QuantifierNode.DEFAULT_MAX_REP+1));
                 indices.set(1, indices.get(1)+1);
                 graph.add_edge(parent_id, quant_id, null);
                 build_expr(graph, rule, (FlexibleParserRuleContext)(node.children.get(0)), quant_id, indices, options);

@@ -212,12 +212,13 @@ public class <graph_name/>Fuzzer {
     }
 
     private int exp_decay_random(int min, int max){
-        if (max-min==2){
-            return Math.random() > 0.5 ? min : min+1;
-        }
+        return this.exp_decay_random(min, max, 0.75);
+    }
+
+    private int exp_decay_random(int min, int max, double decay_rate){
         int i=min;
         while (i<max){
-            if (Math.random()<0.9){
+            if (Math.random()<decay_rate){
                 return i;
             }
             i = i + 1;

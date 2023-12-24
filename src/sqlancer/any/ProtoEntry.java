@@ -99,28 +99,51 @@ public class ProtoEntry {
         conn_str = conn_str.replace("($host$)", host);
         url = conn_str;
         SQLConnection con = null;
-        try{
-            con = new SQLConnection(DriverManager.getConnection("jdbc:mysql://localhost:3306", "new_user", "password"));
-        }
-        catch (SQLException e){
-            System.out.println("Error when establishing connection to the DBMS");
-            e.printStackTrace();
-            System.exit(1);
-        }
 
         //loop over test cases
-        for (int i=0; i<100; i++){
+        int succeeded_counter = 0;
+        int failed_counter = 0;
+        for (int i=0; i<2000; i++){
             try{
-                System.out.println("====================================================");
+                con = new SQLConnection(DriverManager.getConnection("jdbc:mysql://localhost:3306", "new_user", "password"));
                 Fuzzer fz = new Fuzzer(con, depth_limit, 1000);
-                Fuzzer.set_static_variable("db", "dbName"+i);
-                fz.generate();
+                try{
+                    System.out.println("====================================================");
+                    Fuzzer.set_static_variable("db", "dbName"+(i%100));
+                    fz.generate();
+                    String test_case = "";
+                    for (String stmt: fz.get_test_case()){
+                        test_case = test_case + stmt + "\n";
+                    }
+                    log_case(test_case);
+                    succeeded_counter++;
+                }
+                //if an error is thrown, check if it is an expected error
+                //if not, log as a failed case
+                catch (Exception e){
+                    e.printStackTrace();
+                    if (!e.toString().contains("Ignore") && !e.toString().contains("partition")){
+                        failed_counter++;
+                        
+                        String test_case = "";
+                        for (String stmt: fz.get_test_case()){
+                            test_case = test_case + stmt + "\n";
+                        }
+                        log_failed(test_case, e.toString());
+                    }
+                }
+                finally {
+                    con.close();
+                    System.out.println("Executed: "+(i+1)+" test cases, hard failed "+failed_counter+", success rate: "+(succeeded_counter*100/(i+1))+"%");
+                }
             }
-            //if an error is thrown, check if it is an expected error
-            //if not, log as a failed case
-            catch (Exception e){
+            catch (SQLException e){
+                System.out.println("Error when establishing connection to the DBMS");
                 e.printStackTrace();
+                System.exit(1);
             }
+
+            
         }
     }
 }

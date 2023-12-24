@@ -307,6 +307,8 @@ public class TemplateRenderer {
             template = replace_tag(template, "QUAN_MIN", ""+n.get_min());
             template = replace_tag(template, "QUAN_MAX", ""+n.get_max());
             template = replace_tag(template, "RPID", n.get_rp_id()==null ? "null" : "\""+n.get_rp_id()+"\"");
+            template = replace_tag(template, "USE_UNIFORM", ""+n.get_use_uniform());
+            template = replace_tag(template, "DECAY_RATE", ""+n.get_decay_rate());
 
             for (Edge e : n.get_outward_edges()){
                 template = replace_tag(template, "CHILD_NODE_REF", "            ans = ans + " + gen_function_call(e.get_dest(), e)+ ";\n");

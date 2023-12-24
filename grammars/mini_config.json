@@ -35,7 +35,14 @@
             "min" : 1,
             "max" : 1
         },
-        
+        {
+            "name" : "dropSchema",
+            "rules" : [
+                "dropSchema"
+            ],
+            "min" : 1,
+            "max" : 1
+        },
         {
             "name" : "createDatabase",
             "rules" : [
@@ -75,6 +82,17 @@
             ],
             "min" : 1,
             "max" : 5
+        },
+        {
+            "name" : "mix",
+            "rules" : [
+                "createTable",
+                "insertStatement",
+                "updateStatement",
+                "truncateTable"
+            ],
+            "min" : 3,
+            "max" : 50
         }
     ]
 }
