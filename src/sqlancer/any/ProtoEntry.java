@@ -105,37 +105,52 @@ public class ProtoEntry {
         int failed_counter = 0;
         for (int i=0; i<2000; i++){
             try{
-                con = new SQLConnection(DriverManager.getConnection("jdbc:mysql://localhost:3306", "new_user", "password"));
+                con = new SQLConnection(DriverManager.getConnection("jdbc:mysql://localhost:3306", username, password));
                 Fuzzer fz = new Fuzzer(con, depth_limit, 1000);
-                try{
-                    System.out.println("====================================================");
-                    Fuzzer.set_static_variable("db", "dbName"+(i%100));
-                    fz.generate();
-                    String test_case = "";
-                    for (String stmt: fz.get_test_case()){
+                System.out.println("====================================================");
+                Fuzzer.set_static_variable("db", "dbName"+(i%100));
+                fz.generate();
+                String test_case = "";
+                boolean is_successful = true;
+                boolean last_failed = false;
+                while (true){
+                    try {
+                        String stmt = fz.get_next_statement();
+                        if (stmt.equals(Fuzzer.ERROR_FLAG)){
+                            break;
+                        }
                         test_case = test_case + stmt + "\n";
+                        System.out.println(stmt);
+                        con.createStatement().execute(stmt);
+                        last_failed = false;
                     }
+                    catch (Exception e){
+                        System.out.println(e.toString());
+                        boolean is_expected = false;
+                        for (String eerr : fz.get_expected_errors()){
+                            if (e.toString().contains(eerr)){
+                                is_expected = true;
+                                break;
+                            }
+                        }
+                        if ((!is_expected && !e.toString().contains("IgnoreMe")) || last_failed){
+                            log_failed(test_case, e.toString());
+                            failed_counter++;
+                            is_successful = false;
+                            break;
+                        }
+                        else {
+                            last_failed = true;
+                            continue;
+                        }
+                    }
+                }
+                if (is_successful){
                     log_case(test_case);
                     succeeded_counter++;
                 }
-                //if an error is thrown, check if it is an expected error
-                //if not, log as a failed case
-                catch (Exception e){
-                    e.printStackTrace();
-                    if (!e.toString().contains("Ignore") && !e.toString().contains("partition")){
-                        failed_counter++;
-                        
-                        String test_case = "";
-                        for (String stmt: fz.get_test_case()){
-                            test_case = test_case + stmt + "\n";
-                        }
-                        log_failed(test_case, e.toString());
-                    }
-                }
-                finally {
-                    con.close();
-                    System.out.println("Executed: "+(i+1)+" test cases, hard failed "+failed_counter+", success rate: "+(succeeded_counter*100/(i+1))+"%");
-                }
+                con.close();
+                System.out.println("Executed: "+(i+1)+" test cases, hard failed "+failed_counter+", success rate: "+(succeeded_counter*100/(i+1))+"%");
             }
             catch (SQLException e){
                 System.out.println("Error when establishing connection to the DBMS");

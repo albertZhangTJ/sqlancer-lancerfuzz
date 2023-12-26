@@ -11,11 +11,11 @@
         },
         {
             "name" : "username", 
-            "default" : "Username"
+            "default" : "new_user"
         },
         {
             "name" : "password", 
-            "default" : "Password"
+            "default" : "password"
         },
         {
             "name" : "db_prefix", 
@@ -91,7 +91,7 @@
                 "updateStatement",
                 "truncateTable"
             ],
-            "min" : 3,
+            "min" : 15,
             "max" : 50
         }
     ]

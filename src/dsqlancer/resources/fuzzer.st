@@ -10,9 +10,10 @@ import sqlancer.SQLConnection;
 @SuppressWarnings("unused")
 public class <graph_name/>Fuzzer {
     private SQLConnection con;
-    private List<String> test_case_buffer;
-    private int test_case_cursor;
     private List<String> expected_error_buffer;
+
+    private List<String> rules_call_series;
+    private int rules_call_index;
 
     //depth limit, passed in by the tester at fuzzing time
     private int fuzzing_depth;
@@ -43,9 +44,9 @@ public class <graph_name/>Fuzzer {
 
     public <graph_name/>Fuzzer(SQLConnection con, int fuzzing_depth, int loop_threshold){
         this.con = con;
-        this.test_case_buffer = new ArrayList<>();
-        this.test_case_cursor = 0;
         this.expected_error_buffer = new ArrayList<>();
+        this.rules_call_series = new ArrayList<>();
+        this.rules_call_index = 0;
         this.fuzzing_depth = fuzzing_depth;
         this.loop_threshold = loop_threshold;
         this.identifier_cache_stack = new ArrayList<>();
@@ -66,13 +67,30 @@ public class <graph_name/>Fuzzer {
 <DBMS_OPTIONS/>
     }
 
-    public String get_next_statement(){
-        if (this.test_case_buffer.size()>this.test_case_cursor){
-            String res = this.test_case_buffer.get(this.test_case_cursor);
-            this.test_case_cursor++;
+
+    private String translate_rule_call(String rule_name) throws Exception{
+<CALL_RULE_NAME/>
+        System.out.println("ERROR: rule name "+rule_name+" has no corresponding function call generated");
+        System.exit(1);
+        return null;
+    }
+
+    public String get_next_statement() throws Exception{
+        if (this.rules_call_index<this.rules_call_series.size()){
+            this.expected_error_buffer = new ArrayList<>();
+            String res = this.translate_rule_call(this.rules_call_series.get(this.rules_call_index));
+            this.rules_call_index++;
             return res;
         }
-        return "";
+        return ERROR_FLAG;
+    }
+
+    public String regenerate_last_statement() throws Exception{
+        this.rules_call_index--;
+        this.expected_error_buffer = new ArrayList<>();
+        String res = this.translate_rule_call(this.rules_call_series.get(this.rules_call_index));
+        this.rules_call_index++;
+        return res;
     }
 
     public static String get_dbms_option(String key){
@@ -81,13 +99,9 @@ public class <graph_name/>Fuzzer {
 
 
 
-    public void generate() throws Exception{
+    public void generate(){
         int count = -1;
 <STAGE/>
-    }
-
-    public List<String> get_test_case(){
-        return this.test_case_buffer;
     }
 
     public List<String> get_expected_errors(){

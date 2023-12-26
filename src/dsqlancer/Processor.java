@@ -125,13 +125,14 @@ public class Processor {
         template_files.add("alternation_node_sub_option.st");
         template_files.add("alternation_node.st");
         template_files.add("alternative_node.st");
+        template_files.add("call_rule_name.st");
         template_files.add("charset_node.st");
         template_files.add("fuzzer.st");
         template_files.add("lambda_node.st");
         template_files.add("literal_node.st");
         template_files.add("quantifier_node.st");
         template_files.add("schema_node.st");
-        template_files.add("stage_call_rule.st");
+        template_files.add("stage_serialize_rule.st");
         template_files.add("stage.st");
         template_files.add("unlexer_rule_node.st");
         template_files.add("unparser_call_children.st");

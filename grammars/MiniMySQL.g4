@@ -44,7 +44,7 @@ useDatabase
     ;
 
 createTable
-    : CREATE (' ' {BRANCH_W(9);} | TEMPORARY) TABLE ifNotExists? tableName[boolean is_new=true, 
+    : CREATE (' ' {BRANCH_W(9);} | TEMPORARY {E_ERR("Cannot create temporary table with partitions");}) TABLE ifNotExists? tableName[boolean is_new=true, 
             String sup=null, 
             String sub=null,
             String iid="b"] (LB
@@ -69,7 +69,7 @@ createTable
             String iid="b"])  SC
     ;
 
-truncateTable : TRUNCATE TABLE tableName[boolean is_new=false, String sup=null, String sub="t", String iid=null] ;
+truncateTable : TRUNCATE TABLE tableName[boolean is_new=false, String sup=null, String sub="t", String iid=null] SC ;
     
 insertStatement
     : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? tableName[boolean is_new=false, 
@@ -102,7 +102,7 @@ updateStatement
     )* (WHERE columnName[boolean is_new=false, 
             String sup="t", 
             String sub=null,
-            String iid=null] '=' INT_VAL)?
+            String iid=null] '=' INT_VAL)? SC
     ;
 
 INT_VAL : (DIGIT {RP_LIMIT(1,5, false, 0.5); })+ ;

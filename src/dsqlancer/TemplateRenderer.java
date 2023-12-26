@@ -3,6 +3,7 @@ package dsqlancer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -374,6 +375,7 @@ public class TemplateRenderer {
             val = val + ";\n";
             template = replace_tag(template, "DBMS_OPTIONS", val);
         }
+        List<String> translatable_rules = new ArrayList<>();
         for (Stage stage : stages){
             String st_template = this.templates.get("STAGE");
             if (st_template==null){
@@ -385,16 +387,27 @@ public class TemplateRenderer {
             st_template = replace_tag(st_template, "NUM_RULES", ""+stage.get_num_rules());
             List<String> rules = stage.get_rules();
             for (int i=0; i<rules.size(); i++){
-                String stc_template = this.templates.get("STAGE_CALL_RULE");
+                if (!translatable_rules.contains(rules.get(i))){
+                    translatable_rules.add(rules.get(i));
+                }
+                String stc_template = this.templates.get("STAGE_SERIALIZE_RULE");
                 if (stc_template==null){
-                    Utils.panic("TemplateRenderer::render : No template found for stage calling rule");
+                    Utils.panic("TemplateRenderer::render : No template found for stage serializing rule");
                 }
                 stc_template = replace_tag(stc_template, "INDEX", ""+i);
                 stc_template = replace_tag(stc_template, "RULE_NAME", rules.get(i));
                 stc_template = strip_tags(stc_template);
-                st_template = replace_tag(st_template, "STAGE_CALL_RULE", stc_template);
+                st_template = replace_tag(st_template, "STAGE_SERIALIZE_RULE", stc_template);
             }
             template = replace_tag(template, "STAGE", strip_tags(st_template));
+        }
+        for (String rule_name : translatable_rules){
+            String crn_template = this.templates.get("CALL_RULE_NAME");
+            if (crn_template==null){
+                Utils.panic("TemplateRenderer::render : No template found for calling rule name");
+            }
+            crn_template = replace_tag(crn_template, "RULE_NAME", rule_name);
+            template = replace_tag(template, "CALL_RULE_NAME", crn_template);
         }
         HashMap<Integer, Node> vertices = graph.get_vertices();
         for (Integer i : vertices.keySet()){
