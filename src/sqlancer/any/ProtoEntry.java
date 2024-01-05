@@ -17,6 +17,7 @@ import sqlancer.MainOptions;
 
 @SuppressWarnings("unused")
 public class ProtoEntry {
+    private static final int ALLOWED_CONSECUTIVE_FAILS = 2;
     private static int failed_log_counter;
     private static void log_failed(String test_case, String error) throws Exception{
         // System.out.println(test_case);
@@ -103,7 +104,9 @@ public class ProtoEntry {
         //loop over test cases
         int succeeded_counter = 0;
         int failed_counter = 0;
-        for (int i=0; i<2000; i++){
+        int total_stmt = 0;
+        int failed_stmt = 0;
+        for (int i=0; i<100; i++){
             try{
                 con = new SQLConnection(DriverManager.getConnection("jdbc:mysql://localhost:3306", username, password));
                 Fuzzer fz = new Fuzzer(con, depth_limit, 1000);
@@ -112,20 +115,22 @@ public class ProtoEntry {
                 fz.generate();
                 String test_case = "";
                 boolean is_successful = true;
-                boolean last_failed = false;
+                int last_failed = 0;
                 while (true){
                     try {
                         String stmt = fz.get_next_statement();
                         if (stmt.equals(Fuzzer.ERROR_FLAG)){
                             break;
                         }
+                        total_stmt++;
                         test_case = test_case + stmt + "\n";
                         System.out.println(stmt);
                         con.createStatement().execute(stmt);
-                        last_failed = false;
+                        last_failed = 0;
                     }
                     catch (Exception e){
                         System.out.println(e.toString());
+                        failed_stmt++;
                         boolean is_expected = false;
                         for (String eerr : fz.get_expected_errors()){
                             if (e.toString().contains(eerr)){
@@ -133,14 +138,14 @@ public class ProtoEntry {
                                 break;
                             }
                         }
-                        if ((!is_expected && !e.toString().contains("IgnoreMe")) || last_failed){
+                        if ((!is_expected && !e.toString().contains("IgnoreMe")) || last_failed>=ALLOWED_CONSECUTIVE_FAILS){
                             log_failed(test_case, e.toString());
                             failed_counter++;
                             is_successful = false;
                             break;
                         }
                         else {
-                            last_failed = true;
+                            last_failed++;
                             continue;
                         }
                     }
@@ -150,7 +155,8 @@ public class ProtoEntry {
                     succeeded_counter++;
                 }
                 con.close();
-                System.out.println("Executed: "+(i+1)+" test cases, hard failed "+failed_counter+", success rate: "+(succeeded_counter*100/(i+1))+"%");
+                System.out.println("Executed: "+(total_stmt)+" statements, hard failed "+failed_stmt+" statements, statement success rate: "+((total_stmt-failed_stmt)*100/total_stmt)+"%");
+                System.out.println("Executed: "+(i+1)+" test cases, hard failed "+failed_counter+" test cases, test case success rate: "+(succeeded_counter*100/(i+1))+"%");
             }
             catch (SQLException e){
                 System.out.println("Error when establishing connection to the DBMS");

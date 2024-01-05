@@ -42,6 +42,7 @@ public class <graph_name/>Fuzzer {
 
     private static HashMap<String, String> dbms_options = new HashMap<>();
 
+
     public <graph_name/>Fuzzer(SQLConnection con, int fuzzing_depth, int loop_threshold){
         this.con = con;
         this.expected_error_buffer = new ArrayList<>();
@@ -97,7 +98,10 @@ public class <graph_name/>Fuzzer {
         return dbms_options.get(key);
     }
 
-
+    private ResultSet query_dbms(String query) throws Exception{
+        ResultSet ans = this.con.createStatement().executeQuery(query);
+        return ans;
+    }
 
     public void generate(){
         int count = -1;

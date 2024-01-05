@@ -17,7 +17,7 @@
                     return ERROR_FLAG;
                 }
             }
-            ResultSet rs = con.createStatement().executeQuery("<query/>");
+            ResultSet rs = this.query_dbms("<query/>");
             List<String> values = new ArrayList<>();
             while (rs.next()){
                 if (iid==null || this.is_identifier_available(iid, rs.getString("<attribute_name/>") )){
