@@ -10,6 +10,7 @@ public class Utils {
     public static final String ANSI_RED = "\u001B[31m";
     public static final String ANSI_GREEN = "\u001B[32m";
     public static final String ANSI_YELLOW = "\u001B[33m";
+    public static final String ANSI_BLUE = "\u001B[34m";
     public static final String ANSI_RESET = "\u001B[0m";
 
     // in-place merge list2 into list1, ignore duplicates
@@ -42,6 +43,10 @@ public class Utils {
     }
 
     public static void log(String message){
+        System.out.println("["+ANSI_BLUE+"LOG"+ANSI_RESET+"] "+message);
+    }
+
+    public static void log_stage(String message){
         System.out.println("["+ANSI_GREEN+"LOG"+ANSI_RESET+"] "+message);
     }
 

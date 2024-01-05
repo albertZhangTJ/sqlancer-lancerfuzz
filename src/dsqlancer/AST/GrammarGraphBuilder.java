@@ -491,6 +491,7 @@ public class GrammarGraphBuilder {
         if (rule instanceof UnlexerRuleNode){
             ((UnlexerRuleNode)rule).set_start_ranges(new ArrayList<>());
         }
+        Utils.log("Building rule: "+rule.get_name());
         List<Integer> indices = new ArrayList<>();
         indices.add(0); //alt_idx
         indices.add(0); //quant_idx
@@ -644,11 +645,17 @@ public class GrammarGraphBuilder {
         if (parser_root!=null){
             build_rules(graph, parser_root, options);
         }
+        Utils.log_stage("All rules built, start post-processing ...");
         graph.process_expected_errors();
+        Utils.log("Expected errors processed");
         graph.process_weights();
+        Utils.log("Branch weights processed");
         graph.process_repetition_limits();
+        Utils.log("Repetition limits processed");
         graph.process_repetition_ids();
+        Utils.log("Repetition IDs processed");
         graph.process_var_refs();
+        Utils.log("Variable references processed");
         // Ignored the options for the graph, not entirely sure why grammar graph need info on options
         // Will come back to implement if later found needed
         // TODO

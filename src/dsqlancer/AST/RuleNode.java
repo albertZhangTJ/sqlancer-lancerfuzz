@@ -27,7 +27,6 @@ public class RuleNode extends Node{
     public RuleNode(String name, String label, RuleNodeType type){
         super(name, label);
         this.name = name;
-        Utils.log("Rule "+name+" created");
         this.type = type;
 
         this.labels = new HashMap<String, String>();

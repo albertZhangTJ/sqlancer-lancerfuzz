@@ -110,15 +110,19 @@ public class Processor {
 
         GrammarGraph graph = GrammarGraphBuilder.build_grammar_graph(lexer_root, parser_root, options);
         graph.handle_schema_locals();
+        Utils.log("Schema references processed");
         graph.check_imag_rules();
         graph.check_for_duplicate_identifier();
+        Utils.log_stage("Grammar graph sanity checked passed");
         graph.calc_depth();
+        Utils.log("Grammar graph depth calculated");
         //graph.walk_print(); //for debugging
 
         JSONObject config_file = ConfigProcessor.read_json_file(options.config);
         List<Stage> stages = ConfigProcessor.get_stages(config_file, graph.get_defaut_rule()==null ? null : graph.get_defaut_rule().get_identifier());
         List<DBMSOption> dbms_options = ConfigProcessor.get_options(config_file);
         ConfigProcessor.sanity_check(graph, stages);
+        Utils.log_stage("Configuration sanity checked passed");
 
         List<String> template_files = new ArrayList<>();
         template_files.add("action_node.st");
@@ -138,6 +142,7 @@ public class Processor {
         template_files.add("unparser_call_children.st");
         template_files.add("unparser_rule_node.st");
 
+        Utils.log("Rendering fuzzer");
 
         TemplateRenderer template = new TemplateRenderer(template_files);
 
@@ -145,6 +150,7 @@ public class Processor {
             BufferedWriter writer = new BufferedWriter(new FileWriter(graph.get_name()+"Fuzzer.java"));
             writer.write(template.render(graph, stages, dbms_options));
             writer.close();
+            Utils.log_stage("Fuzzer rendered");
         }
         catch (IOException e) {
             Utils.panic("Processor::generate_fuzzer : IOException, cannot write to file\n"+e.toString());
