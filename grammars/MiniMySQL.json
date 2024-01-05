@@ -24,6 +24,10 @@
         {
             "name" : "conn_str", 
             "default" : "jdbc:($db_prefix$)://($host$):($port$)"
+        },
+        {
+            "name" : "jdbc_class", 
+            "default" : "com.mysql.cj.jdbc.Driver"
         }
     ],
     "stages" : [

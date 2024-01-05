@@ -117,7 +117,9 @@ public class RuleNode extends Node{
     public void set_schema_reference(String schema_query, String attribute_name){
         this.is_schema = true;
         this.query = schema_query;
+        //Utils.log("Query set: "+schema_query);
         this.attribute_name = attribute_name;
+        //Utils.log("Attribute name set: "+attribute_name);
         this.remove_schema_locals();
     }
 

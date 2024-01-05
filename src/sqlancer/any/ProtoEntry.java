@@ -51,8 +51,6 @@ public class ProtoEntry {
 
     //TODO
     public static void test(MainOptions options) throws Exception{
-        Class.forName("com.mysql.cj.jdbc.Driver");
-
         //extract the needed info from MainOption class
         int depth_limit = 50;
         boolean log_each_select = options.logEachSelect();
@@ -88,6 +86,9 @@ public class ProtoEntry {
         }
         if (Fuzzer.get_dbms_option("conn_str")!=null){
             conn_str = Fuzzer.get_dbms_option("conn_str");
+        }
+        if (Fuzzer.get_dbms_option("jdbc_class")!=null){
+            Class.forName(Fuzzer.get_dbms_option("jdbc_class"));
         }
 
 

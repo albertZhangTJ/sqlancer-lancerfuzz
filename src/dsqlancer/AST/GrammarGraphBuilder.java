@@ -231,19 +231,30 @@ public class GrammarGraphBuilder {
         ArgActionBlockContext aabc = node.argActionBlock();
 
         if (aabc!=null){
-            String chr_args = "";
+            String decl = "";
+            String val = "";
+            boolean is_val = false;
             for (TerminalNode chr_arg: aabc.ARGUMENT_CONTENT()){
-                chr_args = chr_args+chr_arg.toString();
-            }
-            String[] chr_args_list = chr_args.split(",");
-            for (String s : chr_args_list){
-                if (s.contains("=")){
-                    args.put(s.split("=")[0].strip(), s.split("=")[1].strip());
+                //Utils.log(chr_arg.toString());
+                if (chr_arg.toString().equals(",")){
+                    args.put(decl.strip(), val.strip());
+                    decl = "";
+                    val = "";
+                    is_val = false;
+                    continue;
+                }
+                if (chr_arg.toString().equals("=")){
+                    is_val=true;
+                    continue;
+                }
+                if (is_val){
+                    val = val + chr_arg.toString();
                 }
                 else {
-                    args.put(s.strip(), null);
+                    decl = decl + chr_arg.toString();
                 }
             }
+            args.put(decl.strip(), val.strip());
         }
         return args;
     }

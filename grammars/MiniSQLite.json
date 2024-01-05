@@ -1,0 +1,69 @@
+
+{   
+    "options" : [
+        {
+            "name" : "host", 
+            "default" : "localhost"
+        },
+        {
+            "name" : "port", 
+            "default" : "3306"
+        },
+        {
+            "name" : "username", 
+            "default" : "new_user"
+        },
+        {
+            "name" : "password", 
+            "default" : "password"
+        },
+        {
+            "name" : "db_prefix", 
+            "default" : "sqlite"
+        },
+        {
+            "name" : "conn_str", 
+            "default" : "jdbc:sqlite:"
+        },
+        {
+            "name" : "jdbc_class", 
+            "default" : "org.sqlite.JDBC"
+        }
+    ],
+    "stages" : [
+    	{
+            "name" : "create",
+            "rules" : [
+                "create_table_stmt"
+            ],
+            "min" : 10,
+            "max" : 30
+        },
+   		{
+            "name" : "insert",
+            "rules" : [
+                "insert_stmt"
+            ],
+            "min" : 50,
+            "max" : 70
+        },
+        {
+            "name" : "update",
+            "rules" : [
+                "update_stmt"
+            ],
+            "min" : 15,
+            "max" : 50
+        },
+        {
+            "name" : "mix",
+            "rules" : [
+                "create_table_stmt",
+                "insert_stmt",
+                "update_stmt"
+            ],
+            "min" : 100,
+            "max" : 500
+        }
+    ]
+}
