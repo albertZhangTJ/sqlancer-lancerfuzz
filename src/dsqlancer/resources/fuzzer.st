@@ -11,6 +11,7 @@ import sqlancer.SQLConnection;
 public class <graph_name/>Fuzzer {
     private SQLConnection con;
     private List<String> expected_error_buffer;
+    private List<String> expected_error_buffer_snapshot;
 
     private List<String> rules_call_series;
     private int rules_call_index;
@@ -22,9 +23,11 @@ public class <graph_name/>Fuzzer {
     //Rule-wise identifier cache, must be resetted at the beginning of each rule call
     private List<HashMap<String, String>> identifier_cache_stack;
     private HashMap<String, String> identifier_cache;
+    private HashMap<String, String> identifier_cache_snapshot;
 
     private List<HashMap<String, Integer>> rpid_stack;
     private HashMap<String, Integer> rpid_cache;
+    private HashMap<String, Integer> rpid_cache_snapshot;
 
     private List<HashMap<String, List<String>>> used_identifier_stack;
     private HashMap<String, List<String>> used_identifier; 
@@ -188,15 +191,34 @@ public class <graph_name/>Fuzzer {
         this.used_identifier.get(iid).add(identifier);
     }
 
-    private void snapshot_used_identifier(){
+    private void snapshot_context(){
+        // snapshot relationship identifiers
+        this.identifier_cache_snapshot = new HashMap<>();
+        for (HashMap.Entry<String, String> entry: this.identifier_cache.entrySet()){
+            this.identifier_cache_snapshot.put(entry.getKey(), entry.getValue());
+        }
+
+        // snapshot used identifiers
         this.used_identifier_snapshot = new HashMap<>();
         for (HashMap.Entry<String, List<String>> entry: this.used_identifier.entrySet()){
             this.used_identifier_snapshot.put(entry.getKey(), copy_list(entry.getValue()));
         }
+
+        // snapshot rpid cache
+        this.rpid_cache_snapshot = new HashMap<>();
+        for (HashMap.Entry<String, Integer> entry: this.rpid_cache.entrySet()){
+            this.rpid_cache_snapshot.put(entry.getKey(), entry.getValue());
+        }
+
+        // snapshot expected errors
+        this.expected_error_buffer_snapshot = copy_list(this.expected_error_buffer);
     }
 
-    private void rollback_used_identifier(){
+    private void rollback_context(){
+        this.identifier_cache = this.identifier_cache_snapshot;
         this.used_identifier = this.used_identifier_snapshot;
+        this.rpid_cache = this.rpid_cache_snapshot;
+        this.expected_error_buffer = this.expected_error_buffer_snapshot;
     }
 
     private String get_variable(String key){

@@ -108,7 +108,7 @@ public class ProtoEntry {
         int failed_stmt = 0;
         for (int i=0; i<100; i++){
             try{
-                con = new SQLConnection(DriverManager.getConnection("jdbc:mysql://localhost:3306", username, password));
+                con = new SQLConnection(DriverManager.getConnection(url, username, password));
                 Fuzzer fz = new Fuzzer(con, depth_limit, 1000);
                 System.out.println("====================================================");
                 Fuzzer.set_static_variable("db", "dbName"+(i%100));
