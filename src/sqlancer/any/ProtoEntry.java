@@ -107,12 +107,13 @@ public class ProtoEntry {
         int failed_counter = 0;
         int total_stmt = 0;
         int failed_stmt = 0;
-        for (int i=0; i<100; i++){
+        for (int i=0; i<1000; i++){
             try{
-                con = new SQLConnection(DriverManager.getConnection(url+"db"+(i%100)+".db", username, password));
+                con = new SQLConnection(DriverManager.getConnection(url, username, password)); //For MySQL impl
+                //con = new SQLConnection(DriverManager.getConnection(url+"db"+(i%100)+".db", username, password)); //For SQLite impl
                 Fuzzer fz = new Fuzzer(con, depth_limit, 1000);
                 System.out.println("====================================================");
-                Fuzzer.set_static_variable("db", "dbName"+(i%100));
+                Fuzzer.set_static_variable("db", "dbName"+(i%100)); //For MySQL impl
                 fz.generate();
                 String test_case = "";
                 boolean is_successful = true;
