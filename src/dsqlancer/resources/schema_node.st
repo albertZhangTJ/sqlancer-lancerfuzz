@@ -17,14 +17,21 @@
                     return ERROR_FLAG;
                 }
             }
-            ResultSet rs = this.query_dbms("<query/>");
+            String query = "<query/>";
+            ResultSet rs = this.query_dbms(query);
             List<String> values = new ArrayList<>();
+            int cnt=0;
             while (rs.next()){
+                cnt++;
+                //System.out.println(rs.getString("<attribute_name/>"));
                 if (iid==null || this.is_identifier_available(iid, rs.getString("<attribute_name/>") )){
+                    //System.out.println("Added");
                     values.add(rs.getString("<attribute_name/>"));
                 }
             }
             if (values.size()==0){
+                System.out.println("Queried target DBMS with: "+query);
+                System.out.println("ResultSet has length: "+cnt);
                 throw new Exception("IgnoreMe: quantifier node multiplier cannot be satisfied");
             }
             ans = random_from_list(values);

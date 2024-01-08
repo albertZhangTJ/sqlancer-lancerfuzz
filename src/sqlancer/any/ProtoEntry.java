@@ -109,11 +109,11 @@ public class ProtoEntry {
         int failed_stmt = 0;
         for (int i=0; i<1000; i++){
             try{
-                con = new SQLConnection(DriverManager.getConnection(url, username, password)); //For MySQL impl
-                //con = new SQLConnection(DriverManager.getConnection(url+"db"+(i%100)+".db", username, password)); //For SQLite impl
+                //con = new SQLConnection(DriverManager.getConnection(url, username, password)); //For MySQL impl
+                con = new SQLConnection(DriverManager.getConnection(url+"db"+(i)+".db", username, password)); //For SQLite impl
                 Fuzzer fz = new Fuzzer(con, depth_limit, 1000);
                 System.out.println("====================================================");
-                Fuzzer.set_static_variable("db", "dbName"+(i%100)); //For MySQL impl
+                //Fuzzer.set_static_variable("db", "dbName"+(i%100)); //For MySQL impl
                 fz.generate();
                 String test_case = "";
                 boolean is_successful = true;
@@ -134,8 +134,10 @@ public class ProtoEntry {
                         System.out.println(e.toString());
                         failed_stmt++;
                         boolean is_expected = false;
+                        System.out.println("Got error");
                         for (String eerr : fz.get_expected_errors()){
-                            if (e.toString().contains(eerr)){
+                            //System.out.println("Checking if contains eerr: "+eerr);
+                            if (e.toString().toLowerCase().contains(eerr.toLowerCase())){
                                 is_expected = true;
                                 break;
                             }
@@ -144,6 +146,7 @@ public class ProtoEntry {
                             log_failed(test_case, e.toString());
                             failed_counter++;
                             is_successful = false;
+                            System.out.println("Hard failed");
                             break;
                         }
                         else {

@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import dsqlancer.AST.GrammarGraph;
@@ -34,14 +35,38 @@ public class ConfigProcessor {
         for (int i=0; i<stages.length(); i++){
             JSONObject stage = stages.getJSONObject(i);
             JSONArray rules = stage.getJSONArray("rules");
+            JSONArray weights = null;
+            try {
+                weights = stage.getJSONArray("weights");
+            }
+            catch (JSONException je){
+            
+            }
             if (rules==null){
                 Utils.panic("ConfigProcessor::get_stages : cannot find rules in stage "+i);
             }
+            boolean has_valid_weights = true;
+            if (weights==null){
+                has_valid_weights = false;
+                Utils.oops("ConfigProcessor::get_stages : No weights declaration found for stage "+stage.getString("name")+", using uniform probability");
+            }
+
+            else if (weights.length()!=rules.length()){
+                has_valid_weights = false;
+                Utils.oops("ConfigProcessor::get_stages : length of weights declaration found for stage "+stage.getString("name")+" does not match that of rules declaration, using uniform probability");
+            }
             List<String> stmts = new ArrayList<>();
+            List<Double> wl = new ArrayList<>();
             for (int j=0; j<rules.length(); j++){
                 stmts.add(rules.getString(j));
+                if (has_valid_weights){
+                    wl.add(weights.getDouble(j));
+                }
+                else {
+                    wl.add(1.0);
+                }
             }
-            ans.add(new Stage(stage.getString("name"), stmts, stage.getInt("min"), stage.getInt("max")));
+            ans.add(new Stage(stage.getString("name"), stmts, wl, stage.getInt("min"), stage.getInt("max")));
         }
         return ans;
     }

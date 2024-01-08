@@ -384,8 +384,10 @@ public class TemplateRenderer {
             st_template = replace_tag(st_template, "NAME", stage.get_name());
             st_template = replace_tag(st_template, "STAGE_MIN", ""+stage.get_min());
             st_template = replace_tag(st_template, "STAGE_MAX", ""+stage.get_max());
-            st_template = replace_tag(st_template, "NUM_RULES", ""+stage.get_num_rules());
+            st_template = replace_tag(st_template, "TOTAL_WEIGHT", ""+stage.get_total_weight());
             List<String> rules = stage.get_rules();
+            List<Double> weights = stage.get_weights();
+            double cumulative_weight = 0;
             for (int i=0; i<rules.size(); i++){
                 if (!translatable_rules.contains(rules.get(i))){
                     translatable_rules.add(rules.get(i));
@@ -394,7 +396,9 @@ public class TemplateRenderer {
                 if (stc_template==null){
                     Utils.panic("TemplateRenderer::render : No template found for stage serializing rule");
                 }
-                stc_template = replace_tag(stc_template, "INDEX", ""+i);
+                stc_template = replace_tag(stc_template, "MIN_INDEX", ""+cumulative_weight);
+                cumulative_weight = cumulative_weight + weights.get(i);
+                stc_template = replace_tag(stc_template, "MAX_INDEX", ""+cumulative_weight);
                 stc_template = replace_tag(stc_template, "RULE_NAME", rules.get(i));
                 stc_template = strip_tags(stc_template);
                 st_template = replace_tag(st_template, "STAGE_SERIALIZE_RULE", stc_template);

@@ -73,6 +73,7 @@ public class <graph_name/>Fuzzer {
 
 
     private String translate_rule_call(String rule_name) throws Exception{
+        //System.out.println("Translating: "+rule_name);
 <CALL_RULE_NAME/>
         System.out.println("ERROR: rule name "+rule_name+" has no corresponding function call generated");
         System.exit(1);

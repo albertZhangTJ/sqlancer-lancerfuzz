@@ -6,12 +6,14 @@ public class Stage{
 
     private String name;
     private List<String> rules;
+    private List<Double> weights;
     private int min_statements;
     private int max_statements;
 
-    public Stage(String name, List<String> rules, int min_statements, int max_statements){
+    public Stage(String name, List<String> rules, List<Double> weights, int min_statements, int max_statements){
         this.name = name;
         this.rules = rules;
+        this.weights = weights;
         this.min_statements = min_statements;
         this.max_statements = max_statements;
     }
@@ -22,6 +24,18 @@ public class Stage{
 
     public List<String> get_rules(){
         return Utils.copy_list(this.rules);
+    }
+
+    public List<Double> get_weights(){
+        return Utils.copy_list(weights);
+    }
+
+    public double get_total_weight(){
+        double ans = 0;
+        for (Double w : this.weights){
+            ans = ans + w.doubleValue();
+        }
+        return ans;
     }
 
     public int get_min(){

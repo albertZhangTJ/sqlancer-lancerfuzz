@@ -7,20 +7,26 @@
         List<String> cache = new ArrayList<>();
         boolean is_completed = false;
         int counter = 0;
-        while (!is_completed){
+        try{
+            while (!is_completed){
 <unparser_call_children/>
-            is_completed = true;
-            for (String s: cache){
-                if (s.indexOf(ERROR_FLAG)!=-1){
-                    is_completed = false;
-                    break;
+                is_completed = true;
+                for (String s: cache){
+                    if (s.indexOf(ERROR_FLAG)!=-1){
+                        is_completed = false;
+                        break;
+                    }
+                }
+                counter++;
+                if (counter>this.loop_threshold){
+                    System.out.println("ERROR: <name/> cannot deliver a valid result after "+this.loop_threshold+" passes. Aborting");
+                    System.exit(1);
                 }
             }
-            counter++;
-            if (counter>this.loop_threshold){
-                System.out.println("ERROR: <name/> cannot deliver a valid result after "+this.loop_threshold+" passes. Aborting");
-                System.exit(1);
-            }
+        }
+        catch (Exception e){
+            System.out.println(cache);
+            throw e;
         }
         String ans = "";
         for (String s: cache){

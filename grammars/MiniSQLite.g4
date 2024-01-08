@@ -4,7 +4,7 @@ create_table_stmt
  : K_CREATE ( K_TEMP | K_TEMPORARY )? K_TABLE ( K_IF K_NOT K_EXISTS )?
   	table_name[boolean is_new=true, String sup=null, String sub=null, String iid=null]
    ' (' (' ' {VAR("cn");} | column_name[boolean is_new=true, String sup=null, String sub=null, String iid=null]) 
-   		( ', ' column_name[boolean is_new=true, String sup=null, String sub=null, String iid=null] { RP_LIMIT(5,8); } )* 
+   		( ', ' column_name[boolean is_new=true, String sup=null, String sub=null, String iid=null] { RP_LIMIT(5,8, false, 0.1); } )* 
 		(', ' ( 'PRIMARY KEY(' (' ' {VAR("cn");} | column_name[boolean is_new=true, String sup=null, String sub=null, String iid=null]) ')' 
 				| 'UNIQUE(' (' ' {VAR("cn");} | column_name[boolean is_new=true, String sup=null, String sub=null, String iid=null]) ')'
 			) 
@@ -14,19 +14,18 @@ create_table_stmt
  ; 
 
 update_stmt
- : K_UPDATE { E_ERR("[SQLITE_CONSTRAINT]"); } 
+ : K_UPDATE { E_ERR("SQLITE_CONSTRAINT"); E_ERR("PRIMARY"); E_ERR("UNIQUE");} 
    ( K_OR K_ROLLBACK
      | K_OR K_ABORT 
      | K_OR K_FAIL { BRANCH_W(0.1); }
      | K_OR K_IGNORE 
     )? table_name[boolean is_new=false, String sup=null, String sub="t", String iid=null]
    K_SET column_name[boolean is_new=false, String sup="t", String sub=null, String iid="s"] '=' expr 
-   ( ',' column_name[boolean is_new=false, String sup="t", String sub=null, String iid="id"] '=' expr )? 
    ( K_WHERE expr )? ';'
  ;
  
 insert_stmt :
-	{ E_ERR("Type mismatch");}
+	{ E_ERR("Type mismatch"); E_ERR("PRIMARY"); E_ERR("UNIQUE");}
 	( K_INSERT { BRANCH_W(10); }
       | K_REPLACE { BRANCH_W(5); }
       | K_INSERT K_OR K_IGNORE 
@@ -35,7 +34,7 @@ insert_stmt :
 	table_name[boolean is_new=false, String sup=null, String sub="t", String iid=null]
 	'(' 
 		column_name[boolean is_new=false, String sup="t", String sub=null, String iid="id"] 
-		( ',' column_name[boolean is_new=false, String sup="t", String sub=null, String iid="id"] {RP_LIMIT(2, 4); RP_ID("s");} )* 
+		( ',' column_name[boolean is_new=false, String sup="t", String sub=null, String iid="id"] {RP_LIMIT(1, 3, true, 0.9); RP_ID("s");} )* 
 	')'
 	K_VALUES '(' expr ( ',' expr {RP_LIMIT(2, 4); RP_ID("s");} )* ');'  
 	;
@@ -45,10 +44,10 @@ vacuum_stmt : K_VACUUM ';' ;
 reindex_stmt : K_REINDEX (table_name[boolean is_new=false, String sup=null, String sub=null, String iid=null])? ';';
 
 drop_table_stmt
- : K_DROP K_TABLE ( K_IF K_EXISTS )? table_name[boolean is_new=false, String sup=null, String sub=null, String iid=null] ';'
+ : {E_ERR("no such table");} K_DROP K_TABLE ( K_IF K_EXISTS )? table_name[boolean is_new=false, String sup=null, String sub=null, String iid=null] ';'
  ;
 
-table_name locals [boolean is_schema=true, String query="SELECT name FROM sqlite_master UNION SELECT name FROM sqlite_temp_master WHERE type='table' UNION SELECT name FROM sqlite_temp_master WHERE type='view' GROUP BY name;", String attribute_name="name"] : expr ;
+table_name locals [boolean is_schema=true, String query="SELECT name FROM sqlite_master WHERE name NOT LIKE '%sqlite%';", String attribute_name="name"] : expr ;
     
 column_name locals [boolean is_schema=true, String query="SELECT name FROM pragma_table_info('$parent_name$');", String attribute_name="name"] : expr ;
 	
