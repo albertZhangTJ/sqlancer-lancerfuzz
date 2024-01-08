@@ -47,7 +47,7 @@ public class Utils {
     }
 
     public static void log_stage(String message){
-        System.out.println("["+ANSI_GREEN+"LOG"+ANSI_RESET+"] "+message);
+        System.out.println("["+ANSI_GREEN+"COMPLETED"+ANSI_RESET+"] "+message);
     }
 
     public static <T> List<T> copy_list(List<T> ori){
