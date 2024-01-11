@@ -107,10 +107,12 @@ public class ProtoEntry {
         int failed_counter = 0;
         int total_stmt = 0;
         int failed_stmt = 0;
+        long start_time = System.currentTimeMillis();
+        long last_time = System.currentTimeMillis();
         for (int i=0; i<1000; i++){
             try{
                 //con = new SQLConnection(DriverManager.getConnection(url, username, password)); //For MySQL impl
-                con = new SQLConnection(DriverManager.getConnection(url+"db"+(i)+".db", username, password)); //For SQLite impl
+                con = new SQLConnection(DriverManager.getConnection(url+"db"+(i)+".db")); //For SQLite impl
                 Fuzzer fz = new Fuzzer(con, depth_limit, 1000);
                 System.out.println("====================================================");
                 //Fuzzer.set_static_variable("db", "dbName"+(i%100)); //For MySQL impl
@@ -162,6 +164,12 @@ public class ProtoEntry {
                 con.close();
                 System.out.println("Executed: "+(total_stmt)+" statements, hard failed "+failed_stmt+" statements, statement success rate: "+((total_stmt-failed_stmt)*100/total_stmt)+"%");
                 System.out.println("Executed: "+(i+1)+" test cases, hard failed "+failed_counter+" test cases, test case success rate: "+(succeeded_counter*100/(i+1))+"%");
+                long this_time = System.currentTimeMillis();
+                System.out.println("Time elapsed since beginning: "+((this_time-start_time)/1000) + " seconds");
+                System.out.println("Time elapsed since beginning of test case: "+((this_time-last_time)/1000) + " seconds");
+                System.out.println("Average throughput: "+total_stmt/((this_time-start_time+0.001)/1000)+" statements/second");
+                last_time = this_time;
+                
             }
             catch (SQLException e){
                 System.out.println("Error when establishing connection to the DBMS");
