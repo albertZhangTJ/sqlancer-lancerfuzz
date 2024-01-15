@@ -11,7 +11,7 @@ import java.nio.file.Paths;
 import java.nio.file.Files;
 
 import sqlancer.SQLConnection;
-// This is a prototype tester for DSQLancer generated fuzzers
+// This is a prototype tester for lancerfuzz generated fuzzers
 
 import sqlancer.MainOptions;
 
