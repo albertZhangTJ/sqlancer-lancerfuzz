@@ -112,6 +112,7 @@ public class ProtoEntry {
         for (int i=0; i<1000; i++){
             try{
                 //con = new SQLConnection(DriverManager.getConnection(url, username, password)); //For MySQL impl
+                //set up proper JDBC connection here if the DBMS does something very weird
                 con = new SQLConnection(DriverManager.getConnection(url+"db"+(i)+".db")); //For SQLite impl
                 Fuzzer fz = new Fuzzer(con, depth_limit, 1000);
                 System.out.println("====================================================");

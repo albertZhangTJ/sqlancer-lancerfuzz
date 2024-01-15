@@ -5,6 +5,7 @@
     private String <rule_name/>(int depth, String iid, boolean is_new, String sub, String sup) throws Exception{
 <ee/>
         String ans = "";
+        List<String> parent_hier = null;
         if (is_new){
             <rule_name/>_count++;
             ans = "<rule_name/>"+<rule_name/>_count;
@@ -12,10 +13,11 @@
         else {
             String parent_name = "";
             if (sup!=null){
-                parent_name = this.identifier_cache.get(sup);
-                if (parent_name==null){
+                parent_hier = this.get_parent_hierarchy(sup);
+                if (parent_hier==null || parent_hier.size()==0){
                     return ERROR_FLAG;
                 }
+                parent_name = parent_hier.get(parent_hier.size()-1);
             }
             String query = "<query/>";
             ResultSet rs = this.query_dbms(query);
@@ -40,7 +42,16 @@
             }
         }
         if (sub!=null){
-            this.identifier_cache.put(sub, ans);
+            if (parent_hier==null){
+                List<String> hierarchy = new ArrayList<>();
+                hierarchy.add(ans);
+                this.set_parent(sub, hierarchy);
+            }
+            else {
+                List<String> hierarchy = copy_list(parent_hier);
+                hierarchy.add(ans);
+                this.set_parent(sub, hierarchy);
+            }
         }
         return ans;
     }

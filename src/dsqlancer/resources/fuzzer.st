@@ -21,9 +21,9 @@ public class <graph_name/>Fuzzer {
     private int loop_threshold;
 
     //Rule-wise identifier cache, must be resetted at the beginning of each rule call
-    private List<HashMap<String, String>> identifier_cache_stack;
-    private HashMap<String, String> identifier_cache;
-    private HashMap<String, String> identifier_cache_snapshot;
+    private List<HashMap<String, List<List<String>>>> identifier_cache_stack;
+    private HashMap<String, List<List<String>>> identifier_cache;
+    private HashMap<String, List<List<String>>> identifier_cache_snapshot;
 
     private List<HashMap<String, Integer>> rpid_stack;
     private HashMap<String, Integer> rpid_cache;
@@ -117,7 +117,34 @@ public class <graph_name/>Fuzzer {
     }
 
 
+    private String get_parent_name(String sup){
+        List<List<String>> id_val = this.identifier_cache.get(sup);
+        if (id_val==null || id_val.size()==0){
+            return null;
+        }
+        List<String> parent_hier = random_from_list(id_val);
+        return parent_hier.get(parent_hier.size()-1);
+    }
 
+    private List<String> get_parent_hierarchy(String sup){
+        List<List<String>> id_val = this.identifier_cache.get(sup);
+        if (id_val==null || id_val.size()==0){
+            return null;
+        }
+        return copy_list(random_from_list(id_val));
+    }
+
+    private void set_parent(String sub, List<String> hierarchy){
+        List<List<String>> id_val = this.identifier_cache.get(sub);
+        if (id_val==null){
+            List<List<String>> id_val_n = new ArrayList<>();
+            id_val_n.add(hierarchy);
+            this.identifier_cache.put(sub, id_val_n);
+        }
+        else {
+            id_val.add(hierarchy);
+        }
+    }
 
     private void push_identifier_cache(){
         this.identifier_cache_stack.add(this.identifier_cache);
@@ -195,8 +222,8 @@ public class <graph_name/>Fuzzer {
     private void snapshot_context(){
         // snapshot relationship identifiers
         this.identifier_cache_snapshot = new HashMap<>();
-        for (HashMap.Entry<String, String> entry: this.identifier_cache.entrySet()){
-            this.identifier_cache_snapshot.put(entry.getKey(), entry.getValue());
+        for (HashMap.Entry<String, List<List<String>>> entry: this.identifier_cache.entrySet()){
+            this.identifier_cache_snapshot.put(entry.getKey(), copy_list(entry.getValue()));
         }
 
         // snapshot used identifiers
@@ -267,13 +294,19 @@ public class <graph_name/>Fuzzer {
         return max-1;
     }
 
+    @SuppressWarnings("unchecked")
     private static <T> List<T> copy_list(List<T> ori){
         if (ori==null){
             return null;
         }
         List<T> res = new ArrayList<>();
         for (T item: ori){
-            res.add(item);
+            if (item instanceof List){
+                res.add((T)copy_list((List<?>)item));
+            }
+            else{
+                res.add(item);
+            }
         }
         return res;
     }
