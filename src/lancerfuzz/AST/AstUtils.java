@@ -21,6 +21,8 @@ public class AstUtils {
     public static final int MEMBER_VAR_REF_MIN_LENGTH = 15;  // MEMBER_VAR("");
     public static final String VAR_REF_DECL = "VAR(";
     public static final int VAR_REF_MIN_LENGTH = 8;  // VAR("");
+    public static final String TYPE_DECL = "E_TYPE(";
+    public static final int TYPE_DECL_MIN_LENGTH = 11; //E_TYPE("");
 
 
     // Implementation acquired from https://stackoverflow.com/q/220547
@@ -69,10 +71,10 @@ public class AstUtils {
     // This is not actually parsing but simply a string matching
     // The result list of strings start with the stripped src with all the declaration removed
     // then starting from index 1 the content of declared expected errors
-    public static List<String> get_decl_from_action(String src, boolean is_eerr, boolean is_wght, boolean is_rplm, boolean is_rpid, boolean is_var, boolean is_stat_var, boolean is_mem_var){
+    public static List<String> get_decl_from_action(String src, boolean is_eerr, boolean is_wght, boolean is_rplm, boolean is_rpid, boolean is_var, boolean is_stat_var, boolean is_mem_var, boolean is_typ){
         //System.out.println("get_decl called on source:" + src);
-        int MIN_LENGTH = is_eerr ? EERR_MIN_LENGTH :  is_wght ? WGHT_MIN_LENGTH :  is_rplm ? RPLM_MIN_LENGTH : is_rpid ? RPID_MIN_LENGTH : is_var ? VAR_REF_MIN_LENGTH : is_stat_var ? STATIC_VAR_REF_MIN_LENGTH : MEMBER_VAR_REF_MIN_LENGTH;
-        String DECL = is_eerr ? EERR_DECL : is_wght ? WGHT_DECL : is_rplm ? RPLM_DECL : is_rpid ? RPID_DECL : is_var ? VAR_REF_DECL : is_stat_var ? STATIC_VAR_REF_DECL : MEMBER_VAR_REF_DECL;
+        int MIN_LENGTH = is_eerr ? EERR_MIN_LENGTH :  is_wght ? WGHT_MIN_LENGTH :  is_rplm ? RPLM_MIN_LENGTH : is_rpid ? RPID_MIN_LENGTH : is_var ? VAR_REF_MIN_LENGTH : is_stat_var ? STATIC_VAR_REF_MIN_LENGTH : is_mem_var ? MEMBER_VAR_REF_MIN_LENGTH : TYPE_DECL_MIN_LENGTH; 
+        String DECL = is_eerr ? EERR_DECL : is_wght ? WGHT_DECL : is_rplm ? RPLM_DECL : is_rpid ? RPID_DECL : is_var ? VAR_REF_DECL : is_stat_var ? STATIC_VAR_REF_DECL : is_mem_var ? MEMBER_VAR_REF_DECL : TYPE_DECL;
         //System.out.println("looking for DECL: "+DECL);
         List<String> ans = new ArrayList<>();
         int start_index = 0;
@@ -106,7 +108,7 @@ public class AstUtils {
                             Utils.panic("AstUtils::get_decl_from_action : Declaration is not ended with ;\nsrc:\n"+src);
                         }
                         content = content.strip();
-                        if (is_eerr || is_rpid || is_var || is_stat_var){
+                        if (is_eerr || is_rpid || is_var || is_stat_var || is_typ){
                             if (content.charAt(0)!='\"' || content.charAt(content.length()-1)!='\"'){
                                 Utils.panic("AstUtils::get_decl_from_action : Declaration content not wrapped with \"\"\nsrc:\n"+src);
                             }
@@ -136,30 +138,34 @@ public class AstUtils {
     }
 
     public static List<String> get_expected_errors(String src){
-        return get_decl_from_action(src, true, false, false, false, false, false, false);
+        return get_decl_from_action(src, true, false, false, false, false, false, false, false);
     }
 
     public static List<String> get_weight_decl(String src){
-        return get_decl_from_action(src, false, true, false, false, false, false, false);
+        return get_decl_from_action(src, false, true, false, false, false, false, false, false);
     }
 
     public static List<String> get_rep_limit_decl(String src){
-        return get_decl_from_action(src, false, false, true, false, false, false, false);
+        return get_decl_from_action(src, false, false, true, false, false, false, false, false);
     }
 
     public static List<String> get_rep_id_decl(String src){
-        return get_decl_from_action(src, false, false, false, true, false, false, false);
+        return get_decl_from_action(src, false, false, false, true, false, false, false, false);
     }
 
     public static List<String> get_var_decl(String src){
-        return get_decl_from_action(src, false, false, false, false, true, false, false);
+        return get_decl_from_action(src, false, false, false, false, true, false, false, false);
     }
 
     public static List<String> get_stat_var_decl(String src){
-        return get_decl_from_action(src, false, false, false, false, false, true, false);
+        return get_decl_from_action(src, false, false, false, false, false, true, false, false);
     }
 
     public static List<String> get_mem_var_decl(String src){
-        return get_decl_from_action(src, false, false, false, false, false, false, true);
+        return get_decl_from_action(src, false, false, false, false, false, false, true, false);
+    }
+
+    public static List<String> get_type_decl(String src){
+        return get_decl_from_action(src, false, false, false, false, false, false, false, true);
     }
 }

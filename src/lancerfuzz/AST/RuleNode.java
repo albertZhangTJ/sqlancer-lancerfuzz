@@ -23,6 +23,9 @@ public class RuleNode extends Node{
     private boolean is_schema; // whether the current rule is a schema reference
     private String query;
     private String attribute_name;
+
+    //private boolean is_expression;
+    
     
     public RuleNode(String name, String label, RuleNodeType type){
         super(name, label);

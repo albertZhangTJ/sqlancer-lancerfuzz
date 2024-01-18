@@ -48,17 +48,17 @@ drop_table_stmt
  ;
 
 table_name locals [boolean is_schema=true, String query="SELECT name FROM sqlite_master WHERE name NOT LIKE '%sqlite%' AND TYPE='table' UNION SELECT name FROM sqlite_temp_master WHERE type='table' AND name NOT LIKE '%sqlite%';", String attribute_name="name"] : expr ;
-// view_name locals [boolean is_schema=true, String query="SELECT name FROM sqlite_master WHERE name NOT LIKE '%sqlite%' AND TYPE='view' UNION SELECT name FROM sqlite_temp_master WHERE type='view' AND name NOT LIKE '%sqlite%';", String attribute_name="name"] : expr ;
+view_name locals [boolean is_schema=true, String query="SELECT name FROM sqlite_master WHERE name NOT LIKE '%sqlite%' AND TYPE='view' UNION SELECT name FROM sqlite_temp_master WHERE type='view' AND name NOT LIKE '%sqlite%';", String attribute_name="name"] : expr ;
 column_name locals [boolean is_schema=true, String query="SELECT name FROM pragma_table_info('$parent_name$');", String attribute_name="name"] : expr ;
 	
-// create_view_stmt
-//  : K_CREATE ( K_TEMP | K_TEMPORARY )? K_VIEW ( K_IF K_NOT K_EXISTS )?
-//  	view_name[boolean is_new=true, String sup=null, String sub=null, String iid=null] K_AS  select_stmt ';'
-//  ;
+create_view_stmt
+ : K_CREATE ( K_TEMP | K_TEMPORARY )? K_VIEW ( K_IF K_NOT K_EXISTS )?
+ 	view_name[boolean is_new=true, String sup=null, String sub=null, String iid=null] K_AS  select_stmt ';'
+ ;
 
 select_stmt : K_SELECT '(' column_name[boolean is_new=false, String sup="t", String sub=null, String iid="id"]
-			( ', ' column_name[boolean is_new=false, String sup="t", String sub=null, String iid="id"] { RP_LIMIT(2,4); })* ')'
-			K_FROM table_name[boolean is_new=false, String sup=null, String sub="t", String iid=null]
+			( ', ' column_name[boolean is_new=false, String sup="t", String sub=null, String iid="id"] { RP_LIMIT(1,4); })* ')'
+			K_FROM ( table_name[boolean is_new=false, String sup=null, String sub="t", String iid=null] {BRANCH_W(9);} | { E_ERR("no such table"); } view_name[boolean is_new=false, String sup=null, String sub="t", String iid=null] )
 	;
 
 expr : ( DIGIT { RP_LIMIT(1, 6, false, 0.3); } )+;

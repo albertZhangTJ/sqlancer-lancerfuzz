@@ -103,8 +103,14 @@ public class <graph_name/>Fuzzer {
     }
 
     private ResultSet query_dbms(String query) throws Exception{
-        ResultSet ans = this.con.createStatement().executeQuery(query);
-        return ans;
+        try {
+            ResultSet ans = this.con.createStatement().executeQuery(query);
+            return ans;
+        }
+        catch (Exception e){
+            System.out.println("Error encountered when executing query: "+query);
+            throw e;
+        }
     }
 
     public void generate(){

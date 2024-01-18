@@ -9,6 +9,8 @@ public class AlternativeNode extends Node{
     private boolean is_member;
     private String var_id;
 
+    private String type;
+
     public AlternativeNode(String rule_id, int alternative_index, int index){
         this.rule_id = rule_id;
         this.alternative_index = alternative_index;
@@ -51,6 +53,14 @@ public class AlternativeNode extends Node{
 
     public String get_var_id(){
         return this.var_id;
+    }
+
+    public void set_type(String type){
+        this.type = type;
+    }
+
+    public String get_type(){
+        return this.type;
     }
 
     // @Override
