@@ -24,7 +24,8 @@ public class RuleNode extends Node{
     private String query;
     private String attribute_name;
 
-    //private boolean is_expression;
+
+    private boolean is_expr; //If the current node is an expression definition
     
     
     public RuleNode(String name, String label, RuleNodeType type){
@@ -128,6 +129,10 @@ public class RuleNode extends Node{
 
     public boolean is_schema_ref(){
         return this.is_schema;
+    }
+
+    public boolean is_expr(){
+        return this.is_expr;
     }
 
     public String get_query_stmt(){

@@ -12,6 +12,8 @@ public class AlternationNode extends Node {
     private List<Double> weights;
     private int var_index; //if one of the branches is a var_ref, this is the index to that branch, 0-indexed
 
+    private boolean is_expr;
+
 
     public AlternationNode(String rule_id, int index, List<String> conditions){
         this.rule_id = rule_id;
@@ -76,6 +78,14 @@ public class AlternationNode extends Node {
             ans = ans + d;
         }
         return ans;
+    }
+
+    public void set_expr(){
+        this.is_expr = true;
+    }
+
+    public boolean get_is_expr(){
+        return this.is_expr;
     }
 
     public String toString(){
