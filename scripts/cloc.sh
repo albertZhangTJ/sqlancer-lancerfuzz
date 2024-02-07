@@ -8,7 +8,7 @@ for D in *; do
         # There are a couple of folders that are smaller than 1000 LOCs
         # They are either not DBMS-spceific code (e.g. any, transformations)
         # Or are simply wraps over another DBMS (cosmos, timescale, etc.)
-        # Th
+        # Therefore those folders will be ignored
         if [ "$loc" -gt 1000 ]; then
             echo "Counting $D"
             str+="$D,"
