@@ -117,6 +117,22 @@ public class RuleNode extends Node{
         }
     }
 
+    private void remove_expr_locals(){
+        Set<String> key_set = this.locals.keySet();
+        Pattern pq = Pattern.compile("String\\s{1,}query");
+        Pattern pa = Pattern.compile("String\\s{1,}attribute_name");
+        Pattern ps = Pattern.compile("boolean\\s{1,}is_expr");
+        List<String> keys_to_remove = new ArrayList<>();
+        for (String key : key_set){
+            if (pq.matcher(key.strip()).find() || ps.matcher(key.strip()).find() || pa.matcher(key.strip()).find()){
+                keys_to_remove.add(key);
+            }
+        }
+        for (String key : keys_to_remove){
+            this.locals.remove(key);
+        }
+    }
+
     
     public void set_schema_reference(String schema_query, String attribute_name){
         this.is_schema = true;
@@ -125,6 +141,15 @@ public class RuleNode extends Node{
         this.attribute_name = attribute_name;
         //Utils.log("Attribute name set: "+attribute_name);
         this.remove_schema_locals();
+    }
+
+    public void set_expr_reference(String query, String attribute_name){
+        this.is_expr = true;
+        this.query = query;
+        //Utils.log("Query set: "+schema_query);
+        this.attribute_name = attribute_name;
+        //Utils.log("Attribute name set: "+attribute_name);
+        this.remove_expr_locals();
     }
 
     public boolean is_schema_ref(){

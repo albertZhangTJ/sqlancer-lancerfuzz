@@ -148,12 +148,12 @@ public class TemplateRenderer {
                 query = query.substring(0, query.indexOf("\")$")) +"\") + \"" + query.substring(query.indexOf("\")$")+"\")$".length());
             }
             String attr_name = ((RuleNode)node).get_attribute_name();
-            while (attr.contains("$parent_name")){
-                attr = attr.substring(0, attr.indexOf("$parent_name")) +
+            while (attr_name.contains("$parent_name")){
+                attr_name = attr_name.substring(0, attr_name.indexOf("$parent_name")) +
                         "\" + parent_name.get(" + 
-                        attr.substring(attr.indexOf("$parent_name")+"$parent_name".length(), attr.indexOf("$parent_name")+"$parent_name".length()+1) + 
+                        attr_name.substring(attr_name.indexOf("$parent_name")+"$parent_name".length(), attr_name.indexOf("$parent_name")+"$parent_name".length()+1) + 
                         ") + \"" + 
-                        attr.substring(attr.indexOf("$parent_name")+"$parent_nameX$".length());
+                        attr_name.substring(attr_name.indexOf("$parent_name")+"$parent_nameX$".length());
             }
             while (attr_name.contains("$STATIC_VAR(")){
                 attr_name = attr_name.substring(0, attr_name.indexOf("$STATIC_VAR(")) +"\" + get_static_variable(" + attr_name.substring(attr_name.indexOf("$STATIC_VAR(")+"$STATIC_VAR(".length());
@@ -194,12 +194,12 @@ public class TemplateRenderer {
                 query = query.substring(0, query.indexOf("\")$")) +"\") + \"" + query.substring(query.indexOf("\")$")+"\")$".length());
             }
             String attr_name = ((RuleNode)node).get_attribute_name();
-            while (attr.contains("$parent_name")){
-                attr = attr.substring(0, attr.indexOf("$parent_name")) +
+            while (attr_name.contains("$parent_name")){
+                attr_name = attr_name.substring(0, attr_name.indexOf("$parent_name")) +
                         "\" + parent_name.get(" + 
-                        attr.substring(attr.indexOf("$parent_name")+"$parent_name".length(), attr.indexOf("$parent_name")+"$parent_name".length()+1) + 
+                        attr_name.substring(attr_name.indexOf("$parent_name")+"$parent_name".length(), attr_name.indexOf("$parent_name")+"$parent_name".length()+1) + 
                         ") + \"" + 
-                        attr.substring(attr.indexOf("$parent_name")+"$parent_nameX$".length());
+                        attr_name.substring(attr_name.indexOf("$parent_name")+"$parent_nameX$".length());
             }
             while (attr_name.contains("$STATIC_VAR(")){
                 attr_name = attr_name.substring(0, attr_name.indexOf("$STATIC_VAR(")) +"\" + get_static_variable(" + attr_name.substring(attr_name.indexOf("$STATIC_VAR(")+"$STATIC_VAR(".length());

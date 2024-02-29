@@ -401,6 +401,52 @@ public class GrammarGraph{
         }
     }
 
+    public void handle_expr_locals(){
+        for (Integer idx : this.vertices.keySet()){
+            if (this.vertices.get(idx) instanceof RuleNode){
+                RuleNode rn = (RuleNode)this.vertices.get(idx);
+                HashMap<String, String> locals = rn.get_locals();
+                Set<String> key_set = locals.keySet();
+                Pattern pq = Pattern.compile("String\\s{1,}query");
+                Pattern ps = Pattern.compile("boolean\\s{1,}is_expr");
+                Pattern pa = Pattern.compile("String\\s{1,}attribute_name");
+                String query = null;
+                boolean is_expr = false;
+                String attribute_name = null;
+                for (String key : key_set){
+                    if (ps.matcher(key.strip()).find()){
+                        is_expr = true;
+                    }
+                    if (pq.matcher(key.strip()).find()){
+                        query = locals.get(key);
+                        if (query!=null){
+                            query = query.strip();
+                            if (query.length()>=2 && query.charAt(0)=='"' && query.charAt(query.length()-1)=='"'){
+                                query=query.substring(1, query.length()-1);
+                            }
+                        }
+                    }
+                    if (pa.matcher(key.strip()).find()){
+                        attribute_name = locals.get(key);
+                        if (attribute_name==null){
+                            Utils.panic("GrammarGraph::handle_expr_locals : for expression nodes, attribute_name must not be null");
+                        }
+                        attribute_name = attribute_name.strip();
+                        if (attribute_name.length()>=2 && attribute_name.charAt(0)=='"' && attribute_name.charAt(attribute_name.length()-1)=='"'){
+                            attribute_name=attribute_name.substring(1, attribute_name.length()-1);
+                        }
+                    }
+                }
+                if (is_expr){
+                    if (query==null || query.length()==0){
+                        Utils.panic("GrammarGraph::handle_expr_locals : For each expression rule, a query SQL statement must be provided");
+                    }
+                    rn.set_expr_reference(query, attribute_name);
+                }
+            }
+        }
+    }
+
     //calculate the min depth for each node
     //The result is stored in the each node object
     //pre-compute to detected unsolvable cycles early and save time for the rendering process
