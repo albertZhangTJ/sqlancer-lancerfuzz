@@ -268,6 +268,28 @@ public class GrammarGraph{
         }
     }
 
+    public void process_types(){
+        for (Integer idx : this.vertices.keySet()){
+            if (this.vertices.get(idx) instanceof ActionNode){
+                ActionNode an = (ActionNode)this.vertices.get(idx);
+                List<String> res = AstUtils.get_type_decl(an.get_src());
+                if (res==null || res.size()<1){
+                    continue;
+                }
+                an.update_src(res.get(0));
+                if (res.size()==2){
+                    Node alt = this.parent_of(an);
+                    Node alter = this.parent_of(alt);
+                    if (!(alt instanceof AlternativeNode) || !(alter instanceof AlternationNode)){
+                        Utils.panic("GrammarGraph::process_types : expect parent node of the type definition to be an AlternativeNode");
+                    }
+                    ((AlternativeNode)alt).set_type(res.get(1));
+                    ((AlternationNode)alter).set_expr();
+                }
+            }
+        }
+    }
+
     public void process_var_refs(){
         for (Integer idx : this.vertices.keySet()){
             if (this.vertices.get(idx) instanceof ActionNode){

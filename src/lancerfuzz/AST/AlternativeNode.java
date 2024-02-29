@@ -18,6 +18,7 @@ public class AlternativeNode extends Node{
         this.is_var = false;
         this.is_static = false;
         this.var_id = "";
+        this.type = null;
     }
 
     public String get_rule_id(){

@@ -212,10 +212,84 @@ public class TemplateRenderer {
             template = replace_tag(template, "query", query);
             template = replace_tag(template, "attribute_name", attr_name);
             for (Edge e : node.get_outward_edges()){
+                if (e.get_dest() instanceof AlternationNode && ((AlternationNode)(e.get_dest())).get_is_expr()){
+                    e.add_arg("type", "type");
+                }
                 template = replace_tag(template, "expr_call_children", "        ans = ans + " + gen_function_call(e.get_dest(), e) + ";\n");
             }
             template = strip_tags(template);
             return template;
+        }
+        if (node instanceof AlternationNode && ((AlternationNode)node).get_is_expr()){
+            String template = this.templates.get("EXPR_CORE");
+            if (template==null){
+                Utils.panic("TemplateRenderer::render : No template found for expression cores");
+            }
+            template = replace_tag(template, "name", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
+            template = replace_tag(template, "MIN_DEPTH", ""+node.get_min_depth());
+            AlternationNode anode = (AlternationNode)node;
+            for (Edge e : anode.get_outward_edges()){
+                if (((AlternativeNode)(e.get_dest())).get_type()!=null){
+                    String s_template = this.templates.get("EXPR_CORE_CALL_CHILDREN");
+                    if (s_template == null){
+                        Utils.panic("TemplateRenderer::render : No template found for expression core calling children");
+                    }
+                    s_template = replace_tag(s_template, "type", ((AlternativeNode)(e.get_dest())).get_type());
+                    s_template = replace_tag(s_template, "call_node", gen_function_call(e.get_dest(), e));
+                    template = replace_tag(template, "expr_core_call_children", strip_tags(s_template));
+                }
+            }
+            template = replace_tag(template, "TOTAL_WEIGHT", ""+anode.get_total_weight());
+            // select one sub-paths for minimal expansion
+            // This is not optimal but since this is only a corner case (where the user provided an unreasonable depth limit value)
+            // For simplicity reasons we will only do a rendering time designation
+            // The rationale here is that there must exist at least one node whose min expansion depth is 
+            boolean has_var = false;
+            String var_id = "";
+            boolean is_static = false;
+            boolean is_member = false;
+            for (Edge e : anode.get_outward_edges()){
+                if (((e.get_dest()) instanceof AlternativeNode) && ((AlternativeNode)e.get_dest()).get_is_var()){
+                    template = replace_tag(template, "call_var_ref", "        ans = "+gen_function_call(e.get_dest(), e)+";");
+                    has_var = true;
+                    var_id = ((AlternativeNode)e.get_dest()).get_var_id();
+                    is_static = ((AlternativeNode)e.get_dest()).get_is_static();
+                    is_member = ((AlternativeNode)e.get_dest()).get_is_member();
+                }
+                
+            }
+            for (Edge e : anode.get_outward_edges()){
+                // for normal alternation node
+                if (!has_var && e.get_dest().get_min_depth() == anode.get_min_depth()-1){
+                    template = replace_tag(template, "call_min_child", gen_function_call(e.get_dest(), e));
+                    break; //there might be multiple possible min-expansions, however we just need one
+                }
+                // if one alternative node is a var_ref, just call one that isn't
+                if (has_var && !(((e.get_dest()) instanceof AlternativeNode) && ((AlternativeNode)e.get_dest()).get_is_var())){
+                    template = replace_tag(template, "call_min_child", gen_function_call(e.get_dest(), e));
+                    break; //there might be multiple possible min-expansions, however we just need one
+                }
+            }
+            List<Edge> branches = anode.get_outward_edges();
+            List<Double> weights = anode.get_weights();
+            if (branches.size()!=weights.size()){
+                Utils.panic("TemplateRenderer::render : alternation node weights vector size does not match ");
+            }
+            for (int i=0; i<branches.size(); i++){
+                String s_template = this.templates.get("ALTERNATION_NODE_SUB_OPTION");
+                if (s_template==null){
+                    Utils.panic("TemplateRenderer::render : No template found for alternation nodes sub options");
+                }
+                s_template = replace_tag(s_template, "WEIGHT", ""+weights.get(i));
+                s_template = replace_tag(s_template, "child_depth", ""+branches.get(i).get_dest().get_min_depth());
+                s_template = replace_tag(s_template, "call_child", gen_function_call(branches.get(i).get_dest(), branches.get(i)));
+                s_template = replace_tag(s_template, "HAS_VAR", ""+has_var);
+                s_template = replace_tag(s_template, "VAR_ID", var_id);
+                s_template = replace_tag(s_template, "IS_STATIC", ""+is_static);
+                s_template = replace_tag(s_template, "IS_MEMBER", ""+is_member);
+                template = replace_tag(template, "sub_option", strip_tags(s_template));
+            }
+            return strip_tags(template);
         }
         if (node instanceof ActionNode){
             String template = this.templates.get("ACTION_NODE");

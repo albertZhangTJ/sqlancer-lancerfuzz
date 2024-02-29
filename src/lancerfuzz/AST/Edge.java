@@ -31,6 +31,11 @@ public class Edge {
     public HashMap<String, String> get_args(){
         return Utils.copy_map(this.args);
     }
+
+    public void add_arg(String param, String val){
+        this.args.put(param, val);
+    }
+
     public boolean equals(Object other){
         if (other!=null && other instanceof Edge){
             Edge other_edge = (Edge)other;

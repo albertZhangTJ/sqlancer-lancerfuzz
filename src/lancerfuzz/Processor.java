@@ -110,8 +110,11 @@ public class Processor {
 
         GrammarGraph graph = GrammarGraphBuilder.build_grammar_graph(lexer_root, parser_root, options);
         graph.handle_schema_locals();
-        Utils.log("Schema references processed");
+        Utils.log("Schema locals processed");
+        graph.handle_expr_locals();
+        Utils.log("Expression locals processed");
         graph.check_imag_rules();
+        Utils.log("ImagRules verified");
         graph.check_for_duplicate_identifier();
         Utils.log_stage("Grammar graph sanity checked passed");
         graph.calc_depth();
@@ -131,6 +134,9 @@ public class Processor {
         template_files.add("alternative_node.st");
         template_files.add("call_rule_name.st");
         template_files.add("charset_node.st");
+        template_files.add("expr_core_call_children.st");
+        template_files.add("expr_core.st");
+        template_files.add("expr_node.st");
         template_files.add("fuzzer.st");
         template_files.add("lambda_node.st");
         template_files.add("literal_node.st");
@@ -141,6 +147,8 @@ public class Processor {
         template_files.add("unlexer_rule_node.st");
         template_files.add("unparser_call_children.st");
         template_files.add("unparser_rule_node.st");
+        
+        
 
         Utils.log("Rendering fuzzer");
 

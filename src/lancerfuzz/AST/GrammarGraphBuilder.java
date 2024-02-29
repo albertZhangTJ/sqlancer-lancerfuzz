@@ -667,6 +667,8 @@ public class GrammarGraphBuilder {
         Utils.log("Repetition IDs processed");
         graph.process_var_refs();
         Utils.log("Variable references processed");
+        graph.process_types();
+        Utils.log("Type definition for expression node processed");
         // Ignored the options for the graph, not entirely sure why grammar graph need info on options
         // Will come back to implement if later found needed
         // TODO
