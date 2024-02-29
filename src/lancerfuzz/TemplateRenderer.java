@@ -132,8 +132,12 @@ public class TemplateRenderer {
             }
             template = replace_tag(template, "rule_name", ((RuleNode)node).get_name());
             String query = ((RuleNode)node).get_query_stmt();
-            while (query.contains("$parent_name$")){
-                query = query.substring(0, query.indexOf("$parent_name$")) +"\" + parent_name + \"" + query.substring(query.indexOf("$parent_name$")+"$parent_name$".length());
+            while (query.contains("$parent_name")){
+                query = query.substring(0, query.indexOf("$parent_name")) +
+                        "\" + parent_name.get(" + 
+                        query.substring(query.indexOf("$parent_name")+"$parent_name".length(), query.indexOf("$parent_name")+"$parent_name".length()+1) + 
+                        ") + \"" + 
+                        query.substring(query.indexOf("$parent_name")+"$parent_nameX$".length());
             }
             while (query.contains("$STATIC_VAR(")){
                 query = query.substring(0, query.indexOf("$STATIC_VAR(")) +"\" + get_static_variable(" + query.substring(query.indexOf("$STATIC_VAR(")+"$STATIC_VAR(".length());
@@ -144,8 +148,12 @@ public class TemplateRenderer {
                 query = query.substring(0, query.indexOf("\")$")) +"\") + \"" + query.substring(query.indexOf("\")$")+"\")$".length());
             }
             String attr_name = ((RuleNode)node).get_attribute_name();
-            while (attr_name.contains("$parent_name$")){
-                attr_name = attr_name.substring(0, attr_name.indexOf("$parent_name$")) +"\" + parent_name + \"" + attr_name.substring(attr_name.indexOf("$parent_name$")+"$parent_name$".length());
+            while (attr.contains("$parent_name")){
+                attr = attr.substring(0, attr.indexOf("$parent_name")) +
+                        "\" + parent_name.get(" + 
+                        attr.substring(attr.indexOf("$parent_name")+"$parent_name".length(), attr.indexOf("$parent_name")+"$parent_name".length()+1) + 
+                        ") + \"" + 
+                        attr.substring(attr.indexOf("$parent_name")+"$parent_nameX$".length());
             }
             while (attr_name.contains("$STATIC_VAR(")){
                 attr_name = attr_name.substring(0, attr_name.indexOf("$STATIC_VAR(")) +"\" + get_static_variable(" + attr_name.substring(attr_name.indexOf("$STATIC_VAR(")+"$STATIC_VAR(".length());
@@ -157,6 +165,55 @@ public class TemplateRenderer {
             }
             template = replace_tag(template, "query", query);
             template = replace_tag(template, "attribute_name", attr_name);
+            template = strip_tags(template);
+            return template;
+        }
+        if (node instanceof RuleNode && ((RuleNode)node).is_expr()){
+            String template = this.templates.get("EXPR_NODE");
+            if (template==null){
+                Utils.panic("TemplateRenderer::render : No template found for expression nodes");
+            }
+            for (String ee : node.get_expected_errors()){
+                template = replace_tag(template, "ee", "        this.expected_error_buffer.add(\""+ee+"\");\n");
+            }
+            template = replace_tag(template, "rule_name", ((RuleNode)node).get_name());
+            String query = ((RuleNode)node).get_query_stmt();
+            while (query.contains("$parent_name")){
+                query = query.substring(0, query.indexOf("$parent_name")) +
+                        "\" + parent_name.get(" + 
+                        query.substring(query.indexOf("$parent_name")+"$parent_name".length(), query.indexOf("$parent_name")+"$parent_name".length()+1) + 
+                        ") + \"" + 
+                        query.substring(query.indexOf("$parent_name")+"$parent_nameX$".length());
+            }
+            while (query.contains("$STATIC_VAR(")){
+                query = query.substring(0, query.indexOf("$STATIC_VAR(")) +"\" + get_static_variable(" + query.substring(query.indexOf("$STATIC_VAR(")+"$STATIC_VAR(".length());
+                query = query.substring(0, query.indexOf("\")$")) +"\") + \"" + query.substring(query.indexOf("\")$")+"\")$".length());
+            }
+            while (query.contains("$MEMBER_VAR(")){
+                query = query.substring(0, query.indexOf("$MEMBER_VAR(")) +"\" + this.get_member_variable(" + query.substring(query.indexOf("$MEMBER_VAR(")+"$MEMBER_VAR(".length());
+                query = query.substring(0, query.indexOf("\")$")) +"\") + \"" + query.substring(query.indexOf("\")$")+"\")$".length());
+            }
+            String attr_name = ((RuleNode)node).get_attribute_name();
+            while (attr.contains("$parent_name")){
+                attr = attr.substring(0, attr.indexOf("$parent_name")) +
+                        "\" + parent_name.get(" + 
+                        attr.substring(attr.indexOf("$parent_name")+"$parent_name".length(), attr.indexOf("$parent_name")+"$parent_name".length()+1) + 
+                        ") + \"" + 
+                        attr.substring(attr.indexOf("$parent_name")+"$parent_nameX$".length());
+            }
+            while (attr_name.contains("$STATIC_VAR(")){
+                attr_name = attr_name.substring(0, attr_name.indexOf("$STATIC_VAR(")) +"\" + get_static_variable(" + attr_name.substring(attr_name.indexOf("$STATIC_VAR(")+"$STATIC_VAR(".length());
+                attr_name = attr_name.substring(0, attr_name.indexOf("\")$")) +"\") + \"" + attr_name.substring(attr_name.indexOf("\")$")+"\")$".length());
+            }
+            while (attr_name.contains("$MEMBER_VAR(")){
+                attr_name = attr_name.substring(0, attr_name.indexOf("$MEMBER_VAR(")) +"\" + this.get_member_variable(" + attr_name.substring(attr_name.indexOf("$MEMBER_VAR(")+"$MEMBER_VAR(".length());
+                attr_name = attr_name.substring(0, attr_name.indexOf("\")$")) +"\") + \"" + attr_name.substring(attr_name.indexOf("\")$")+"\")$".length());
+            }
+            template = replace_tag(template, "query", query);
+            template = replace_tag(template, "attribute_name", attr_name);
+            for (Edge e : node.get_outward_edges()){
+                template = replace_tag(template, "expr_call_children", "        ans = ans + " + gen_function_call(e.get_dest(), e) + ";\n");
+            }
             template = strip_tags(template);
             return template;
         }

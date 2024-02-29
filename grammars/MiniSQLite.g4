@@ -49,7 +49,7 @@ drop_table_stmt
 
 table_name locals [boolean is_schema=true, String query="SELECT name FROM sqlite_master WHERE name NOT LIKE '%sqlite%' AND TYPE='table' UNION SELECT name FROM sqlite_temp_master WHERE type='table' AND name NOT LIKE '%sqlite%';", String attribute_name="name"] : expr ;
 view_name locals [boolean is_schema=true, String query="SELECT name FROM sqlite_master WHERE name NOT LIKE '%sqlite%' AND TYPE='view' UNION SELECT name FROM sqlite_temp_master WHERE type='view' AND name NOT LIKE '%sqlite%';", String attribute_name="name"] : expr ;
-column_name locals [boolean is_schema=true, String query="SELECT name FROM pragma_table_info('$parent_name$');", String attribute_name="name"] : expr ;
+column_name locals [boolean is_schema=true, String query="SELECT name FROM pragma_table_info('$parent_name0$');", String attribute_name="name"] : expr ;
 	
 create_view_stmt
  : K_CREATE ( K_TEMP | K_TEMPORARY )? K_VIEW ( K_IF K_NOT K_EXISTS )?

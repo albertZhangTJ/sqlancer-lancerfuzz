@@ -9,7 +9,7 @@ public class AlternativeNode extends Node{
     private boolean is_member;
     private String var_id;
 
-    private String type;
+    private String type; //type (in SQL), should only be applicable if the parent is an expression node
 
     public AlternativeNode(String rule_id, int alternative_index, int index){
         this.rule_id = rule_id;

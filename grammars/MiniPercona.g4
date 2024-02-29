@@ -109,7 +109,7 @@ INT_VAL : (DIGIT {RP_LIMIT(1,5, false, 0.5); })+ ;
 
 dbName locals [boolean is_schema=true, String query="SHOW DATABASES;", String attribute_name="Database"] : STUB ;
 tableName locals [boolean is_schema=true, String query="SHOW TABLES;", String attribute_name="Tables_in_$STATIC_VAR("db")$"] : STUB;
-columnName locals [boolean is_schema=true, String query="SHOW COLUMNS FROM $parent_name$;", String attribute_name="Field"] : STUB;
+columnName locals [boolean is_schema=true, String query="SHOW COLUMNS FROM $parent_name0$;", String attribute_name="Field"] : STUB;
 
 
     
