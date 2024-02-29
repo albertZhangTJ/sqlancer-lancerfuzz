@@ -121,9 +121,10 @@ public class ProtoEntry {
                 String test_case = "";
                 boolean is_successful = true;
                 int last_failed = 0;
+                String stmt="";
                 while (true){
                     try {
-                        String stmt = fz.get_next_statement();
+                        stmt = fz.get_next_statement();
                         if (stmt.equals(Fuzzer.ERROR_FLAG)){
                             break;
                         }
@@ -134,7 +135,12 @@ public class ProtoEntry {
                         last_failed = 0;
                     }
                     catch (Exception e){
-                        System.out.println(e.toString());
+                        System.out.println("===================================");
+                        System.out.println(stmt);
+                        System.out.println(fz.get_crash_log());
+                        System.out.flush();
+                        e.printStackTrace();
+                        System.out.flush();
                         failed_stmt++;
                         boolean is_expected = false;
                         System.out.println("Got error");

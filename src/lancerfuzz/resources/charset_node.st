@@ -8,7 +8,7 @@
             return "";
         }
         if (indices.size()%2!=0){
-            System.out.println("\u001B[31mSUSPECT ERROR DURING FUZZER RENDERING, SIZE OF INDICES SHOULD BE EVEN\u001B[0m");
+            this.log("\u001B[31mSUSPECT ERROR DURING FUZZER RENDERING, SIZE OF INDICES SHOULD BE EVEN\u001B[0m");
         }
         //select a random range
         int r = random(0, indices.size()/2);

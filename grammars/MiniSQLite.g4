@@ -3,8 +3,8 @@ grammar MiniSQLite;
 create_table_stmt
  : K_CREATE ( K_TEMP | K_TEMPORARY )? K_TABLE ( K_IF K_NOT K_EXISTS )?
   	table_name[boolean is_new=true, String sup=null, String sub=null, String iid=null]
-   ' (' (' ' {VAR("cn");} | column_name[boolean is_new=true, String sup=null, String sub=null, String iid=null]) 
-   		( ', ' column_name[boolean is_new=true, String sup=null, String sub=null, String iid=null] { RP_LIMIT(5,8, false, 0.1); } )* 
+   ' (' (' ' {VAR("cn");} | column_name[boolean is_new=true, String sup=null, String sub=null, String iid=null] ) ( ' INTEGER' | ' TEXT')
+   		( ', ' column_name[boolean is_new=true, String sup=null, String sub=null, String iid=null] ( ' INTEGER' | ' TEXT') { RP_LIMIT(5,8, false, 0.1); } )* 
 		(', ' ( 'PRIMARY KEY(' (' ' {VAR("cn");} | column_name[boolean is_new=true, String sup=null, String sub=null, String iid=null]) ')' 
 				| 'UNIQUE(' (' ' {VAR("cn");} | column_name[boolean is_new=true, String sup=null, String sub=null, String iid=null]) ')'
 			) 
@@ -20,7 +20,7 @@ update_stmt
      | K_OR K_FAIL { BRANCH_W(0.1); }
      | K_OR K_IGNORE 
     )? table_name[boolean is_new=false, String sup=null, String sub="t", String iid=null] 
-   K_SET column_name[boolean is_new=false, String sup="t", String sub=null, String iid="s"] '=' expr 
+   K_SET column_name[boolean is_new=false, String sup="t", String sub="c", String iid="s"] '=' expr[String sup="c"] 
    ( K_WHERE expr )? ';'
  ;
  
@@ -33,10 +33,10 @@ insert_stmt :
 	K_INTO
 	table_name[boolean is_new=false, String sup=null, String sub="t", String iid=null] 
 	'(' 
-		column_name[boolean is_new=false, String sup="t", String sub=null, String iid="id"] 
-		( ',' column_name[boolean is_new=false, String sup="t", String sub=null, String iid="id"] {RP_LIMIT(1, 3, true, 0.9); RP_ID("s");} )* 
+		column_name[boolean is_new=false, String sup="t", String sub="c", String iid="id"] 
+		( ',' column_name[boolean is_new=false, String sup="t", String sub="c", String iid="id"] {RP_LIMIT(1, 3, true, 0.9); RP_ID("s");} )* 
 	')'
-	K_VALUES '(' expr ( ',' expr {RP_LIMIT(2, 4); RP_ID("s");} )* ');'  
+	K_VALUES '(' expr[String sup="c"] ( ',' expr[String sup="c"] {RP_LIMIT(2, 4); RP_ID("s");} )* ');'  
 	;
 	
 vacuum_stmt : K_VACUUM ';' ;
@@ -58,10 +58,10 @@ create_view_stmt
 
 select_stmt : K_SELECT '(' column_name[boolean is_new=false, String sup="t", String sub=null, String iid="id"]
 			( ', ' column_name[boolean is_new=false, String sup="t", String sub=null, String iid="id"] { RP_LIMIT(1,4); })* ')'
-			K_FROM ( table_name[boolean is_new=false, String sup=null, String sub="t", String iid=null] {BRANCH_W(9);} | { E_ERR("no such table"); } view_name[boolean is_new=false, String sup=null, String sub="t", String iid=null] )
+			K_FROM  table_name[boolean is_new=false, String sup=null, String sub="t", String iid=null] 
 	;
 
-expr locals [boolean is_expr=true, String query="SELECT type FROM pragma_table_info('$parent_name1$') WHERE name='$parent_name0$'';", String attribute_name="name"]: ( number {E_TYPE("INTEGER"); } | str {E_TYPE("TEXT");});
+expr locals [boolean is_expr=true, String query="SELECT type, name FROM pragma_table_info('$parent_name0$') WHERE name='$parent_name1$';", String attribute_name="type"]: ( number {E_TYPE("INTEGER"); } | str {E_TYPE("TEXT");});
 
 number : ( DIGIT { RP_LIMIT(1, 6, false, 0.3); } )+;
 str : DQ ( CH { RP_LIMIT(1, 8, false, 0.3); } )+ DQ;

@@ -22,6 +22,12 @@ public class Fuzzer {
         return null;
     }
 
+    public String get_crash_log() throws Exception{
+        System.out.println("This is template code. To use grammar based fuzzer, please generate them using lancerfuzz first");
+        System.exit(1);
+        return null;
+    }
+
     public String regenerate_last_statement() throws Exception{
         System.out.println("This is template code. To use grammar based fuzzer, please generate them using lancerfuzz first");
         System.exit(1);

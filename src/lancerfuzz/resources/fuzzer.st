@@ -49,6 +49,8 @@ public class <graph_name/>Fuzzer {
 
     private static HashMap<String, String> dbms_options = new HashMap<>();
 
+    private String crash_log;
+
 
     public <graph_name/>Fuzzer(SQLConnection con, int fuzzing_depth, int loop_threshold){
         this.con = con;
@@ -75,7 +77,13 @@ public class <graph_name/>Fuzzer {
         this.var_ref_stack = new ArrayList<>();
     }
 
+    public String get_crash_log(){
+        return this.crash_log;
+    }
 
+    private void log(Object entry){
+        this.crash_log = this.crash_log + entry.toString() +"\n";
+    }
 
     public static void init(){
         static_var_ref = new HashMap<>();
@@ -84,9 +92,9 @@ public class <graph_name/>Fuzzer {
 
 
     private String translate_rule_call(String rule_name) throws Exception{
-        //System.out.println("Translating: "+rule_name);
+        //this.log("Translating: "+rule_name);
 <CALL_RULE_NAME/>
-        System.out.println("ERROR: rule name "+rule_name+" has no corresponding function call generated");
+        this.log("ERROR: rule name "+rule_name+" has no corresponding function call generated");
         System.exit(1);
         return null;
     }
@@ -94,9 +102,16 @@ public class <graph_name/>Fuzzer {
     public String get_next_statement() throws Exception{
         if (this.rules_call_index<this.rules_call_series.size()){
             this.expected_error_buffer = new ArrayList<>();
-            String res = this.translate_rule_call(this.rules_call_series.get(this.rules_call_index));
-            this.rules_call_index++;
-            return res;
+            this.crash_log = "";
+            try {
+                String res = this.translate_rule_call(this.rules_call_series.get(this.rules_call_index));
+                this.rules_call_index++;
+                return res;
+            }
+            catch (Exception e){
+                //System.out.println(crash_log);
+                throw e;
+            }
         }
         return ERROR_FLAG;
     }
@@ -115,11 +130,13 @@ public class <graph_name/>Fuzzer {
 
     private ResultSet query_dbms(String query) throws Exception{
         try {
+            this.log("Queried DBMS with: "+query);
             ResultSet ans = this.con.createStatement().executeQuery(query);
+            //this.log("Got ans: "+ans.toString());
             return ans;
         }
         catch (Exception e){
-            System.out.println("Error encountered when executing query: "+query);
+            this.log("Error encountered when executing query: "+query);
             throw e;
         }
     }
@@ -156,9 +173,11 @@ public class <graph_name/>Fuzzer {
         if (id_val==null || id_val.size()==0){
             return null;
         }
-
+        
         List<String> ans = copy_list(id_val.get(this.identifier_cache_cursor.get(sup)));
+        this.log("get_next_parent_hierarchy: sup="+sup+"  index="+this.identifier_cache_cursor.get(sup)+"  ans="+ans.toString());
         this.identifier_cache_cursor.put(sup, (this.identifier_cache_cursor.get(sup)+1)%id_val.size());
+        this.log("Identifier index updated to: "+this.identifier_cache_cursor.get(sup));
         return ans;
     }
 
@@ -185,14 +204,14 @@ public class <graph_name/>Fuzzer {
 
     private void pop_identifier_cache(){
         if (this.identifier_cache_stack.size()==0){
-            System.out.println("ERROR: identifier stack underflow");
+            this.log("ERROR: identifier stack underflow");
             System.exit(1);
         }
         this.identifier_cache = this.identifier_cache_stack.get(this.identifier_cache_stack.size()-1);
         this.identifier_cache_stack.remove(this.identifier_cache_stack.size()-1);
 
         if (this.identifier_cache_cursor_stack.size()==0){
-            System.out.println("ERROR: identifier cursor stack underflow");
+            this.log("ERROR: identifier cursor stack underflow");
         }
         this.identifier_cache_cursor = this.identifier_cache_cursor_stack.get(this.identifier_cache_cursor_stack.size()-1);
         this.identifier_cache_cursor_stack.remove(this.identifier_cache_cursor_stack.size()-1);
@@ -205,7 +224,7 @@ public class <graph_name/>Fuzzer {
 
     private void pop_rpid(){
         if (this.rpid_stack.size()==0){
-            System.out.println("ERROR: rpid stack underflow");
+            this.log("ERROR: rpid stack underflow");
             System.exit(1);
         }
         this.rpid_cache = this.rpid_stack.get(this.rpid_stack.size()-1);
@@ -219,7 +238,7 @@ public class <graph_name/>Fuzzer {
 
     private void pop_used_identifier(){
         if (this.used_identifier_stack.size()==0){
-            System.out.println("ERROR: used identifier stack underflow");
+            this.log("ERROR: used identifier stack underflow");
             System.exit(1);
         }
         this.used_identifier = this.used_identifier_stack.get(this.used_identifier_stack.size()-1);

@@ -19,13 +19,13 @@
                 }
                 counter++;
                 if (counter>this.loop_threshold){
-                    System.out.println("ERROR: <name/> cannot deliver a valid result after "+this.loop_threshold+" passes. Aborting");
+                    this.log("ERROR: <name/> cannot deliver a valid result after "+this.loop_threshold+" passes. Aborting");
                     System.exit(1);
                 }
             }
         }
         catch (Exception e){
-            System.out.println(cache);
+            this.log(cache);
             throw e;
         }
         String ans = "";

@@ -15,8 +15,13 @@
                 return ERROR_FLAG;
             }
             String query = "<query/>";
+            //this.log("Executing query: "+query);
             ResultSet rs = this.query_dbms(query);
             List<String> values = new ArrayList<>();
+            while (rs.next()){
+                values.add(rs.getString("<attribute_name/>"));
+                this.log("Type added: "+rs.getString("<attribute_name/>")+" for parent: "+parent_name.toString());
+            }
             type = values.get(0);
         }
         // sub nodes of an expression are not expected to fail
