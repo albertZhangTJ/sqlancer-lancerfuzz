@@ -24,6 +24,10 @@ public class <graph_name/>Fuzzer {
     private List<HashMap<String, List<List<String>>>> identifier_cache_stack;
     private HashMap<String, List<List<String>>> identifier_cache;
     private HashMap<String, List<List<String>>> identifier_cache_snapshot;
+    
+    private HashMap<String, Integer> identifier_cache_cursor;
+    private List<HashMap<String, Integer>> identifier_cache_cursor_stack;
+    private HashMap<String, Integer> identifier_cache_cursor_snapshot;
 
     private List<HashMap<String, Integer>> rpid_stack;
     private HashMap<String, Integer> rpid_cache;
@@ -53,12 +57,19 @@ public class <graph_name/>Fuzzer {
         this.rules_call_index = 0;
         this.fuzzing_depth = fuzzing_depth;
         this.loop_threshold = loop_threshold;
+
         this.identifier_cache_stack = new ArrayList<>();
         this.identifier_cache = new HashMap<>();
+
+        this.identifier_cache_cursor = new HashMap<>();
+        this.identifier_cache_cursor_stack = new ArrayList<>();
+        
         this.used_identifier_stack = new ArrayList<>();
         this.used_identifier = new HashMap<>();
+
         this.rpid_stack = new ArrayList<>();
         this.rpid_cache = new HashMap<>();
+
         this.member_var_ref = new HashMap<>();
         this.var_ref = new HashMap<>();
         this.var_ref_stack = new ArrayList<>();
@@ -140,12 +151,24 @@ public class <graph_name/>Fuzzer {
         return copy_list(random_from_list(id_val));
     }
 
+    private List<String> get_next_parent_hierarchy(String sup){
+        List<List<String>> id_val = this.identifier_cache.get(sup);
+        if (id_val==null || id_val.size()==0){
+            return null;
+        }
+
+        List<String> ans = copy_list(id_val.get(this.identifier_cache_cursor.get(sup)));
+        this.identifier_cache_cursor.put(sup, (this.identifier_cache_cursor.get(sup)+1)%id_val.size());
+        return ans;
+    }
+
     private void set_parent(String sub, List<String> hierarchy){
         List<List<String>> id_val = this.identifier_cache.get(sub);
         if (id_val==null){
             List<List<String>> id_val_n = new ArrayList<>();
             id_val_n.add(hierarchy);
             this.identifier_cache.put(sub, id_val_n);
+            this.identifier_cache_cursor.put(sub, 0);
         }
         else {
             id_val.add(hierarchy);
@@ -155,6 +178,9 @@ public class <graph_name/>Fuzzer {
     private void push_identifier_cache(){
         this.identifier_cache_stack.add(this.identifier_cache);
         this.identifier_cache = new HashMap<>();
+
+        this.identifier_cache_cursor_snapshot.add(this.identifier_cache_cursor);
+        this.identifier_cache_cursor = new HashMap<>;
     }
 
     private void pop_identifier_cache(){
@@ -164,6 +190,12 @@ public class <graph_name/>Fuzzer {
         }
         this.identifier_cache = this.identifier_cache_stack.get(this.identifier_cache_stack.size()-1);
         this.identifier_cache_stack.remove(this.identifier_cache_stack.size()-1);
+
+        if (this.identifier_cache_cursor_stack.size()==0){
+            System.out.println("ERROR: identifier cursor stack underflow");
+        }
+        this.identifier_cache_cursor = this.identifier_cache_cursor_stack.get(this.identifier_cache_cursor_stack.size()-1);
+        this.identifier_cache_cursor_stack.remove(this.identifier_cache_cursor_stack.size()-1);
     }
 
     private void push_rpid(){
@@ -232,6 +264,12 @@ public class <graph_name/>Fuzzer {
             this.identifier_cache_snapshot.put(entry.getKey(), copy_list(entry.getValue()));
         }
 
+        //snapshot the cursor for the identifiers above
+        this.identifier_cache_cursor_snapshot = new HashMap<>();
+        for (HashMap.Entry<String, Integer> entry: this.identifier_cache_cursor.entrySet()){
+            this.identifier_cache_cursor_snapshot.put(entry.getKey(), entry.getValue());
+        }
+
         // snapshot used identifiers
         this.used_identifier_snapshot = new HashMap<>();
         for (HashMap.Entry<String, List<String>> entry: this.used_identifier.entrySet()){
@@ -250,6 +288,7 @@ public class <graph_name/>Fuzzer {
 
     private void rollback_context(){
         this.identifier_cache = this.identifier_cache_snapshot;
+        this.identifier_cache_cursor = this.identifier_cache_cursor_snapshot;
         this.used_identifier = this.used_identifier_snapshot;
         this.rpid_cache = this.rpid_cache_snapshot;
         this.expected_error_buffer = this.expected_error_buffer_snapshot;

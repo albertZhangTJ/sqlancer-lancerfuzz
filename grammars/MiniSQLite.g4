@@ -61,8 +61,10 @@ select_stmt : K_SELECT '(' column_name[boolean is_new=false, String sup="t", Str
 			K_FROM ( table_name[boolean is_new=false, String sup=null, String sub="t", String iid=null] {BRANCH_W(9);} | { E_ERR("no such table"); } view_name[boolean is_new=false, String sup=null, String sub="t", String iid=null] )
 	;
 
-expr : ( DIGIT { RP_LIMIT(1, 6, false, 0.3); } )+;
+expr locals [boolean is_expr=true, String query="SELECT type FROM pragma_table_info('$parent_name1$') WHERE name='$parent_name0$'';", String attribute_name="name"]: ( number {E_TYPE("INTEGER"); } | str {E_TYPE("TEXT");});
 
+number : ( DIGIT { RP_LIMIT(1, 6, false, 0.3); } )+;
+str : ( CH { RP_LIMIT(1, 6, false, 0.3); } )+;
 
 K_ABORT : SPACE A B O R T SPACE;
 K_ALL : SPACE A L L SPACE;
@@ -98,7 +100,7 @@ K_VIEW : SPACE V I E W SPACE;
 K_WHERE : SPACE W H E R E SPACE;
 
 
-
+fragment CH : [A-Z];
 fragment DIGIT : [0-9];
 fragment SPACE : [\u0020];
 fragment NL : [\n];

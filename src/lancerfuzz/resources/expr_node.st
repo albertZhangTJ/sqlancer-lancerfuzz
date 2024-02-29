@@ -7,7 +7,7 @@
         List<String> parent_name = null;
         String type = "";
         if (sup!=null){
-            parent_name = this.get_parent_hierarchy(sup);
+            parent_name = this.get_next_parent_hierarchy(sup);
             if (parent_name==null || parent_name.size()==0){
                 return ERROR_FLAG;
             }
