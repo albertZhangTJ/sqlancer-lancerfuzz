@@ -179,8 +179,8 @@ public class <graph_name/>Fuzzer {
         this.identifier_cache_stack.add(this.identifier_cache);
         this.identifier_cache = new HashMap<>();
 
-        this.identifier_cache_cursor_snapshot.add(this.identifier_cache_cursor);
-        this.identifier_cache_cursor = new HashMap<>;
+        this.identifier_cache_cursor_stack.add(this.identifier_cache_cursor);
+        this.identifier_cache_cursor = new HashMap<>();
     }
 
     private void pop_identifier_cache(){

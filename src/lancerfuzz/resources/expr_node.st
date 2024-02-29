@@ -1,6 +1,9 @@
 //EXPR_NODE
 //MIN_DEPTH = 1
 //IT IS THE TESTER'S RESPONSIBILITY TO ENSURE THE PROPER PARAMETERS ARE SPECIFIED IN THE GRAMMAR FILE
+    private String <rule_name/>(int depth) throws Exception{
+        return <rule_name/>(depth, null);
+    }
     private String <rule_name/>(int depth, String sup) throws Exception{
 <ee/>
         String ans = "";
@@ -14,20 +17,6 @@
             String query = "<query/>";
             ResultSet rs = this.query_dbms(query);
             List<String> values = new ArrayList<>();
-            int cnt=0;
-            while (rs.next()){
-                cnt++;
-                //System.out.println(rs.getString("<attribute_name/>"));
-                if (iid==null || this.is_identifier_available(iid, rs.getString("<attribute_name/>") )){
-                    //System.out.println("Added");
-                    values.add(rs.getString("<attribute_name/>"));
-                }
-            }
-            if (values.size()==0){
-                System.out.println("Queried target DBMS with: "+query);
-                System.out.println("ResultSet has length: "+cnt);
-                throw new Exception("IgnoreMe: quantifier node multiplier cannot be satisfied");
-            }
             type = values.get(0);
         }
         // sub nodes of an expression are not expected to fail

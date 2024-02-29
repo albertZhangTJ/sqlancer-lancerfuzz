@@ -33,6 +33,9 @@ public class Edge {
     }
 
     public void add_arg(String param, String val){
+        if (this.args == null){
+            this.args = new HashMap<>();
+        }
         this.args.put(param, val);
     }
 
