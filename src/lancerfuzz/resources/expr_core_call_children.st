@@ -1,4 +1,4 @@
 //EXPR_CORE_CALL_CHILDREN
-            if ("<type/>".equals(type)){
+            if ("<type/>".toLowerCase().equals(type.toLowerCase())){
                 return <call_node/>;
             }

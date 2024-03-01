@@ -44,17 +44,17 @@ useDatabase
     ;
 
 createTable
-    : CREATE (' ' {BRANCH_W(9);} | TEMPORARY {E_ERR("Cannot create temporary table with partitions");}) TABLE ifNotExists? tableName[boolean is_new=true, 
+    : CREATE {E_ERR("A BLOB field is not allowed in partition function");} (' ' {BRANCH_W(9);} | TEMPORARY {E_ERR("Cannot create temporary table with partitions");}) TABLE ifNotExists? tableName[boolean is_new=true, 
             String sup=null, 
             String sub=null,
             String iid="b"] (LB
     	( { VAR("cn");} | columnName[boolean is_new=true, 
             String sup=null, 
             String sub=null,
-            String iid="a"]) INT (',' columnName[boolean is_new=true, 
+            String iid="a"]) ( INT | TEXT )(',' columnName[boolean is_new=true, 
             String sup=null, 
             String sub=null,
-            String iid="a"] INT { RP_LIMIT(1,6, true, 0.1); })* RB 
+            String iid="a"] ( INT | TEXT) { RP_LIMIT(1,6, true, 0.1); })* RB 
             (' ' {BRANCH_W(8);} |
                     PARTITION BY (LINEAR)? 
                     ( 
@@ -78,11 +78,11 @@ insertStatement
             String iid=null]  (
        '(' columnName[boolean is_new=false, 
             String sup="t", 
-            String sub=null,
+            String sub="c",
             String iid="id1"] ( ',' columnName[boolean is_new=false, 
             String sup="t", 
-            String sub=null,
-            String iid="id1"] { RP_LIMIT(0, 5); RP_ID("a"); })* ')' VALUES '(' INT_VAL (',' INT_VAL { RP_LIMIT(0, 5); RP_ID("a"); })* ')'
+            String sub="c",
+            String iid="id1"] { RP_LIMIT(0, 5); RP_ID("a"); })* ')' VALUES '(' expr[String sup="c"] (',' expr[String sup="c"] { RP_LIMIT(0, 5); RP_ID("a"); })* ')'
     ) SC
     ;
 
@@ -92,20 +92,23 @@ updateStatement
             String sub="t",
             String iid=null] SET columnName[boolean is_new=false, 
             String sup="t", 
-            String sub=null,
-            String iid="id1"] '=' INT_VAL (
+            String sub="c",
+            String iid="id1"] '=' expr[String sup="c"] (
         ',' columnName[boolean is_new=false, 
             String sup="t", 
-            String sub=null,
-            String iid="id1"] '=' INT_VAL
+            String sub="c",
+            String iid="id1"] '=' expr[String sup="c"]
             {RP_LIMIT(0, 5); }
-    )* (WHERE columnName[boolean is_new=false, 
+    )* (WHERE (NOT)? columnName[boolean is_new=false, 
             String sup="t", 
-            String sub=null,
-            String iid=null] '=' INT_VAL)? SC
+            String sub="cc",
+            String iid=null] '=' expr[String sup="cc"])? SC
     ;
 
+expr locals [boolean is_expr=true, String query="SHOW COLUMNS FROM $parent_name0$ WHERE Field='$parent_name1$';", String attribute_name="Type"] : ( INT_VAL {E_TYPE("INT");} | TEXT_VAL {E_TYPE("TEXT");} );
+
 INT_VAL : (DIGIT {RP_LIMIT(1,5, false, 0.5); })+ ;
+TEXT_VAL : DQ (CH {RP_LIMIT(1,10, false, 0.2); })+ DQ;
 
 dbName locals [boolean is_schema=true, String query="SHOW DATABASES;", String attribute_name="Database"] : STUB ;
 tableName locals [boolean is_schema=true, String query="SHOW TABLES;", String attribute_name="Tables_in_$STATIC_VAR("db")$"] : STUB;
@@ -143,6 +146,7 @@ SELECT : SPACE S E L E C T SPACE;
 SET : SPACE S E T SPACE;
 TABLE : SPACE T A B L E SPACE;
 TEMPORARY : SPACE T E M P O R A R Y SPACE;
+TEXT : SPACE T E X T SPACE;
 TRUNCATE : SPACE T R U N C A T E SPACE;
 UPDATE : SPACE U P D A T E SPACE;
 USE : SPACE U S E SPACE;
@@ -190,5 +194,6 @@ fragment W : [W];
 fragment X : [X];
 fragment Y : [Y];
 fragment Z : [Z];
-
+fragment CH : [A-Z];
+fragment DQ : ["];
 

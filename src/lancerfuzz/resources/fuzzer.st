@@ -174,9 +174,9 @@ public class <graph_name/>Fuzzer {
             return null;
         }
         
-        List<String> ans = copy_list(id_val.get(this.identifier_cache_cursor.get(sup)));
+        List<String> ans = copy_list(id_val.get(this.identifier_cache_cursor.get(sup)%id_val.size()));
         this.log("get_next_parent_hierarchy: sup="+sup+"  index="+this.identifier_cache_cursor.get(sup)+"  ans="+ans.toString());
-        this.identifier_cache_cursor.put(sup, (this.identifier_cache_cursor.get(sup)+1)%id_val.size());
+        this.identifier_cache_cursor.put(sup, this.identifier_cache_cursor.get(sup)+1);
         this.log("Identifier index updated to: "+this.identifier_cache_cursor.get(sup));
         return ans;
     }
