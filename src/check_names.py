@@ -13,6 +13,12 @@ def get_java_files(directory_path: str) -> List[str]:
 
 
 def verify_one_db(prefix: str, files: List[str]):
+    if prefix=="any":
+        if len(files) == 0:
+            print("Grammar-based fuzzers not found")
+        else:
+            print("Grammar-based fuzzers found")
+        return
     print('checking database, name: {0}, files: {1}'.format(prefix, files))
     if len(files) == 0:
         print(prefix + ' directory does not contain any files!', file=sys.stderr)
@@ -33,6 +39,7 @@ if __name__ == '__main__':
     cwd = os.getcwd()
     print("Current working directory: {0}".format(cwd))
     name_to_files: dict[str:List[str]] = dict()
+    name_to_files["Any"] = get_java_files(os.path.join(cwd, "src", "sqlancer", "any")) # Used for grammar-based fuzzing
     name_to_files["Citus"] = get_java_files(os.path.join(cwd, "src", "sqlancer", "citus"))
     name_to_files["ClickHouse"] = get_java_files(os.path.join(cwd, "src", "sqlancer", "clickhouse"))
     name_to_files["CnosDB"] = get_java_files(os.path.join(cwd, "src", "sqlancer", "cnosdb"))
