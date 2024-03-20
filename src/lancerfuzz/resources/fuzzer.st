@@ -168,6 +168,14 @@ public class <graph_name/>Fuzzer {
         return copy_list(random_from_list(id_val));
     }
 
+    private int get_parent_hierarchy_cursor(String sup){
+        return this.identifier_cache_cursor.get(sup);
+    }
+    
+    private void set_parent_hierarchy_cursor(String sup, int new_val){
+        this.identifier_cache_cursor.put(sup, new_val);
+    }
+
     private List<String> get_next_parent_hierarchy(String sup){
         List<List<String>> id_val = this.identifier_cache.get(sup);
         if (id_val==null || id_val.size()==0){
