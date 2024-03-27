@@ -91,7 +91,7 @@ public class <graph_name/>Fuzzer {
     }
 
 
-    private String translate_rule_call(String rule_name) throws Exception{
+    public String generate_rule(String rule_name) throws Exception{
         //this.log("Translating: "+rule_name);
 <CALL_RULE_NAME/>
         this.log("ERROR: rule name "+rule_name+" has no corresponding function call generated");
@@ -104,7 +104,7 @@ public class <graph_name/>Fuzzer {
             this.expected_error_buffer = new ArrayList<>();
             this.crash_log = "";
             try {
-                String res = this.translate_rule_call(this.rules_call_series.get(this.rules_call_index));
+                String res = this.generate_rule(this.rules_call_series.get(this.rules_call_index));
                 this.rules_call_index++;
                 return res;
             }
@@ -119,7 +119,7 @@ public class <graph_name/>Fuzzer {
     public String regenerate_last_statement() throws Exception{
         this.rules_call_index--;
         this.expected_error_buffer = new ArrayList<>();
-        String res = this.translate_rule_call(this.rules_call_series.get(this.rules_call_index));
+        String res = this.generate_rule(this.rules_call_series.get(this.rules_call_index));
         this.rules_call_index++;
         return res;
     }
