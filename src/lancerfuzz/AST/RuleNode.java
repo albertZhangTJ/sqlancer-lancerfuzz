@@ -27,6 +27,7 @@ public class RuleNode extends Node{
 
     private boolean is_expr; //If the current node is an expression definition
     
+    private boolean is_dependent;
     
     public RuleNode(String name, String label, RuleNodeType type){
         super(name, label);
@@ -41,6 +42,10 @@ public class RuleNode extends Node{
         this.is_schema = false;
         this.query = null;
         this.attribute_name = null;
+
+        this.is_expr = false;
+
+        this.is_dependent = false;
     } 
 
     public boolean has_var(){
@@ -133,6 +138,19 @@ public class RuleNode extends Node{
         }
     }
 
+    private void remove_dependent_locals(){
+        Set<String> key_set = this.locals.keySet();
+        Pattern p = Pattern.compile("boolean\\s{1,}is_dependent");
+        List<String> keys_to_remove = new ArrayList<>();
+        for (String key : key_set){
+            if (p.matcher(key.strip()).find()){
+                keys_to_remove.add(key);
+            }
+        }
+        for (String key : keys_to_remove){
+            this.locals.remove(key);
+        }
+    }
     
     public void set_schema_reference(String schema_query, String attribute_name){
         this.is_schema = true;
@@ -152,12 +170,21 @@ public class RuleNode extends Node{
         this.remove_expr_locals();
     }
 
+    public void set_is_dependent(boolean is_dependent){
+        this.is_dependent = is_dependent;
+        this.remove_dependent_locals();
+    }
+
     public boolean is_schema_ref(){
         return this.is_schema;
     }
 
     public boolean is_expr(){
         return this.is_expr;
+    }
+
+    public boolean get_is_dependent(){
+        return this.is_dependent;
     }
 
     public String get_query_stmt(){

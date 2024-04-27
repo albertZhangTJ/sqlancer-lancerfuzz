@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import com.facebook.presto.jdbc.internal.apache.commons.codec.language.bm.Rule;
+
 import lancerfuzz.AST.*;
 import io.questdb.std.Hash;
 import net.sf.jsqlparser.statement.alter.Alter;
@@ -457,6 +459,7 @@ public class TemplateRenderer {
                 template = replace_tag(template, "ee", "        this.expected_error_buffer.add(\""+ee+"\");\n");
             }
             template = replace_tag(template, "name", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
+            template = replace_tag(template, "dependent", ((RuleNode)node).get_is_dependent() ? "true" : "false");
             for (Edge e : node.get_outward_edges()){
                 template = replace_tag(template, "call_children", "        ans = ans + " + gen_function_call(e.get_dest(), e) + ";\n        ");
             }
@@ -472,6 +475,7 @@ public class TemplateRenderer {
                 template = replace_tag(template, "ee", "        this.expected_error_buffer.add(\""+ee+"\");\n");
             }
             template = replace_tag(template, "name", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
+            template = replace_tag(template, "dependent", ((RuleNode)node).get_is_dependent() ? "true" : "false");
             template = replace_tag(template, "MIN_DEPTH", ""+node.get_min_depth());
             int index = 0;
             for (Edge e: node.get_outward_edges()){
@@ -536,6 +540,16 @@ public class TemplateRenderer {
             }
             template = replace_tag(template, "STAGE", strip_tags(st_template));
         }
+        HashMap<Integer, Node> vertices = graph.get_vertices();
+        for (Integer i : vertices.keySet()){
+            template = replace_tag(template, "RULE", render(vertices.get(i)));
+            if (vertices.get(i) instanceof RuleNode){
+                String rule_name = ((RuleNode)vertices.get(i)).get_name();
+                if (!((RuleNode)vertices.get(i)).is_schema_ref() && !((RuleNode)vertices.get(i)).is_expr() && !translatable_rules.contains(rule_name)){
+                    translatable_rules.add(rule_name);
+                }
+            }
+        }
         for (String rule_name : translatable_rules){
             String crn_template = this.templates.get("CALL_RULE_NAME");
             if (crn_template==null){
@@ -543,10 +557,6 @@ public class TemplateRenderer {
             }
             crn_template = replace_tag(crn_template, "RULE_NAME", rule_name);
             template = replace_tag(template, "CALL_RULE_NAME", crn_template);
-        }
-        HashMap<Integer, Node> vertices = graph.get_vertices();
-        for (Integer i : vertices.keySet()){
-            template = replace_tag(template, "RULE", render(vertices.get(i)));
         }
         return strip_tags(template); //TODO
     }

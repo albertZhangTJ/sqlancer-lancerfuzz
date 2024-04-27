@@ -22,18 +22,22 @@ public class <graph_name/>Fuzzer {
 
     //Rule-wise identifier cache, must be resetted at the beginning of each rule call
     private List<HashMap<String, List<List<String>>>> identifier_cache_stack;
+    private int identifier_cache_stack_pointer;
     private HashMap<String, List<List<String>>> identifier_cache;
     private HashMap<String, List<List<String>>> identifier_cache_snapshot;
     
     private HashMap<String, Integer> identifier_cache_cursor;
     private List<HashMap<String, Integer>> identifier_cache_cursor_stack;
+    private int identifier_cache_cursor_stack_pointer;
     private HashMap<String, Integer> identifier_cache_cursor_snapshot;
 
     private List<HashMap<String, Integer>> rpid_stack;
+    private int rpid_stack_pointer;
     private HashMap<String, Integer> rpid_cache;
     private HashMap<String, Integer> rpid_cache_snapshot;
 
     private List<HashMap<String, List<String>>> used_identifier_stack;
+    private int used_identifier_stack_pointer;
     private HashMap<String, List<String>> used_identifier; 
     private HashMap<String, List<String>> used_identifier_snapshot;
 
@@ -61,15 +65,19 @@ public class <graph_name/>Fuzzer {
         this.loop_threshold = loop_threshold;
 
         this.identifier_cache_stack = new ArrayList<>();
+        this.identifier_cache_stack_pointer = 0;
         this.identifier_cache = new HashMap<>();
 
         this.identifier_cache_cursor = new HashMap<>();
         this.identifier_cache_cursor_stack = new ArrayList<>();
+        this.identifier_cache_cursor_stack_pointer = 0;
         
         this.used_identifier_stack = new ArrayList<>();
+        this.used_identifier_stack_pointer = 0;
         this.used_identifier = new HashMap<>();
 
         this.rpid_stack = new ArrayList<>();
+        this.rpid_stack_pointer = 0;
         this.rpid_cache = new HashMap<>();
 
         this.member_var_ref = new HashMap<>();
@@ -95,8 +103,7 @@ public class <graph_name/>Fuzzer {
         //this.log("Translating: "+rule_name);
 <CALL_RULE_NAME/>
         this.log("ERROR: rule name "+rule_name+" has no corresponding function call generated");
-        System.exit(1);
-        return null;
+        throw new Exception();
     }
 
     public String get_next_statement() throws Exception{
@@ -109,7 +116,7 @@ public class <graph_name/>Fuzzer {
                 return res;
             }
             catch (Exception e){
-                //System.out.println(crash_log);
+                //this.log(crash_log);
                 throw e;
             }
         }
@@ -203,54 +210,107 @@ public class <graph_name/>Fuzzer {
     }
 
     private void push_identifier_cache(){
-        this.identifier_cache_stack.add(this.identifier_cache);
         this.identifier_cache = new HashMap<>();
-
-        this.identifier_cache_cursor_stack.add(this.identifier_cache_cursor);
+        this.identifier_cache_stack.add(this.identifier_cache_stack_pointer, this.identifier_cache);
+        this.identifier_cache_stack_pointer++;
+        
         this.identifier_cache_cursor = new HashMap<>();
+        this.identifier_cache_cursor_stack.add(this.identifier_cache_cursor_stack_pointer, this.identifier_cache_cursor);
+        this.identifier_cache_cursor_stack_pointer++;
     }
 
-    private void pop_identifier_cache(){
+    private void restore_identifier_cache(){
+        this.identifier_cache = this.identifier_cache_stack.get(this.identifier_cache_stack_pointer);
+        this.identifier_cache_stack_pointer++;
+
+        this.identifier_cache_cursor = this.identifier_cache_cursor_stack.get(this.identifier_cache_cursor_stack_pointer);
+        this.identifier_cache_cursor_stack_pointer++;
+    }
+
+    private void pop_identifier_cache() throws Exception{
         if (this.identifier_cache_stack.size()==0){
             this.log("ERROR: identifier stack underflow");
-            System.exit(1);
+            throw new Exception("ERROR: identifier stack underflow");
         }
-        this.identifier_cache = this.identifier_cache_stack.get(this.identifier_cache_stack.size()-1);
-        this.identifier_cache_stack.remove(this.identifier_cache_stack.size()-1);
+        this.identifier_cache_stack_pointer--;
+        if (this.identifier_cache_stack_pointer==0){
+            this.identifier_cache = new HashMap<>();
+        }
+        else {
+            this.identifier_cache = this.identifier_cache_stack.get(this.identifier_cache_stack_pointer-1);
+        }
 
         if (this.identifier_cache_cursor_stack.size()==0){
             this.log("ERROR: identifier cursor stack underflow");
         }
-        this.identifier_cache_cursor = this.identifier_cache_cursor_stack.get(this.identifier_cache_cursor_stack.size()-1);
-        this.identifier_cache_cursor_stack.remove(this.identifier_cache_cursor_stack.size()-1);
+        this.identifier_cache_cursor_stack_pointer--;
+        if (this.identifier_cache_cursor_stack_pointer==0){
+            this.identifier_cache_cursor = new HashMap<>();
+        }
+        else {
+            this.identifier_cache_cursor = this.identifier_cache_cursor_stack.get(this.identifier_cache_cursor_stack_pointer-1);
+        }
     }
 
     private void push_rpid(){
-        this.rpid_stack.add(this.rpid_cache);
+        //once we try to push something, all the potentially restorable stack frames should be deemed invalid
+        while(this.rpid_stack.size()>this.rpid_stack_pointer){
+            this.rpid_stack.remove(this.rpid_stack.size()-1);
+        }
         this.rpid_cache = new HashMap<>();
+        this.rpid_stack.add(this.rpid_stack_pointer, this.rpid_cache);
+        this.rpid_stack_pointer++;
     }
 
-    private void pop_rpid(){
-        if (this.rpid_stack.size()==0){
+    //this is like push, but without invalidating all further stack frames
+    //also the cache will be given a on-stack frame instead of a new frame
+    private void restore_rpid(){
+        this.rpid_cache = this.rpid_stack.get(this.rpid_stack_pointer);
+        this.rpid_stack_pointer++;
+    }
+
+    private void pop_rpid() throws Exception{
+        if (this.rpid_stack_pointer==0){
             this.log("ERROR: rpid stack underflow");
-            System.exit(1);
+            throw new Exception();
         }
-        this.rpid_cache = this.rpid_stack.get(this.rpid_stack.size()-1);
-        this.rpid_stack.remove(this.rpid_stack.size()-1);
+        this.rpid_stack_pointer--;
+        if (this.rpid_stack_pointer==0){
+            this.rpid_cache = new HashMap<>();
+        }
+        else {
+            this.rpid_cache = this.rpid_stack.get(this.rpid_stack_pointer-1);
+        }
     }
 
     private void push_used_identifier(){
-        this.used_identifier_stack.add(this.used_identifier);
+        //once we try to push something, all the potentially restorable stack frames should be deemed invalid
+        while(this.used_identifier_stack.size()>this.used_identifier_stack_pointer){
+            this.used_identifier_stack.remove(this.used_identifier_stack.size()-1);
+        }
         this.used_identifier = new HashMap<>();
+        this.used_identifier_stack.add(this.used_identifier_stack_pointer, this.used_identifier);
+        this.used_identifier_stack_pointer++;
     }
 
-    private void pop_used_identifier(){
-        if (this.used_identifier_stack.size()==0){
+    //this is like push, but without invalidating all further stack frames
+    //also the cache will be given a on-stack frame instead of a new frame
+    private void restore_used_identifier(){
+        this.used_identifier = this.used_identifier_stack.get(this.used_identifier_stack_pointer);
+        this.used_identifier_stack_pointer++;
+    }
+    private void pop_used_identifier() throws Exception{
+        if (this.used_identifier_stack_pointer==0){
             this.log("ERROR: used identifier stack underflow");
-            System.exit(1);
+            throw new Exception();
         }
-        this.used_identifier = this.used_identifier_stack.get(this.used_identifier_stack.size()-1);
-        this.used_identifier_stack.remove(this.used_identifier_stack.size()-1);
+        this.used_identifier_stack_pointer--;
+        if (this.used_identifier_stack_pointer==0){
+            this.used_identifier = new HashMap<>();
+        }
+        else{
+            this.used_identifier = this.used_identifier_stack.get(this.used_identifier_stack_pointer-1);
+        }
     }
 
     //it is the callee's responsibility to create new context for itself at entry
@@ -260,7 +320,20 @@ public class <graph_name/>Fuzzer {
         this.push_rpid();
         this.push_used_identifier();
     }
-    private void pop_context(){
+    private void restore_context(){
+        //check if all stacks have something to restore
+        //these stacks SHOULD have the same size, but just to be safe we will check every one
+        if (this.identifier_cache_stack.size()>this.identifier_cache_stack_pointer &&
+                this.identifier_cache_cursor_stack.size()>this.identifier_cache_cursor_stack_pointer &&
+                this.rpid_stack.size()>this.rpid_stack_pointer &&
+                this.used_identifier_stack.size()>this.used_identifier_stack_pointer){
+            this.log("Restoring stack frame");
+            this.restore_identifier_cache();
+            this.restore_rpid();
+            this.restore_used_identifier();
+        }
+    }
+    private void pop_context() throws Exception{
         this.pop_used_identifier();
         this.pop_rpid();
         this.pop_identifier_cache();
@@ -314,11 +387,20 @@ public class <graph_name/>Fuzzer {
     }
 
     private void rollback_context(){
+        //this.log("Rolling back");
         this.identifier_cache = this.identifier_cache_snapshot;
         this.identifier_cache_cursor = this.identifier_cache_cursor_snapshot;
         this.used_identifier = this.used_identifier_snapshot;
         this.rpid_cache = this.rpid_cache_snapshot;
         this.expected_error_buffer = this.expected_error_buffer_snapshot;
+
+        //for the contexts that resides on the context stacks
+        //update the pointers on the context stacks as well
+        this.identifier_cache_stack.set(this.identifier_cache_stack_pointer-1, this.identifier_cache_snapshot);
+        this.identifier_cache_cursor_stack.set(this.identifier_cache_cursor_stack_pointer-1, this.identifier_cache_cursor_snapshot);
+        this.rpid_stack.set(this.rpid_stack_pointer-1, this.rpid_cache_snapshot);
+        this.used_identifier_stack.set(this.used_identifier_stack_pointer-1, this.used_identifier_snapshot);
+        //this.log("Rolled back");
     }
 
     private String get_variable(String key){

@@ -107,8 +107,30 @@ updateStatement
 
 expr locals [boolean is_expr=true, String query="SHOW COLUMNS FROM $parent_name0$ WHERE Field='$parent_name1$';", String attribute_name="Type"] : ( INT_VAL {E_TYPE("INT");} | TEXT_VAL {E_TYPE("TEXT");} );
 
+selectStatement 
+    : SELECT '(' columnName[boolean is_new=false, 
+            String sup="t", 
+            String sub="c",
+            String iid="id1"] (
+        ',' columnName[boolean is_new=false, 
+            String sup="t", 
+            String sub="c",
+            String iid="id1"]
+            {RP_LIMIT(0, 5); }
+    )* ')' FROM tableName[boolean is_new=false, 
+            String sup=null, 
+            String sub="t",
+            String iid=null]
+    ;
+
+pre locals [boolean is_dependent=true] : '(' columnName[boolean is_new=false, 
+            String sup="t", 
+            String sub="cc",
+            String iid="id1"] '=' expr[String sup="cc"] ')'
+        ;
+
 INT_VAL : (DIGIT {RP_LIMIT(1,5, false, 0.5); })+ ;
-TEXT_VAL : DQ (CH {RP_LIMIT(1,10, false, 0.2); })+ DQ;
+TEXT_VAL : DQ ( (CH | DIGIT) {RP_LIMIT(1,100, false, 0.1); })+ DQ;
 
 dbName locals [boolean is_schema=true, String query="SHOW DATABASES;", String attribute_name="Database"] : STUB ;
 tableName locals [boolean is_schema=true, String query="SHOW TABLES;", String attribute_name="Tables_in_$STATIC_VAR("db")$"] : STUB;

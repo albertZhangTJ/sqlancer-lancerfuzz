@@ -130,7 +130,7 @@ public class ProtoEntry {
                         }
                         total_stmt++;
                         test_case = test_case + stmt + "\n";
-                        System.out.println(stmt);
+                        //System.out.println(stmt);
                         con.createStatement().execute(stmt);
                         last_failed = 0;
                     }
@@ -167,6 +167,43 @@ public class ProtoEntry {
                 if (is_successful){
                     log_case(test_case);
                     succeeded_counter++;
+                    try {
+                        System.out.println("||||||||||||||||||||||||||||||||||||||||");
+                        String base_query = fz.generate_rule("selectStatement");
+                        System.out.println("Base query generated: "+base_query);
+                        String base_predicate = fz.generate_rule("pre");
+                        System.out.println("Base predicate generated: "+base_predicate);
+                        System.out.println("Base query: "+base_query+";");
+                        ResultSet base_result = con.createStatement().executeQuery(base_query+";");
+                        System.out.println("Positive query: "+base_query+" WHERE ("+ base_predicate + ");");
+                        ResultSet true_result = con.createStatement().executeQuery(base_query+" WHERE ("+ base_predicate + ");");
+                        System.out.println("Negative query: "+base_query+" WHERE ("+base_query+" WHERE NOT ("+ base_predicate + ");");
+                        ResultSet false_result = con.createStatement().executeQuery(base_query+" WHERE NOT ("+ base_predicate + ");");
+                        System.out.println("Null query: "+base_query+" WHERE ("+ base_predicate + ") IS NULL;");
+                        ResultSet null_result = con.createStatement().executeQuery(base_query+" WHERE ("+ base_predicate + ") IS NULL;");
+                        int base_counter = 0;
+                        int tlp_counter = 0;
+                        while (base_result.next()){
+                            base_counter++;
+                        }
+                        while(true_result.next()){
+                            tlp_counter++;
+                        }
+                        while(false_result.next()){
+                            tlp_counter++;
+                        }
+                        while(null_result.next()){
+                            tlp_counter++;
+                        }
+                        System.out.println("Base counter: "+base_counter+"     TLP_counter: "+tlp_counter);
+                        if (base_counter!=tlp_counter){
+                            System.out.println("Potential bug found!");
+                        }
+                    }
+                    catch (Exception e){
+                        System.out.println(fz.get_crash_log());
+                        e.printStackTrace();
+                    }
                 }
                 con.close();
                 System.out.println("Executed: "+(total_stmt)+" statements, hard failed "+failed_stmt+" statements, statement success rate: "+((total_stmt-failed_stmt)*100/total_stmt)+"%");

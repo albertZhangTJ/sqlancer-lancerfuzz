@@ -469,6 +469,26 @@ public class GrammarGraph{
         }
     }
 
+    public void handle_dependent_local(){
+        for (Integer idx : this.vertices.keySet()){
+            if (this.vertices.get(idx) instanceof RuleNode){
+                RuleNode rn = (RuleNode)this.vertices.get(idx);
+                HashMap<String, String> locals = rn.get_locals();
+                Set<String> key_set = locals.keySet();
+                Pattern p = Pattern.compile("boolean\\s{1,}is_dependent");
+                boolean is_dependent = false;
+                for (String key : key_set){
+                    if (p.matcher(key.strip()).find()){
+                        is_dependent = true;
+                    }
+                }
+                if (is_dependent){
+                    rn.set_is_dependent(is_dependent);
+                }
+            }
+        }
+    }
+
     //calculate the min depth for each node
     //The result is stored in the each node object
     //pre-compute to detected unsolvable cycles early and save time for the rendering process

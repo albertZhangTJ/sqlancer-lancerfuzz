@@ -16,6 +16,11 @@ public class Fuzzer {
         System.exit(1);
     }
 
+    public String generate_rule(String rule){
+        System.out.println("This is template code. To use grammar based fuzzer, please generate them using lancerfuzz first");
+        System.exit(1);
+        return null;
+    }
     public String get_next_statement() throws Exception{
         System.out.println("This is template code. To use grammar based fuzzer, please generate them using lancerfuzz first");
         System.exit(1);

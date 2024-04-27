@@ -2,7 +2,12 @@
 //MIN_DEPTH = <min_depth/>
     public String <name/>(int depth) throws Exception{
 <ee/>
-        this.push_context();
+        if (<dependent/>){
+            this.restore_context();
+        }
+        else{
+            this.push_context();
+        }
 
         List<String> cache = new ArrayList<>();
         boolean is_completed = false;
@@ -20,7 +25,7 @@
                 counter++;
                 if (counter>this.loop_threshold){
                     this.log("ERROR: <name/> cannot deliver a valid result after "+this.loop_threshold+" passes. Aborting");
-                    System.exit(1);
+                    throw new Exception();
                 }
             }
         }

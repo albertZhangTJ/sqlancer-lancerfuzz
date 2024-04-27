@@ -113,6 +113,8 @@ public class Processor {
         Utils.log("Schema locals processed");
         graph.handle_expr_locals();
         Utils.log("Expression locals processed");
+        graph.handle_dependent_local();
+        Utils.log("Dependent locals processed");
         graph.check_imag_rules();
         Utils.log("ImagRules verified");
         graph.check_for_duplicate_identifier();
