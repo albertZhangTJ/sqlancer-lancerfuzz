@@ -6,13 +6,17 @@ on:
       - main
     paths:
       - 'src/**'
+      - 'test/**'
       - '.github/workflows/*.yml'
+      - 'pom.xml'
   pull_request:
     branches:
       - main
     paths:
       - 'src/**'
+      - 'test/**'
       - '.github/workflows/*.yml'
+      - 'pom.xml'
 
 jobs:
   misc:
@@ -105,8 +109,8 @@ jobs:
         run: mvn -B package -DskipTests=true
       - name: Set up ClickHouse
         run: |
-          docker pull clickhouse/clickhouse-server:head
-          docker run --ulimit nofile=262144:262144 --name clickhouse-server -p8123:8123 -d clickhouse/clickhouse-server:head
+          docker pull clickhouse/clickhouse-server:24.3.1.2672
+          docker run --ulimit nofile=262144:262144 --name clickhouse-server -p8123:8123 -d clickhouse/clickhouse-server:24.3.1.2672
           sleep 5
       - name: Run Tests
         run: CLICKHOUSE_AVAILABLE=true mvn -Dtest=ClickHouseBinaryComparisonOperationTest,TestClickHouse,ClickHouseOperatorsVisitorTest,ClickHouseToStringVisitorTest test
@@ -212,7 +216,9 @@ jobs:
       - name: Build
         run: mvn -B package -DskipTests=true
       - name: DuckDB Tests
-        run: mvn -Dtest=TestDuckDB test
+        run: |
+          mvn -Dtest=TestDuckDBTLP test
+          mvn -Dtest=TestDuckDBNoREC test
 
   h2:
     name: DBMS Tests (H2)
@@ -317,6 +323,14 @@ jobs:
   mysql:
     name: DBMS Tests (MySQL)
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0.36
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=10
     steps:
       - uses: actions/checkout@v3
         with:
@@ -329,11 +343,8 @@ jobs:
           cache: 'maven'
       - name: Build SQLancer
         run: mvn -B package -DskipTests=true
-      - name: Set up MySQL
-        run: |
-          sudo systemctl start mysql.service # MySQL 8.0.32-0ubuntu0.22.04.2
       - name: Create SQLancer user
-        run: mysql -uroot -proot -e "CREATE USER 'sqlancer'@'localhost' IDENTIFIED BY 'sqlancer'; GRANT ALL PRIVILEGES ON * . * TO 'sqlancer'@'localhost';"
+        run: mysql -h 127.0.0.1  -uroot -proot -e "CREATE USER 'sqlancer'@'%' IDENTIFIED BY 'sqlancer'; GRANT ALL PRIVILEGES ON * . * TO 'sqlancer'@'%';"
       - name: Run Tests
         run: |
           MYSQL_AVAILABLE=true mvn test -Dtest=TestMySQLPQS
@@ -362,7 +373,10 @@ jobs:
       - name: Build SQLancer
         run: mvn -B package -DskipTests=true
       - name: Run Tests
-        run: POSTGRES_AVAILABLE=true mvn -Dtest=TestPostgres test
+        run: |
+          POSTGRES_AVAILABLE=true mvn -Dtest=TestPostgresPQS test
+          POSTGRES_AVAILABLE=true mvn -Dtest=TestPostgresTLP test
+          POSTGRES_AVAILABLE=true mvn -Dtest=TestPostgresNoREC test
 
   sqlite:
     name: DBMS Tests (SQLite)
@@ -383,7 +397,8 @@ jobs:
       - name: SQLite Tests
         run: |
           mvn -Dtest=TestSQLitePQS test
-          mvn -Dtest=TestSQLite3 test
+          mvn -Dtest=TestSQLiteTLP test
+          mvn -Dtest=TestSQLiteNoREC test
 
   sqlite-qpg:
     name: QPG Tests (SQLite)
@@ -452,7 +467,7 @@ jobs:
       - name: Set up TiDB
         run: |
           docker pull pingcap/tidb:latest
-          docker run --name tidb-server -d -p 4000:4000 pingcap/tidb:latest
+          docker run --name tidb-server -d -p 4000:4000 pingcap/tidb:v7.5.1
           sleep 10
       - name: Create SQLancer user
         run: sudo mysql -h 127.0.0.1 -P 4000 -u root -D test -e "CREATE USER 'sqlancer'@'%' IDENTIFIED WITH mysql_native_password BY 'sqlancer'; GRANT ALL PRIVILEGES ON *.* TO 'sqlancer'@'%' WITH GRANT OPTION; FLUSH PRIVILEGES;"
