@@ -108,7 +108,7 @@ updateStatement
 expr locals [boolean is_expr=true, String query="SHOW COLUMNS FROM $parent_name0$ WHERE Field='$parent_name1$';", String attribute_name="Type"] : ( INT_VAL {E_TYPE("INT");} | TEXT_VAL {E_TYPE("TEXT");} );
 
 selectStatement 
-    : SELECT '(' columnName[boolean is_new=false, 
+    : SELECT  columnName[boolean is_new=false, 
             String sup="t", 
             String sub="c",
             String iid="id1"] (
@@ -117,7 +117,7 @@ selectStatement
             String sub="c",
             String iid="id1"]
             {RP_LIMIT(0, 5); }
-    )* ')' FROM tableName[boolean is_new=false, 
+    )*  FROM tableName[boolean is_new=false, 
             String sup=null, 
             String sub="t",
             String iid=null]

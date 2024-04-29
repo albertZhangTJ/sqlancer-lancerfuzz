@@ -105,6 +105,8 @@ public class ProtoEntry {
         //loop over test cases
         int succeeded_counter = 0;
         int failed_counter = 0;
+        int q_counter = 0;
+        int bug_counter = 0;
         int total_stmt = 0;
         int failed_stmt = 0;
         long start_time = System.currentTimeMillis();
@@ -135,12 +137,6 @@ public class ProtoEntry {
                         last_failed = 0;
                     }
                     catch (Exception e){
-                        System.out.println("===================================");
-                        System.out.println(stmt);
-                        System.out.println(fz.get_crash_log());
-                        System.out.flush();
-                        e.printStackTrace();
-                        System.out.flush();
                         failed_stmt++;
                         boolean is_expected = false;
                         System.out.println("Got error");
@@ -152,6 +148,12 @@ public class ProtoEntry {
                             }
                         }
                         if ((!is_expected && !e.toString().contains("IgnoreMe")) || last_failed>=ALLOWED_CONSECUTIVE_FAILS){
+                            System.out.println("===================================");
+                            System.out.println(stmt);
+                            System.out.println(fz.get_crash_log());
+                            System.out.flush();
+                            e.printStackTrace();
+                            System.out.flush();
                             log_failed(test_case, e.toString());
                             failed_counter++;
                             is_successful = false;
@@ -167,42 +169,50 @@ public class ProtoEntry {
                 if (is_successful){
                     log_case(test_case);
                     succeeded_counter++;
-                    try {
-                        System.out.println("||||||||||||||||||||||||||||||||||||||||");
-                        String base_query = fz.generate_rule("selectStatement");
-                        System.out.println("Base query generated: "+base_query);
-                        String base_predicate = fz.generate_rule("pre");
-                        System.out.println("Base predicate generated: "+base_predicate);
-                        System.out.println("Base query: "+base_query+";");
-                        ResultSet base_result = con.createStatement().executeQuery(base_query+";");
-                        System.out.println("Positive query: "+base_query+" WHERE ("+ base_predicate + ");");
-                        ResultSet true_result = con.createStatement().executeQuery(base_query+" WHERE ("+ base_predicate + ");");
-                        System.out.println("Negative query: "+base_query+" WHERE ("+base_query+" WHERE NOT ("+ base_predicate + ");");
-                        ResultSet false_result = con.createStatement().executeQuery(base_query+" WHERE NOT ("+ base_predicate + ");");
-                        System.out.println("Null query: "+base_query+" WHERE ("+ base_predicate + ") IS NULL;");
-                        ResultSet null_result = con.createStatement().executeQuery(base_query+" WHERE ("+ base_predicate + ") IS NULL;");
-                        int base_counter = 0;
-                        int tlp_counter = 0;
-                        while (base_result.next()){
-                            base_counter++;
+                    for (int k=0; k<10; k++){
+                        try {
+                            System.out.println("||||||||||||||||||||||||||||||||||||||||");
+                            String base_query = fz.generate_rule("selectStatement");
+                            System.out.println("Base query generated: "+base_query);
+                            String base_predicate = fz.generate_rule("pre");
+                            System.out.println("Base predicate generated: "+base_predicate);
+                            
+                            System.out.println("Base query: "+base_query+";");
+                            ResultSet base_result = con.createStatement().executeQuery(base_query+";");
+
+                            System.out.println("Positive query: "+base_query+" WHERE ("+ base_predicate + ");");
+                            ResultSet true_result = con.createStatement().executeQuery(base_query+" WHERE ("+ base_predicate + ");");
+
+                            System.out.println("Negative query: "+base_query+" WHERE NOT ("+ base_predicate + ");");
+                            ResultSet false_result = con.createStatement().executeQuery(base_query+" WHERE NOT ("+ base_predicate + ");");
+
+                            System.out.println("Null query: "+base_query+" WHERE ("+ base_predicate + ") IS NULL;");
+                            ResultSet null_result = con.createStatement().executeQuery(base_query+" WHERE ("+ base_predicate + ") IS NULL;");
+                            int base_counter = 0;
+                            int tlp_counter = 0;
+                            while (base_result.next()){
+                                base_counter++;
+                            }
+                            while(true_result.next()){
+                                tlp_counter++;
+                            }
+                            while(false_result.next()){
+                                tlp_counter++;
+                            }
+                            while(null_result.next()){
+                                tlp_counter++;
+                            }
+                            q_counter++;
+                            System.out.println("Base counter: "+base_counter+"     TLP_counter: "+tlp_counter);
+                            System.out.println("Executed "+q_counter+" comparisons, found "+bug_counter+" inconsistencies");
+                            if (base_counter!=tlp_counter){
+                                bug_counter++;
+                                System.out.println("Potential bug found!");
+                            }
                         }
-                        while(true_result.next()){
-                            tlp_counter++;
+                        catch (Exception e){
+                            e.printStackTrace();
                         }
-                        while(false_result.next()){
-                            tlp_counter++;
-                        }
-                        while(null_result.next()){
-                            tlp_counter++;
-                        }
-                        System.out.println("Base counter: "+base_counter+"     TLP_counter: "+tlp_counter);
-                        if (base_counter!=tlp_counter){
-                            System.out.println("Potential bug found!");
-                        }
-                    }
-                    catch (Exception e){
-                        System.out.println(fz.get_crash_log());
-                        e.printStackTrace();
                     }
                 }
                 con.close();
