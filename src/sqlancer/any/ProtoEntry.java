@@ -132,7 +132,7 @@ public class ProtoEntry {
                         }
                         total_stmt++;
                         test_case = test_case + stmt + "\n";
-                        //System.out.println(stmt);
+                        System.out.println(stmt);
                         con.createStatement().execute(stmt);
                         last_failed = 0;
                     }

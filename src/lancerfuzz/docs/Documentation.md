@@ -1,9 +1,9 @@
 # Documentation for LancerFuzz
 
-LancerFuzz is a grammar-based fuzzing framework for SQLancer. 
-It takes in a grammar file in ANTLR syntax, a configuration file and outputs a fuzzer than can be used by SQLancer to test DBMSs.
+LancerFuzz is a grammar-based fuzzing framework for generating RDBMS test cases. 
+It takes in a grammar file in annotated ANTLR syntax, a configuration file and outputs a Java test case generator.
 
-This project is still work in progress at relatively early stage.
+This project is still work in progress.
 Features described might still be un-implemented or buggy.
 
 This work is inspired by [Grammarinator](https://github.com/renatahodovan/grammarinator) for AST generation and [StringTemplate](https://github.com/antlr/stringtemplate4) for fuzzer rendering.
@@ -11,23 +11,26 @@ This work is inspired by [Grammarinator](https://github.com/renatahodovan/gramma
 
 ## Quick Start
 
+We have prepared (not yet) annotated LancerSpec files for MySQL dialect, SQLite dialect, as well as Postgresql dialect.
+You can use these files as starting point for implementing you grammar file.
+
 _TODO_
 
 
 
-## Grammar File
+## LancerSpec Syntax
 
-LancerFuzz takes in a grammar file in ANTLR syntax.
+LancerFuzz takes in a LancerSpec grammar file, which is essentially an annotated ANTLR syntax.
 For more details about ANTLR, see [ANTLRv4 Documentation](https://github.com/antlr/antlr4/blob/master/doc/index.md).
 For list of ANTLR grammar files for different SQL dialects, see [ANTLRv4 GitHub repo](https://github.com/antlr/grammars-v4/tree/master/sql).
 
-In order to improve semantic validity of the generated test cases, LancerFuzz needs more than mere plain grammar files.
+In order to improve semantic validity of the generated test cases, LancerFuzz needs more than mere context-free grammar files.
 
-The extra semantic information shall be provided in [ANTLR Action](https://github.com/antlr/antlr4/blob/master/doc/actions.md). Details described below.
+The extra semantic information shall be provided as [ANTLR Action](https://github.com/antlr/antlr4/blob/master/doc/actions.md). Details described below.
 
-### TL;DR
+### Overview
 
-Below are the extra information in the grammar file (compared to plain ANTLR grammar file) need by LancerFuzz and things in normal ANTLR grammar file that we do not support.
+Below are the types of extra information in the grammar file (compared to plain context-free ANTLR grammar file) need by LancerFuzz and what scenarios do they prevent.
 
 _TODO_
 
@@ -39,24 +42,18 @@ In order to generate SQL statements with correct identifiers (e.g. column names)
 Schema references shall be declared as parser rules, with a special list of parameters.
 A rule declared for schema references must have the parameter `boolean is_schema` set to `true`. Parameter `String query` must be set to a SQL query that allows LancerFuzz to query the target DBMS for list of available identifiers. A related parameter `String attribute_name` must also be provided for LancerFuzz to get the correct column out of the `ResultSet` returned by the execution of the previous statement.
 
-When the current schema reference belongs to some parent reference (e.g. a column belongs to a table), the name of the parent reference can be accessed using `$parent_name$` in the `query` parameter.
+When the current schema reference belongs to some parent reference (e.g. a column belongs to a table, a table belongs to a database), the name of the parent references can be accessed using `$parent_nameX$` in the `query` parameter, where `X` refers to the level in the hierarchy. 
+For example, in a hierarchy `database` -> `table` -> `column`, the name of the database a column belongs to can be accessed using `$parent_name0$`, while the name of the table a column belongs to can be accessed using `$parent_name1$`
 
-Below is an example of declaring table name references for SQLite.
+Below is an example of declaring production rule for columns in MySQL dialect. In this example the hierarchical structure is `table` -> `column`.
+Therefore, the top level parent (table) name is accessed using `$parent_name0$`.
 
 <pre><code>
-table_name locals <strong>[boolean is_schema=true, 
-    String query="
-        SELECT name, type as category, sql
-        FROM sqlite_master 
-        UNION
-        SELECT name, 'temp_table' as category, sql 
-        FROM sqlite_temp_master
-        WHERE type='table'
-        UNION
-        SELECT name, 'view' as category, sql
-        FROM sqlite_temp_master
-        WHERE type='view' GROUP BY name;",
-    String attribute_name="name"]</strong> : K_STUB;
+columnName locals <strong>[
+    boolean is_schema=true, 
+    String query="SHOW COLUMNS FROM $parent_name0$;", 
+    String attribute_name="Field"
+]</strong> : STUB;
 </code></pre>
 
 When such a schema reference rule is referred to in other rules, several parameters needs to be provided. `boolean is_new` must be specified to indicate whether the identifier shall be generated (e.g. table name for create table statement) or queried from target DBMS (e.g. table name for insert statement). Another two parameters `String sup` and `String sub` are used to specify the relationship between different identifiers within the same rule. `sup` is used to declare the current reference as parent of other references. `sub` is used to declare the current reference as child of other references. For all references to schema rules, these two parameters needs to be explicitly set to null when they are not used.
@@ -66,11 +63,7 @@ Do notice that multiple parent SQL identifiers can be mapped to a single grammar
 Below is an example of referring to schema reference rules.
 
 <pre><code>
-insert_stmt : with_clause?  
-    ( K_INSERT 
-                | K_REPLACE
-                | K_INSERT K_OR K_IGNORE ) 
-    K_INTO
+insert_stmt : K_INSERT K_INTO
     table_name[<strong>boolean is_new=false, 
             String sup=null, 
             String sub="t",</strong>
@@ -86,44 +79,58 @@ insert_stmt : with_clause?
                     String sub=null,</strong>
                     String iid="a"] 
         )* 
-    ')' )?
-    ( K_VALUES '(' expr ( ',' expr )* ')' 
-        ( ',' '(' expr ( ',' expr )* ')' )* 
-        | K_DEFAULT K_VALUES 
-    );
+    ')' )? K_DEFAULT K_VALUES ;
 </code></pre>
 
-In this example `"t"` is to specify `table_name` as parent of `column_name`. 
+In this example `"t"` is to specify `table_name` as parent of `column_name` so that correct columns from the desired table is selected. 
 
-### Variable References
 
-There are some spots in the generated test case that must contain the same value. For example, to create a new database and operate in it. The two `<db_name>`s in `CREATE DATABASE <db_name>; USE <db_name>;` must be the same.
+### Typed Expressions
+While fuzzing typeless SQL is sufficient in many scenarios, having the ability to fuzz typed statements correctly is generally desirable.
+LancerSpec offers the capability to fuzz typed statements by annotating the specification file with extra information on expression type.
 
-LancerFuzz offers a mechanism, variable reference, to handle these issues.
-
-Variable references shall be used in the grammar file in the following way:
-
+Below is an example for defining expression production rule for MySQL.
+Notice that the hierarchical structure here is `table` -> `column` -> `expression`.
 <pre><code>
-( { VAR("variable_name"); } | <rules to generate when the variable name has not been initialized> )
+expr locals <strong>[boolean is_expr=true, 
+        String query="SHOW COLUMNS 
+                FROM $parent_name0$ 
+                WHERE Field='$parent_name1$';",
+        String attribute_name="Type"]</strong> : 
+    ( INT_VAL {E_TYPE("INT");} | TEXT_VAL {E_TYPE("TEXT");} );
 </code></pre>
 
-Variable references shall be declared in alternation node with two branches. At runtime, LancerFuzz will check whether the variable name referenced has been initialized and render the value of the variable if yes. If the variable has not been initialized, LancerFuzz will render the other branch and initialize the variable with the content rendered so that future references to the same variable can render the same content.
+A rule declared for expressions must have the parameter `boolean is_expr` set to `true`. Parameter `String query` must be set to a SQL query that allows LancerFuzz to query the target DBMS for the type of a column. A related parameter `String attribute_name` must also be provided for LancerFuzz to get the correct column out of the `ResultSet` returned by the execution of the previous statement.
 
-The scope of the variable reference can be rule-wise, testcase-wise, or execution-wise. Rule-wise variables shall be called using reserved function `VAR`, as shown above. The syntax for testcase-wise and execution-wise variables are the same, except for the function name for testcase-wise variables is `MEMBER_VAR` and the one for execution-wise variables is `STATIC_VAR`.
+When the above production rule is called, the parent columns shall be specified using `String sup="c"`.
+If no parent column is specified, the rule will randomly be evaluated to any type.
 
-All three types of variable references can also be used from schema rule local variables. The example for syntax is as follows.
+Below is an example of using expression rules.
 <pre><code>
-tableName locals [boolean is_schema=true, String query="SHOW TABLES;", String attribute_name="Tables_in_<strong>$STATIC_VAR("db")$</strong>"] : STUB;
+insertStatement: 
+    INSERT INTO tableName[boolean is_new=false, 
+            String sup=null, 
+            String sub="t",
+            String iid=null]  
+    ('(' columnName[boolean is_new=false, 
+            String sup="t", 
+            <strong>String sub="c",</strong>
+            String iid="id1"] 
+        ( ',' columnName[boolean is_new=false, 
+            String sup="t", 
+            <strong>String sub="c",</strong>
+            String iid="id1"] { RP_ID("a"); }
+        )* 
+    ')' 
+    VALUES 
+    '(' <strong>expr[String sup="c"]</strong> (',' <strong>expr[String sup="c"]</strong> { RP_ID("a"); })* ')'
+    ) SC
+    ;
 </code></pre>
-
-Static variable can also be accessed and modified at runtime using Java API `String Fuzzer.get_static_variable(String key);` and `void Fuzzer.set_static_variable(String key, String value);`.
-
-
-
 
 ### Used Identifier List ID
 
-For many DBMSs, having a same identifier showing up twice at the same spot is not allowed. A simple example is `INSERT INTO t0(c0, c0) VALUES (1, 2);`, which will cause error in most cases due to `c0` appeared twice.
+For many DBMSs, having a same identifier showing up more than once in a list is not allowed. A simple example is `INSERT INTO t0(c0, c0) VALUES (1, 2);`, which will cause error in most cases due to `c0` appeared twice.
 
 To avoid producing such invalid test case, LancerFuzz needs to know which parts of the grammar cannot contain duplicate identifiers.
 
@@ -132,16 +139,12 @@ For specifying the locations in a grammar rule that cannot contain duplicates, t
 An example is as below.
 
 <pre><code>
-insert_stmt : with_clause?  
-    ( K_INSERT { BRANCH_W(10); }
-                | K_REPLACE { BRANCH_W(0.5); }
-                | K_INSERT K_OR K_IGNORE ) 
-    K_INTO
+insert_stmt : K_INSERT K_INTO
     table_name[boolean is_new=false, 
             String sup=null, 
             String sub="t", 
-            <strong>String iid=null</strong>]
-    ( '(' 
+            String iid=null]
+    '(' 
         column_name[boolean is_new=false, 
                     String sup="t", 
                     String sub=null, 
@@ -152,12 +155,44 @@ insert_stmt : with_clause?
                     String sub=null, 
                     <strong>String iid="a"</strong>] 
         )* 
-    ')' )?
-    ( K_VALUES '(' expr ( ',' expr )* ')' 
-        ( ',' '(' expr ( ',' expr )* ')' )* 
-        | K_DEFAULT K_VALUES 
-    );
+    ')'
+    K_DEFAULT K_VALUES 
+    ;
 </code></pre>
+
+
+
+### Variable References
+
+There are some spots in the generated test case that must contain the same value. For example, in MySQL, to create a new database and operate in it. The two `<db_name>`s in `CREATE DATABASE <db_name>; USE <db_name>;` must be the same.
+
+LancerFuzz offers a mechanism, variable reference, to handle these issues.
+
+Variable references shall be used in the grammar file in the following way:
+
+<pre><code>
+( { VAR("variable_name"); } | /*rules to generate when the variable name has not been initialized*/ )
+</code></pre>
+
+Variable references shall be declared in alternation node with two branches. At runtime, LancerFuzz will check whether the variable has been initialized in the scope and render the value of the variable if yes. If the variable has not been initialized, LancerFuzz will render the other branch and initialize the variable with the content rendered so that future references to the same variable can render the same content.
+
+The scope of the variable reference can be rule-wise, testcase-wise, or execution-wise. Rule-wise variables shall be called using reserved function `VAR`, as shown above. The syntax for testcase-wise and execution-wise variables are the same, except for the function name for testcase-wise variables is `MEMBER_VAR` and the one for execution-wise variables is `STATIC_VAR`.
+
+All three types of variable references can also be used from schema rule local variables. 
+
+An example is as follows.
+<pre><code>
+dropDatabase
+    : DROP DATABASE ifExists ( {STATIC_VAR("db");} | dbName[boolean is_new=true, String sup=null, String sub=null, String iid=null]) SC
+    ;
+useDatabase
+    : USE ( {STATIC_VAR("db");} | dbName[boolean is_new=true, String sup=null, String sub=null, String iid=null]) SC
+    ;
+tableName locals [boolean is_schema=true, String query="SHOW TABLES;", String attribute_name="Tables_in_<strong>$STATIC_VAR("db")$</strong>"] : STUB;
+</code></pre>
+
+Static variable can also be accessed and modified at runtime using Java API `String Fuzzer.get_static_variable(String key);` and `void Fuzzer.set_static_variable(String key, String value);`.
+
 
 
 ### Branch Weights
