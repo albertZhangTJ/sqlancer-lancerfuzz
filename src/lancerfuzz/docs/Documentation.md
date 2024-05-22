@@ -11,10 +11,12 @@ This work is inspired by [Grammarinator](https://github.com/renatahodovan/gramma
 
 ## Quick Start
 
-We have prepared (not yet) annotated LancerSpec files for MySQL dialect, SQLite dialect, as well as Postgresql dialect.
+We have prepared (not yet) annotated LancerSpec and corresponding configuration files for MySQL dialect, SQLite dialect, as well as Postgresql dialect.
 You can use these files as starting point for implementing you grammar file.
 
-_TODO_
+You can run the examples or your own files using
+<pre><code>./scripts/run.sh [path to grammar file] [path to config file]
+</code></pre>
 
 
 
@@ -30,9 +32,17 @@ The extra semantic information shall be provided as [ANTLR Action](https://githu
 
 ### Overview
 
-Below are the types of extra information in the grammar file (compared to plain context-free ANTLR grammar file) need by LancerFuzz and what scenarios do they prevent.
+Below are the types of extra information in the grammar file (compared to plain context-free ANTLR grammar file) need by LancerFuzz and the purpose these mechanisms serve.
 
-_TODO_
+ * [Schema references](#schema-references): help generate correct identifiers (table names, column names, etc.)
+ * [Typed expressions](#typed-expressions): help generate correct expressions
+ * [Used identifiers](#used-identifier-list-id): avoids duplicated IDs when not allowed
+ * [Variable references](#variable-references): used for producing same content over multiple different locations
+ * [Branch weights](#branch-weights): used for increase the probability of generating "interesting" outputs
+ * [Expected errors](#expected-errors): Filter out false alarms
+ * [Quantifier node](#quantifier-nodes)
+    + [Repetition limits](#a-more-precise-definition-of-repetitions): A finer grain control of repetitions
+    + [Repetition IDs](#repetition-id): Produce lists with matching length
 
 
 ### Schema References
@@ -48,8 +58,7 @@ For example, in a hierarchy `database` -> `table` -> `column`, the name of the d
 Below is an example of declaring production rule for columns in MySQL dialect. In this example the hierarchical structure is `table` -> `column`.
 Therefore, the top level parent (table) name is accessed using `$parent_name0$`.
 
-<pre><code>
-columnName locals <strong>[
+<pre><code>columnName locals <strong>[
     boolean is_schema=true, 
     String query="SHOW COLUMNS FROM $parent_name0$;", 
     String attribute_name="Field"
@@ -62,8 +71,7 @@ Do notice that multiple parent SQL identifiers can be mapped to a single grammar
 
 Below is an example of referring to schema reference rules.
 
-<pre><code>
-insert_stmt : K_INSERT K_INTO
+<pre><code>insert_stmt : K_INSERT K_INTO
     table_name[<strong>boolean is_new=false, 
             String sup=null, 
             String sub="t",</strong>
@@ -91,8 +99,7 @@ LancerSpec offers the capability to fuzz typed statements by annotating the spec
 
 Below is an example for defining expression production rule for MySQL.
 Notice that the hierarchical structure here is `table` -> `column` -> `expression`.
-<pre><code>
-expr locals <strong>[boolean is_expr=true, 
+<pre><code>expr locals <strong>[boolean is_expr=true, 
         String query="SHOW COLUMNS 
                 FROM $parent_name0$ 
                 WHERE Field='$parent_name1$';",
@@ -108,8 +115,7 @@ If no parent column is specified, the rule will randomly be evaluated to any typ
 Below is an example of using expression rules.
 In this example `"t"` is used to specify `table_name` as parent of `column_name` so that correct columns from the desired table is selected. 
 `"c"` is used to specify `column_name` as parents of expressions so that correct types of expressions are generated for the columns. 
-<pre><code>
-insertStatement: 
+<pre><code>insertStatement: 
     INSERT INTO tableName[boolean is_new=false, 
             String sup=null, 
             String sub="t",
@@ -140,8 +146,7 @@ For specifying the locations in a grammar rule that cannot contain duplicates, t
 
 An example is as below.
 
-<pre><code>
-insert_stmt : K_INSERT K_INTO
+<pre><code>insert_stmt : K_INSERT K_INTO
     table_name[boolean is_new=false, 
             String sup=null, 
             String sub="t", 
@@ -172,8 +177,7 @@ LancerFuzz offers a mechanism, variable reference, to handle these issues.
 
 Variable references shall be used in the grammar file in the following way:
 
-<pre><code>
-( { VAR("variable_name"); } | /*rules to generate when the variable name has not been initialized*/ )
+<pre><code>( { VAR("variable_name"); } | /*rules to generate when the variable name has not been initialized*/ )
 </code></pre>
 
 Variable references shall be declared in alternation node with two branches. At runtime, LancerFuzz will check whether the variable has been initialized in the scope and render the value of the variable if yes. If the variable has not been initialized, LancerFuzz will render the other branch and initialize the variable with the content rendered so that future references to the same variable can render the same content.
@@ -183,8 +187,7 @@ The scope of the variable reference can be rule-wise, testcase-wise, or executio
 All three types of variable references can also be used from schema rule local variables. 
 
 An example is as follows.
-<pre><code>
-dropDatabase
+<pre><code>dropDatabase
     : DROP DATABASE ifExists ( {STATIC_VAR("db");} | dbName[boolean is_new=true, String sup=null, String sub=null, String iid=null]) SC
     ;
 useDatabase
@@ -205,8 +208,7 @@ At runtime, the possibility of going down a branch is $$\frac{current \ weight}{
 
 Below is an example of specifying branch weights.
 
-<pre><code>
-insert_stmt : with_clause?  
+<pre><code>insert_stmt : with_clause?  
     ( K_INSERT <strong>{ BRANCH_W(10); }</strong>
                 | K_REPLACE <strong>{ BRANCH_W(0.5); }</strong>
                 | K_INSERT K_OR K_IGNORE ) 
@@ -241,8 +243,7 @@ In order to separate error messages that are known to be triggered by invalid te
 
 Below is an example of specifying expected error.
 
-<pre><code>
-insert_stmt : with_clause?  
+<pre><code>insert_stmt : with_clause?  
     <strong>{ E_ERR("Unique constraint violation"); }</strong>
     ( K_INSERT 
                 | K_REPLACE
@@ -284,15 +285,13 @@ In LancerFuzz, we allow for such fine-grained definition using a reserved functi
 
 Below is an example of the usage of this function which will output a list of 3 to 6 columns (note the first column is defined separately).
 
-<pre><code>
-column_name ( ',' column_name { RP_LIMIT(2, 5); } )*
+<pre><code>column_name ( ',' column_name { RP_LIMIT(2, 5); } )*
 </code></pre>
 
 The minimum and maximum (both inclusive) must be within the limits specified by the EBNF suffix. 
 For example, the grammar snippet below __WILL TRIGGER AN ERROR__ due to the lower limit 0 specified using `RP_LIMIT` is below the one specified by EBNF suffix (1 for `+`).
 
-<pre><code>
-column_name ( ',' column_name { RP_LIMIT(0, 3); } )+
+<pre><code>column_name ( ',' column_name { RP_LIMIT(0, 3); } )+
 </code></pre>
 
 #### Repetition ID
@@ -308,8 +307,7 @@ These IDs are rule-wise. All quantifier nodes that have the same `RP_ID` within 
 
 An example of defining `RP_ID` is as follows.
 
-<pre><code>
-insert_stmt : with_clause?  
+<pre><code>insert_stmt : with_clause?  
     ( K_INSERT 
                 | K_REPLACE
                 | K_INSERT K_OR K_IGNORE ) 
@@ -381,8 +379,7 @@ Each entry in the array shall contain the following attributes.
 
 Below is an example of configuration file.
 
-<pre><code>
-{   
+<pre><code>{   
     "options" : [
         {
             "name" : "host", 
