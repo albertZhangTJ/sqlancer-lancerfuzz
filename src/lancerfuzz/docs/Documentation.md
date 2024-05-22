@@ -106,6 +106,8 @@ When the above production rule is called, the parent columns shall be specified 
 If no parent column is specified, the rule will randomly be evaluated to any type.
 
 Below is an example of using expression rules.
+In this example `"t"` is used to specify `table_name` as parent of `column_name` so that correct columns from the desired table is selected. 
+`"c"` is used to specify `column_name` as parents of expressions so that correct types of expressions are generated for the columns. 
 <pre><code>
 insertStatement: 
     INSERT INTO tableName[boolean is_new=false, 
@@ -199,7 +201,7 @@ Static variable can also be accessed and modified at runtime using Java API `Str
 
 Some parts of the AST might need to be generated more often than others. To specify this kind of weighted branching, the tester can use a reserved function in ANTLR Action `BRANCH_W(double)`. If a branch has no weight specified, the weight will be set to default value 1.
 
-At runtime, the possibility of going down a branch is $$\frac{current \_ weight}{total \_ weight}$$. Therefore, the larger the weight is, the higher the possibility that the branch is walked.
+At runtime, the possibility of going down a branch is $$\frac{current \ weight}{total \ weight}$$. Therefore, the larger the weight is, the higher the possibility that the branch is walked.
 
 Below is an example of specifying branch weights.
 
