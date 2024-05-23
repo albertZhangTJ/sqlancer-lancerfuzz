@@ -24,7 +24,21 @@ THE SOFTWARE.
 */
 
 
-parser grammar MySqlParser;
+grammar MiniMySQL;
+
+alterTable
+    : ALTER TABLE tableName[boolean is_new=false, String sup=null, String sub=null, String iid=null]
+    alterSpecification (',' alterSpecification)* SC
+    ;
+
+alterSpecification
+    : ADD COLUMN? columnName[boolean is_new=true, String sup=null, String sub=null, String iid=null] columnDefinition FIRST?    
+    | ADD COLUMN? '(' columnName[boolean is_new=true, String sup=null, String sub=null, String iid=null] columnDefinition (',' columnName[boolean is_new=true, String sup=null, String sub=null, String iid=null] columnDefinition)* ')' 
+    ;
+
+columnDefinition
+    : ' FLOAT ' | ' INT ' | ' TEXT '
+    ;
 
 dropDatabase
     : DROP DATABASE ifExists ( {STATIC_VAR("db");} | dbName[boolean is_new=true, String sup=null, String sub=null, String iid=null]) SC
@@ -44,17 +58,17 @@ useDatabase
     ;
 
 createTable
-    : CREATE {E_ERR("A BLOB field is not allowed in partition function");} (' ' {BRANCH_W(9);} | TEMPORARY {E_ERR("Cannot create temporary table with partitions");}) TABLE ifNotExists? tableName[boolean is_new=true, 
+    : CREATE {E_ERR("A BLOB field is not allowed in partition function"); E_ERR("is of a not allowed type for this type of partitioning");} (' ' {BRANCH_W(9);} | TEMPORARY {E_ERR("Cannot create temporary table with partitions");}) TABLE ifNotExists? tableName[boolean is_new=true, 
             String sup=null, 
             String sub=null,
             String iid="b"] (LB
     	( { VAR("cn");} | columnName[boolean is_new=true, 
             String sup=null, 
             String sub=null,
-            String iid="a"]) ( INT | TEXT )(',' columnName[boolean is_new=true, 
+            String iid="a"]) columnDefinition (',' columnName[boolean is_new=true, 
             String sup=null, 
             String sub=null,
-            String iid="a"] ( INT | TEXT) { RP_LIMIT(1,6, true, 0.1); })* RB 
+            String iid="a"] columnDefinition { RP_LIMIT(1,6, true, 0.1); })* RB 
             (' ' {BRANCH_W(8);} |
                     PARTITION BY (LINEAR)? 
                     ( 
@@ -105,7 +119,7 @@ updateStatement
             String iid=null] '=' expr[String sup="cc"])? SC
     ;
 
-expr locals [boolean is_expr=true, String query="SHOW COLUMNS FROM $parent_name0$ WHERE Field='$parent_name1$';", String attribute_name="Type"] : ( INT_VAL {E_TYPE("INT");} | TEXT_VAL {E_TYPE("TEXT");} );
+expr locals [boolean is_expr=true, String query="SHOW COLUMNS FROM $parent_name0$ WHERE Field='$parent_name1$';", String attribute_name="Type"] : ( int_expr {E_TYPE("INT");} | text_val {E_TYPE("TEXT");} | int_expr {E_TYPE("FLOAT");});
 
 selectStatement 
     : SELECT  columnName[boolean is_new=false, 
@@ -126,11 +140,26 @@ selectStatement
 pre locals [boolean is_dependent=true] : '(' columnName[boolean is_new=false, 
             String sup="t", 
             String sub="cc",
-            String iid="id1"] '=' expr[String sup="cc"] ')'
+            String iid="id1"] comparison expr[String sup="cc"] ')'
         ;
 
-INT_VAL : (DIGIT {RP_LIMIT(1,5, false, 0.5); })+ ;
-TEXT_VAL : DQ ( (CH | DIGIT) {RP_LIMIT(1,100, false, 0.1); })+ DQ;
+comparison : ( LT | GT | EQ | LT EQ | GT EQ );
+
+waitNowaitClause
+    : WAIT float_val
+    | NOWAIT
+    ;
+
+abs : ' ABS(' (float_expr | int_expr ) ')' ;
+bit_count : ' BIT_COUNT(' int_expr ')';
+coalesce : ' COALESCE(' expr ( ',' expr )* ')';
+
+
+float_expr : ( float_val {BRANCH_W(10); } | abs ) ;
+float_val : int_val ('.' int_val )? ;
+int_expr : ( int_val {BRANCH_W(10);} | bit_count );
+int_val :  (DIGIT {RP_LIMIT(1,5, false, 0.5); })+ ;
+text_val : DQ ( (CH | DIGIT) {RP_LIMIT(1,100, false, 0.1); })+ DQ;
 
 dbName locals [boolean is_schema=true, String query="SHOW DATABASES;", String attribute_name="Database"] : STUB ;
 tableName locals [boolean is_schema=true, String query="SHOW TABLES;", String attribute_name="Tables_in_$STATIC_VAR("db")$"] : STUB;
@@ -141,13 +170,18 @@ columnName locals [boolean is_schema=true, String query="SHOW COLUMNS FROM $pare
 ifNotExists : IF NOT EXISTS;
 ifExists : IF EXISTS;
 
+ADD : SPACE A D D SPACE;
+ALTER : SPACE A L T E R SPACE;
 AS : SPACE A S SPACE;
 BY : SPACE B Y SPACE;
+COLUMN : SPACE C O L U M N SPACE;
 CREATE : SPACE C R E A T E SPACE;
 DATABASE : SPACE D A T A B A S E SPACE;
 DELAYED : SPACE D E L A Y E D SPACE;
 DROP : SPACE D R O P SPACE;
 EXISTS : SPACE E X I S T S SPACE;
+FIRST : SPACE F I R S T SPACE;
+FLOAT : SPACE F L O A T SPACE;
 FROM : SPACE F R O M SPACE;
 HASH : SPACE H A S H SPACE;
 HIGH_PRIORITY : SPACE H I G H US P R I O R I T Y SPACE;
@@ -160,7 +194,10 @@ LIKE : SPACE L I K E SPACE;
 LINEAR : SPACE L I N E A R SPACE;
 LOW_PRIORITY : SPACE L O W US P R I O R I T Y SPACE;
 NOT : SPACE N O T SPACE;
+NOWAIT : SPACE N O W A I T SPACE;
+OFFLINE : SPACE O F F L I N E SPACE;
 ON : SPACE O N SPACE;
+ONLINE : SPACE O N L I N E SPACE;
 PARTITION : SPACE P A R T I T I O N SPACE;
 REPLACE : SPACE R E P L A C E SPACE;
 SCHEMA : SPACE S C H E M A SPACE;
@@ -174,6 +211,7 @@ UPDATE : SPACE U P D A T E SPACE;
 USE : SPACE U S E SPACE;
 VALUES : SPACE V A L U E S SPACE;
 VIEW : SPACE V I E W SPACE;
+WAIT : SPACE W A I T SPACE;
 WHERE : SPACE W H E R E SPACE;
 STUB : SPACE S T U B SPACE;
 

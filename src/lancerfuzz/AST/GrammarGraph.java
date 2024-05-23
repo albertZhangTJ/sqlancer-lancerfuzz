@@ -493,8 +493,38 @@ public class GrammarGraph{
     //The result is stored in the each node object
     //pre-compute to detected unsolvable cycles early and save time for the rendering process
     public void calc_depth(){
+        List<Node> relaxed = new ArrayList<>();
+        List<Node> relaxing = new ArrayList<>();
+        List<Node> unrelaxed = new ArrayList<>();
         for (Integer i: this.vertices.keySet()){
-            this.vertices.get(i).get_min_depth();
+            unrelaxed.add(this.vertices.get(i));
+        }
+        for (int i=0; i<unrelaxed.size(); i++){
+            if (unrelaxed.get(i).get_outward_edges().size()==0){
+                unrelaxed.get(i).set_min_depth(0);
+                relaxed.add(unrelaxed.remove(i));
+                i--;
+            }
+        }
+        int steps = 1;
+        while (unrelaxed.size()>0){
+            for (int i=0; i<unrelaxed.size(); i++){
+                for (int j=0; j<unrelaxed.get(i).get_outward_edges().size(); j++){
+                    if (relaxed.contains(unrelaxed.get(i).get_outward_edges().get(j).get_dest())){
+                        relaxing.add(unrelaxed.remove(i));
+                        i--;
+                        break;
+                    }
+                }
+            }
+            if (relaxing.size()==0){
+                Utils.panic("GrammarGraph::calc_depth : Unrelaxable nodes found, infinite loop?");
+            }
+            while (relaxing.size()>0){
+                relaxing.get(0).set_min_depth(steps);
+                relaxed.add(relaxing.remove(0));
+            }
+            steps++;
         }
     }
 

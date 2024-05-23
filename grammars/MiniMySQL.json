@@ -68,38 +68,39 @@
             "rules" : [
                 "createTable"
             ],
-            "min" : 10,
-            "max" : 30
+            "min" : 50,
+            "max" : 300
         },
    		{
             "name" : "insert",
             "rules" : [
                 "insertStatement"
             ],
-            "min" : 50,
-            "max" : 70
+            "min" : 500,
+            "max" : 1500
         },
         {
             "name" : "update",
             "rules" : [
                 "updateStatement"
             ],
-            "min" : 15,
-            "max" : 50
+            "min" : 100,
+            "max" : 500
         },
         {
             "name" : "mix",
             "rules" : [
+                "alterTable",
                 "createTable",
                 "insertStatement",
                 "updateStatement",
                 "truncateTable"
             ],
             "weights" : [
-                2, 5, 5, 1
+                1, 2, 5, 5, 1
             ],
-            "min" : 100,
-            "max" : 500
+            "min" : 500,
+            "max" : 1500
         }
     ]
 }
