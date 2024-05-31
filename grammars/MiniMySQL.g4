@@ -27,13 +27,18 @@ THE SOFTWARE.
 grammar MiniMySQL;
 
 alterTable
-    : ALTER TABLE tableName[boolean is_new=false, String sup=null, String sub=null, String iid=null]
+    : {E_ERR("exist");} ALTER TABLE tableName[boolean is_new=false, String sup=null, String sub="t", String iid=null]
     alterSpecification (',' alterSpecification)* SC
     ;
 
-alterSpecification
-    : ADD COLUMN? columnName[boolean is_new=true, String sup=null, String sub=null, String iid=null] columnDefinition FIRST?    
+alterSpecification locals [boolean is_component=true]
+    : 
+    ADD COLUMN? columnName[boolean is_new=true, String sup=null, String sub=null, String iid=null] columnDefinition FIRST?    
     | ADD COLUMN? '(' columnName[boolean is_new=true, String sup=null, String sub=null, String iid=null] columnDefinition (',' columnName[boolean is_new=true, String sup=null, String sub=null, String iid=null] columnDefinition)* ')' 
+    | DROP COLUMN? columnName[boolean is_new=false, String sup="t", String sub=null, String iid="a"] {E_ERR("can't delete all"); E_ERR("has a partitioning function dependency");}
+    | DROP PRIMARY KEY {E_ERR("primary");}
+    | RENAME ( TO | AS ) tableName[boolean is_new=true, String sup=null, String sub=null, String iid=null]
+    | RENAME COLUMN columnName[boolean is_new=false, String sup="t", String sub=null, String iid="a"] TO columnName[boolean is_new=true, String sup=null, String sub=null, String iid=null]
     ;
 
 columnDefinition
@@ -119,7 +124,7 @@ updateStatement
             String iid=null] '=' expr[String sup="cc"])? SC
     ;
 
-expr locals [boolean is_expr=true, String query="SHOW COLUMNS FROM $parent_name0$ WHERE Field='$parent_name1$';", String attribute_name="Type"] : ( int_expr {E_TYPE("INT");} | text_val {E_TYPE("TEXT");} | int_expr {E_TYPE("FLOAT");});
+expr locals [boolean is_expr=true, String query="SHOW COLUMNS FROM $parent_name0$ WHERE Field='$parent_name1$';", String attribute_name="Type"] : ( int_expr {E_TYPE("INT");} | text_val {E_TYPE("TEXT");} | int_expr {E_TYPE("FLOAT");} | least | greatest );
 
 selectStatement 
     : SELECT  columnName[boolean is_new=false, 
@@ -137,10 +142,16 @@ selectStatement
             String iid=null]
     ;
 
-pre locals [boolean is_dependent=true] : '(' columnName[boolean is_new=false, 
+pre locals [boolean is_dependent=true] : ('(' columnName[boolean is_new=false, 
             String sup="t", 
             String sub="cc",
-            String iid="id1"] comparison expr[String sup="cc"] ')'
+            String iid="id1"] comparison expr[String sup="cc"] ')' {BRANCH_W(5);}
+            | '(' columnName[boolean is_new=false, 
+            String sup="t", 
+            String sub="cc",
+            String iid="id1"] comparison expr ')' {BRANCH_W(3);}
+            | expr comparison expr
+            | ifnull )
         ;
 
 comparison : ( LT | GT | EQ | LT EQ | GT EQ );
@@ -153,13 +164,15 @@ waitNowaitClause
 abs : ' ABS(' (float_expr | int_expr ) ')' ;
 bit_count : ' BIT_COUNT(' int_expr ')';
 coalesce : ' COALESCE(' expr ( ',' expr )* ')';
+ifnull : ' IFNULL(' expr ', ' expr ') ';
+greatest : ' GREATEST(' expr ( ', ' expr )+ ')';
+least : ' LEAST(' expr ( ', ' expr )+ ')';
 
-
-float_expr : ( float_val {BRANCH_W(10); } | abs ) ;
+float_expr : ( float_val {BRANCH_W(2); System.exit(134); /*aabbcc*/} | abs  | NULL ) ;
 float_val : int_val ('.' int_val )? ;
-int_expr : ( int_val {BRANCH_W(10);} | bit_count );
+int_expr : ( int_val {BRANCH_W(2);} | bit_count | NULL );
 int_val :  (DIGIT {RP_LIMIT(1,5, false, 0.5); })+ ;
-text_val : DQ ( (CH | DIGIT) {RP_LIMIT(1,100, false, 0.1); })+ DQ;
+text_val : ( DQ ( (CH | DIGIT) {RP_LIMIT(1,100, false, 0.1); })+ DQ | NULL);
 
 dbName locals [boolean is_schema=true, String query="SHOW DATABASES;", String attribute_name="Database"] : STUB ;
 tableName locals [boolean is_schema=true, String query="SHOW TABLES;", String attribute_name="Tables_in_$STATIC_VAR("db")$"] : STUB;
@@ -190,15 +203,19 @@ IGNORE : SPACE I G N O R E SPACE;
 INSERT : SPACE I N S E R T SPACE;
 INT : SPACE I N T SPACE;
 INTO : SPACE I N T O SPACE;
+KEY : SPACE K E Y SPACE;
 LIKE : SPACE L I K E SPACE;
 LINEAR : SPACE L I N E A R SPACE;
 LOW_PRIORITY : SPACE L O W US P R I O R I T Y SPACE;
 NOT : SPACE N O T SPACE;
 NOWAIT : SPACE N O W A I T SPACE;
+NULL : SPACE N U L L SPACE;
 OFFLINE : SPACE O F F L I N E SPACE;
 ON : SPACE O N SPACE;
 ONLINE : SPACE O N L I N E SPACE;
 PARTITION : SPACE P A R T I T I O N SPACE;
+PRIMARY : SPACE P R I M A R Y SPACE;
+RENAME : SPACE R E N A M E SPACE;
 REPLACE : SPACE R E P L A C E SPACE;
 SCHEMA : SPACE S C H E M A SPACE;
 SELECT : SPACE S E L E C T SPACE;
@@ -206,6 +223,7 @@ SET : SPACE S E T SPACE;
 TABLE : SPACE T A B L E SPACE;
 TEMPORARY : SPACE T E M P O R A R Y SPACE;
 TEXT : SPACE T E X T SPACE;
+TO : SPACE T O SPACE;
 TRUNCATE : SPACE T R U N C A T E SPACE;
 UPDATE : SPACE U P D A T E SPACE;
 USE : SPACE U S E SPACE;

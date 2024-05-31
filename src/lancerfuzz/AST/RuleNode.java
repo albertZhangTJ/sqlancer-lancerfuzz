@@ -27,7 +27,9 @@ public class RuleNode extends Node{
 
     private boolean is_expr; //If the current node is an expression definition
     
-    private boolean is_dependent;
+    private boolean is_dependent; //will restore the stack frame of the previous statement
+
+    private boolean is_component; //within the same statement, do not create a new stack frame when calling
     
     public RuleNode(String name, String label, RuleNodeType type){
         super(name, label);
@@ -151,6 +153,20 @@ public class RuleNode extends Node{
             this.locals.remove(key);
         }
     }
+
+    private void remove_component_local(){
+        Set<String> key_set = this.locals.keySet();
+        Pattern p = Pattern.compile("boolean\\s{1,}is_component");
+        List<String> keys_to_remove = new ArrayList<>();
+        for (String key : key_set){
+            if (p.matcher(key.strip()).find()){
+                keys_to_remove.add(key);
+            }
+        }
+        for (String key : keys_to_remove){
+            this.locals.remove(key);
+        }
+    }
     
     public void set_schema_reference(String schema_query, String attribute_name){
         this.is_schema = true;
@@ -175,6 +191,11 @@ public class RuleNode extends Node{
         this.remove_dependent_locals();
     }
 
+    public void set_is_component(boolean is_component){
+        this.is_component = is_component;
+        this.remove_component_local();
+    }
+
     public boolean is_schema_ref(){
         return this.is_schema;
     }
@@ -187,6 +208,10 @@ public class RuleNode extends Node{
         return this.is_dependent;
     }
 
+    public boolean get_is_component(){
+        return this.is_component;
+    }
+    
     public String get_query_stmt(){
         return this.query;
     }

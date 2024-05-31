@@ -489,6 +489,26 @@ public class GrammarGraph{
         }
     }
 
+    public void handle_component_local(){
+        for (Integer idx : this.vertices.keySet()){
+            if (this.vertices.get(idx) instanceof RuleNode){
+                RuleNode rn = (RuleNode)this.vertices.get(idx);
+                HashMap<String, String> locals = rn.get_locals();
+                Set<String> key_set = locals.keySet();
+                Pattern p = Pattern.compile("boolean\\s{1,}is_component");
+                boolean is_component = false;
+                for (String key : key_set){
+                    if (p.matcher(key.strip()).find()){
+                        is_component = true;
+                    }
+                }
+                if (is_component){
+                    rn.set_is_component(is_component);
+                }
+            }
+        }
+    }
+
     //calculate the min depth for each node
     //The result is stored in the each node object
     //pre-compute to detected unsolvable cycles early and save time for the rendering process

@@ -458,6 +458,9 @@ public class TemplateRenderer {
             for (String ee : node.get_expected_errors()){
                 template = replace_tag(template, "ee", "        this.expected_error_buffer.add(\""+ee+"\");\n");
             }
+            if (((RuleNode)node).get_is_component()){
+                template = replace_tag(template, "set_component", "is_component = true;");
+            }
             template = replace_tag(template, "name", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
             template = replace_tag(template, "dependent", ((RuleNode)node).get_is_dependent() ? "true" : "false");
             for (Edge e : node.get_outward_edges()){
@@ -473,6 +476,9 @@ public class TemplateRenderer {
             }
             for (String ee : node.get_expected_errors()){
                 template = replace_tag(template, "ee", "        this.expected_error_buffer.add(\""+ee+"\");\n");
+            }
+            if (((RuleNode)node).get_is_component()){
+                template = replace_tag(template, "set_component", "is_component = true;");
             }
             template = replace_tag(template, "name", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
             template = replace_tag(template, "dependent", ((RuleNode)node).get_is_dependent() ? "true" : "false");

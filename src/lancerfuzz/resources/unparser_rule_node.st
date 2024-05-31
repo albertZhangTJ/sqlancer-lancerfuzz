@@ -2,10 +2,12 @@
 //MIN_DEPTH = <min_depth/>
     public String <name/>(int depth) throws Exception{
 <ee/>
+        boolean is_component = false;
+        <set_component/>
         if (<dependent/>){
             this.restore_context();
         }
-        else{
+        else if (!is_component){
             this.push_context();
         }
 
@@ -38,6 +40,8 @@
             ans = ans + s;
         }
         
-        this.pop_context();
+        if (!is_component){
+            this.pop_context();
+        }
         return ans;
     }

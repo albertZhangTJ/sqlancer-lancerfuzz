@@ -115,6 +115,8 @@ public class Processor {
         Utils.log("Expression locals processed");
         graph.handle_dependent_local();
         Utils.log("Dependent locals processed");
+        graph.handle_component_local();
+        Utils.log("Component locals processed");
         graph.check_imag_rules();
         Utils.log("ImagRules verified");
         graph.check_for_duplicate_identifier();
