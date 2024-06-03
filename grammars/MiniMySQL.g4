@@ -22,23 +22,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-
-
 grammar MiniMySQL;
 
 alterTable
-    : {E_ERR("exist");} ALTER TABLE tableName[boolean is_new=false, String sup=null, String sub="t", String iid=null]
+    : {ERR("exist");} ALTER TABLE tableName[sub=t]
     alterSpecification (',' alterSpecification)* SC
     ;
 
-alterSpecification locals [boolean is_component=true]
+alterSpecification locals [is_component]
     : 
-    ADD COLUMN? columnName[boolean is_new=true, String sup=null, String sub=null, String iid=null] columnDefinition FIRST?    
-    | ADD COLUMN? '(' columnName[boolean is_new=true, String sup=null, String sub=null, String iid=null] columnDefinition (',' columnName[boolean is_new=true, String sup=null, String sub=null, String iid=null] columnDefinition)* ')' 
-    | DROP COLUMN? columnName[boolean is_new=false, String sup="t", String sub=null, String iid="a"] {E_ERR("can't delete all"); E_ERR("has a partitioning function dependency");}
-    | DROP PRIMARY KEY {E_ERR("primary");}
-    | RENAME ( TO | AS ) tableName[boolean is_new=true, String sup=null, String sub=null, String iid=null]
-    | RENAME COLUMN columnName[boolean is_new=false, String sup="t", String sub=null, String iid="a"] TO columnName[boolean is_new=true, String sup=null, String sub=null, String iid=null]
+    ADD COLUMN? columnName[is_new] columnDefinition FIRST?    
+    | ADD COLUMN? '(' columnName[is_new] columnDefinition (',' columnName[is_new] columnDefinition)* ')' 
+    | DROP COLUMN? columnName[sup=t, iid=a] {ERR("can't delete all"); ERR("has a partitioning function dependency");}
+    | DROP PRIMARY KEY {ERR("primary");}
+    | RENAME ( TO | AS ) tableName[is_new]
+    | RENAME COLUMN columnName[sup=t, iid=a] TO columnName[is_new]
     ;
 
 columnDefinition
@@ -46,110 +44,63 @@ columnDefinition
     ;
 
 dropDatabase
-    : DROP DATABASE ifExists ( {STATIC_VAR("db");} | dbName[boolean is_new=true, String sup=null, String sub=null, String iid=null]) SC
+    : DROP DATABASE ifExists ( {STATIC_VAR("db");} | dbName[is_new]) SC
     ;
 
 dropSchema
-    : DROP SCHEMA ifExists ( {STATIC_VAR("db");} | dbName[boolean is_new=true, String sup=null, String sub=null, String iid=null]) SC
+    : DROP SCHEMA ifExists ( {STATIC_VAR("db");} | dbName[is_new]) SC
     ;
 
 
 createDatabase
-    : CREATE (DATABASE | SCHEMA) ifNotExists? ( {STATIC_VAR("db");} | dbName[boolean is_new=true, String sup=null, String sub=null, String iid=null]) SC
+    : CREATE (DATABASE | SCHEMA) ifNotExists? ( {STATIC_VAR("db");} | dbName[is_new]) SC
     ;
 
 useDatabase
-    : USE ( {STATIC_VAR("db");} | dbName[boolean is_new=true, String sup=null, String sub=null, String iid=null]) SC
+    : USE ( {STATIC_VAR("db");} | dbName[is_new]) SC
     ;
 
 createTable
-    : CREATE {E_ERR("A BLOB field is not allowed in partition function"); E_ERR("is of a not allowed type for this type of partitioning");} (' ' {BRANCH_W(9);} | TEMPORARY {E_ERR("Cannot create temporary table with partitions");}) TABLE ifNotExists? tableName[boolean is_new=true, 
-            String sup=null, 
-            String sub=null,
-            String iid="b"] (LB
-    	( { VAR("cn");} | columnName[boolean is_new=true, 
-            String sup=null, 
-            String sub=null,
-            String iid="a"]) columnDefinition (',' columnName[boolean is_new=true, 
-            String sup=null, 
-            String sub=null,
-            String iid="a"] columnDefinition { RP_LIMIT(1,6, true, 0.1); })* RB 
+    : CREATE {ERR("A BLOB field is not allowed in partition function"); ERR("is of a not allowed type for this type of partitioning");} (' ' {BRANCH_W(9);} | TEMPORARY {ERR("Cannot create temporary table with partitions");}) TABLE 
+        ifNotExists? tableName[is_new, iid=b] (LB
+    	( { VAR("cn");} | columnName[is_new, iid=a]) columnDefinition (',' columnName[is_new, iid=a] columnDefinition { RP_LIMIT(1,6, true, 0.1); })* RB 
             (' ' {BRANCH_W(8);} |
                     PARTITION BY (LINEAR)? 
                     ( 
-                        'HASH(' ( { VAR("cn");} | columnName[boolean is_new=true, String sup=null, String sub=null, String iid="a"]) ')' |
-                        ' KEY ' ( 'ALGORITHM=' ('1'|'2'))? '(' ( { VAR("cn");} | columnName[boolean is_new=true, String sup=null, String sub=null, String iid="a"]) ')'
+                        'HASH(' ( { VAR("cn");} | columnName[is_new, iid=a]) ')' |
+                        ' KEY ' ( 'ALGORITHM=' ('1'|'2'))? '(' ( { VAR("cn");} | columnName[is_new, iid=a]) ')'
                     )
             ) {BRANCH_W(9);}
             | LIKE 
-            tableName[boolean is_new=false, 
-            String sup=null, 
-            String sub=null,
-            String iid="b"])  SC
+            tableName[iid=b])  SC
     ;
 
-truncateTable : TRUNCATE TABLE tableName[boolean is_new=false, String sup=null, String sub="t", String iid=null] SC ;
+truncateTable : TRUNCATE TABLE tableName[sub=t] SC ;
     
 insertStatement
-    : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? tableName[boolean is_new=false, 
-            String sup=null, 
-            String sub="t",
-            String iid=null]  (
-       '(' columnName[boolean is_new=false, 
-            String sup="t", 
-            String sub="c",
-            String iid="id1"] ( ',' columnName[boolean is_new=false, 
-            String sup="t", 
-            String sub="c",
-            String iid="id1"] { RP_LIMIT(0, 5); RP_ID("a"); })* ')' VALUES '(' expr[String sup="c"] (',' expr[String sup="c"] { RP_LIMIT(0, 5); RP_ID("a"); })* ')'
+    : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? tableName[sub=t]  (
+       '(' columnName[sup=t, sub=c, iid=id1] ( ',' columnName[sup=t, sub=c, iid=id1] { RP_LIMIT(0, 5); RP_ID("a"); })* ')' VALUES '(' expr[sup=c] (',' expr[sup=c] { RP_LIMIT(0, 5); RP_ID("a"); })* ')'
     ) SC
     ;
 
 updateStatement
-    : UPDATE LOW_PRIORITY? IGNORE? tableName[boolean is_new=false, 
-            String sup=null, 
-            String sub="t",
-            String iid=null] SET columnName[boolean is_new=false, 
-            String sup="t", 
-            String sub="c",
-            String iid="id1"] '=' expr[String sup="c"] (
-        ',' columnName[boolean is_new=false, 
-            String sup="t", 
-            String sub="c",
-            String iid="id1"] '=' expr[String sup="c"]
+    : UPDATE LOW_PRIORITY? IGNORE? tableName[sub=t] SET columnName[sup=t, sub=c, iid=id1] '=' expr[sup=c] (
+        ',' columnName[sup=t, sub=c, iid=id1] '=' expr[sup=c]
             {RP_LIMIT(0, 5); }
-    )* (WHERE (NOT)? columnName[boolean is_new=false, 
-            String sup="t", 
-            String sub="cc",
-            String iid=null] '=' expr[String sup="cc"])? SC
+    )* (WHERE (NOT)? columnName[sup=t, sub=cc] '=' expr[sup=cc])? SC
     ;
 
-expr locals [boolean is_expr=true, String query="SHOW COLUMNS FROM $parent_name0$ WHERE Field='$parent_name1$';", String attribute_name="Type"] : ( int_expr {E_TYPE("INT");} | text_val {E_TYPE("TEXT");} | int_expr {E_TYPE("FLOAT");} | least | greatest );
+expr locals [is_expr, query="SHOW COLUMNS FROM $parent0$ WHERE Field='$parent1$';", attr="Type"] : ( int_expr {TYPE("INT");} | text_val {TYPE("TEXT");} | int_expr {TYPE("FLOAT");} | least | greatest );
 
 selectStatement 
-    : SELECT  columnName[boolean is_new=false, 
-            String sup="t", 
-            String sub="c",
-            String iid="id1"] (
-        ',' columnName[boolean is_new=false, 
-            String sup="t", 
-            String sub="c",
-            String iid="id1"]
+    : SELECT  columnName[sup=t, sub=c, iid=id1] (
+        ',' columnName[sup=t, sub=c, iid=id1]
             {RP_LIMIT(0, 5); }
-    )*  FROM tableName[boolean is_new=false, 
-            String sup=null, 
-            String sub="t",
-            String iid=null]
+    )*  FROM tableName[sub=t]
     ;
 
-pre locals [boolean is_dependent=true] : ('(' columnName[boolean is_new=false, 
-            String sup="t", 
-            String sub="cc",
-            String iid="id1"] comparison expr[String sup="cc"] ')' {BRANCH_W(5);}
-            | '(' columnName[boolean is_new=false, 
-            String sup="t", 
-            String sub="cc",
-            String iid="id1"] comparison expr ')' {BRANCH_W(3);}
+pre locals [is_dependent] : ('(' columnName[sup=t, sub=cc, iid=id1] comparison expr[sup=cc] ')' {BRANCH_W(5);}
+            | '(' columnName[sup=t, sub=cc, iid=id1] comparison expr ')' {BRANCH_W(3);}
             | expr comparison expr
             | ifnull )
         ;
@@ -168,18 +119,15 @@ ifnull : ' IFNULL(' expr ', ' expr ') ';
 greatest : ' GREATEST(' expr ( ', ' expr )+ ')';
 least : ' LEAST(' expr ( ', ' expr )+ ')';
 
-float_expr : ( float_val {BRANCH_W(2);
-    System.exit(134);
-    //aabbcc
-    } | abs  | NULL ) ;
+float_expr : ( float_val {BRANCH_W(2);} | abs  | NULL ) ;
 float_val : int_val ('.' int_val )? ;
 int_expr : ( int_val {BRANCH_W(2);} | bit_count | NULL );
 int_val :  (DIGIT {RP_LIMIT(1,5, false, 0.5); })+ ;
 text_val : ( DQ ( (CH | DIGIT) {RP_LIMIT(1,100, false, 0.1); })+ DQ | NULL);
 
-dbName locals [boolean is_schema=true, String query="SHOW DATABASES;", String attribute_name="Database"] : STUB ;
-tableName locals [boolean is_schema=true, String query="SHOW TABLES;", String attribute_name="Tables_in_$STATIC_VAR("db")$"] : STUB;
-columnName locals [boolean is_schema=true, String query="SHOW COLUMNS FROM $parent_name0$;", String attribute_name="Field"] : STUB;
+dbName locals [is_schema, query="SHOW DATABASES;", attr="Database"] : STUB ;
+tableName locals [is_schema, query="SHOW TABLES;", attr="Tables_in_$STATIC_VAR("db")$"] : STUB;
+columnName locals [is_schema, query="SHOW COLUMNS FROM $parent0$;", attr="Field"] : STUB;
 
 
     

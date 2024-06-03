@@ -383,9 +383,9 @@ public class GrammarGraph{
                 RuleNode rn = (RuleNode)this.vertices.get(idx);
                 HashMap<String, String> locals = rn.get_locals();
                 Set<String> key_set = locals.keySet();
-                Pattern pq = Pattern.compile("String\\s{1,}query");
-                Pattern ps = Pattern.compile("boolean\\s{1,}is_schema");
-                Pattern pa = Pattern.compile("String\\s{1,}attribute_name");
+                Pattern pq = Pattern.compile("query");
+                Pattern ps = Pattern.compile("is_schema");
+                Pattern pa = Pattern.compile("attr");
                 String query = null;
                 boolean is_schema = false;
                 String attribute_name = null;
@@ -429,9 +429,9 @@ public class GrammarGraph{
                 RuleNode rn = (RuleNode)this.vertices.get(idx);
                 HashMap<String, String> locals = rn.get_locals();
                 Set<String> key_set = locals.keySet();
-                Pattern pq = Pattern.compile("String\\s{1,}query");
-                Pattern ps = Pattern.compile("boolean\\s{1,}is_expr");
-                Pattern pa = Pattern.compile("String\\s{1,}attribute_name");
+                Pattern pq = Pattern.compile("query");
+                Pattern ps = Pattern.compile("is_expr");
+                Pattern pa = Pattern.compile("attr");
                 String query = null;
                 boolean is_expr = false;
                 String attribute_name = null;
@@ -443,9 +443,13 @@ public class GrammarGraph{
                         query = locals.get(key);
                         if (query!=null){
                             query = query.strip();
+                            //Utils.log("GrammarGraph::handle_expr_locals : found query "+query+" for expression node");
                             if (query.length()>=2 && query.charAt(0)=='"' && query.charAt(query.length()-1)=='"'){
                                 query=query.substring(1, query.length()-1);
                             }
+                        }
+                        else {
+                            Utils.panic("GrammarGraph::handle_expr_locals : for expression nodes, query must not be null");
                         }
                     }
                     if (pa.matcher(key.strip()).find()){
@@ -475,7 +479,7 @@ public class GrammarGraph{
                 RuleNode rn = (RuleNode)this.vertices.get(idx);
                 HashMap<String, String> locals = rn.get_locals();
                 Set<String> key_set = locals.keySet();
-                Pattern p = Pattern.compile("boolean\\s{1,}is_dependent");
+                Pattern p = Pattern.compile("is_dependent");
                 boolean is_dependent = false;
                 for (String key : key_set){
                     if (p.matcher(key.strip()).find()){
@@ -495,7 +499,7 @@ public class GrammarGraph{
                 RuleNode rn = (RuleNode)this.vertices.get(idx);
                 HashMap<String, String> locals = rn.get_locals();
                 Set<String> key_set = locals.keySet();
-                Pattern p = Pattern.compile("boolean\\s{1,}is_component");
+                Pattern p = Pattern.compile("is_component");
                 boolean is_component = false;
                 for (String key : key_set){
                     if (p.matcher(key.strip()).find()){

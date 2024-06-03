@@ -110,9 +110,9 @@ public class RuleNode extends Node{
 
     private void remove_schema_locals(){
         Set<String> key_set = this.locals.keySet();
-        Pattern pq = Pattern.compile("String\\s{1,}query");
-        Pattern pa = Pattern.compile("String\\s{1,}attribute_name");
-        Pattern ps = Pattern.compile("boolean\\s{1,}is_schema");
+        Pattern pq = Pattern.compile("query");
+        Pattern pa = Pattern.compile("attribute_name");
+        Pattern ps = Pattern.compile("is_schema");
         List<String> keys_to_remove = new ArrayList<>();
         for (String key : key_set){
             if (pq.matcher(key.strip()).find() || ps.matcher(key.strip()).find() || pa.matcher(key.strip()).find()){
@@ -126,9 +126,9 @@ public class RuleNode extends Node{
 
     private void remove_expr_locals(){
         Set<String> key_set = this.locals.keySet();
-        Pattern pq = Pattern.compile("String\\s{1,}query");
-        Pattern pa = Pattern.compile("String\\s{1,}attribute_name");
-        Pattern ps = Pattern.compile("boolean\\s{1,}is_expr");
+        Pattern pq = Pattern.compile("query");
+        Pattern pa = Pattern.compile("attribute_name");
+        Pattern ps = Pattern.compile("is_expr");
         List<String> keys_to_remove = new ArrayList<>();
         for (String key : key_set){
             if (pq.matcher(key.strip()).find() || ps.matcher(key.strip()).find() || pa.matcher(key.strip()).find()){
@@ -142,7 +142,7 @@ public class RuleNode extends Node{
 
     private void remove_dependent_locals(){
         Set<String> key_set = this.locals.keySet();
-        Pattern p = Pattern.compile("boolean\\s{1,}is_dependent");
+        Pattern p = Pattern.compile("is_dependent");
         List<String> keys_to_remove = new ArrayList<>();
         for (String key : key_set){
             if (p.matcher(key.strip()).find()){
@@ -156,7 +156,7 @@ public class RuleNode extends Node{
 
     private void remove_component_local(){
         Set<String> key_set = this.locals.keySet();
-        Pattern p = Pattern.compile("boolean\\s{1,}is_component");
+        Pattern p = Pattern.compile("is_component");
         List<String> keys_to_remove = new ArrayList<>();
         for (String key : key_set){
             if (p.matcher(key.strip()).find()){

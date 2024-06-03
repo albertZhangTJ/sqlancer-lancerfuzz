@@ -106,16 +106,64 @@ public class TemplateRenderer {
         }
         name = name + "(depth-1";
         HashMap<String, String> args = call.get_args();
-        if (args==null || args.size()==0){
-            name = name +")";
-            return name;
-        }
-        for (String key: args.keySet()){
-            String val = args.get(key);
+        if (callee instanceof RuleNode && (((RuleNode)callee).is_schema_ref())){
+            String val = args.get("iid");
             if (val==null){
                 val = "null";
             }
+            val = val.strip();
+            if (!val.equals("null") && val.charAt(0)!='"'){
+                val = "\""+val+"\"";
+            }
             name = name + ", " + val;
+            if (args.containsKey("is_new")){
+                name = name + ", true";
+            }
+            else {
+                name = name + ", false";
+            }
+            val = args.get("sub");
+            if (val==null){
+                val = "null";
+            }
+            val = val.strip();
+            if (!val.equals("null") && val.charAt(0)!='"'){
+                val = "\""+val+"\"";
+            }
+            name = name + ", " + val;
+            val = args.get("sup");
+            if (val==null){
+                val = "null";
+            }
+            val = val.strip();
+            if (!val.equals("null") && val.charAt(0)!='"'){
+                val = "\""+val+"\"";
+            }
+            name = name + ", " + val;
+        }
+        else if (callee instanceof RuleNode && (((RuleNode)callee).is_expr()) && args.containsKey("sup")){
+            String val = args.get("sup");
+            if (val==null){
+                val = "null";
+            }
+            val = val.strip();
+            if (!val.equals("null") && val.charAt(0)!='"'){
+                val = "\""+val+"\"";
+            }
+            name = name + ", " + val;
+        }
+        else{
+            if (args==null || args.size()==0){
+                name = name +")";
+                return name;
+            }
+            for (String key: args.keySet()){
+                String val = args.get(key);
+                if (val==null){
+                    val = "null";
+                }
+                name = name + ", " + val;
+            }
         }
         name = name + ")";
         return name;
@@ -134,13 +182,15 @@ public class TemplateRenderer {
             }
             template = replace_tag(template, "rule_name", ((RuleNode)node).get_name());
             String query = ((RuleNode)node).get_query_stmt();
-            while (query.contains("$parent_name")){
-                query = query.substring(0, query.indexOf("$parent_name")) +
+            //Utils.log("TemplateRenderer::render : rendering schema node "+((RuleNode)node).get_name()+", raw query: "+query);
+            while (query.contains("$parent")){
+                query = query.substring(0, query.indexOf("$parent")) +
                         "\" + parent_name.get(" + 
-                        query.substring(query.indexOf("$parent_name")+"$parent_name".length(), query.indexOf("$parent_name")+"$parent_name".length()+1) + 
+                        query.substring(query.indexOf("$parent")+"$parent".length(), query.indexOf("$parent")+"$parent".length()+1) + 
                         ") + \"" + 
-                        query.substring(query.indexOf("$parent_name")+"$parent_nameX$".length());
+                        query.substring(query.indexOf("$parent")+"$parentX$".length());
             }
+            //Utils.log("TemplateRenderer::render : processed query "+query);
             while (query.contains("$STATIC_VAR(")){
                 query = query.substring(0, query.indexOf("$STATIC_VAR(")) +"\" + get_static_variable(" + query.substring(query.indexOf("$STATIC_VAR(")+"$STATIC_VAR(".length());
                 query = query.substring(0, query.indexOf("\")$")) +"\") + \"" + query.substring(query.indexOf("\")$")+"\")$".length());
@@ -150,12 +200,12 @@ public class TemplateRenderer {
                 query = query.substring(0, query.indexOf("\")$")) +"\") + \"" + query.substring(query.indexOf("\")$")+"\")$".length());
             }
             String attr_name = ((RuleNode)node).get_attribute_name();
-            while (attr_name.contains("$parent_name")){
-                attr_name = attr_name.substring(0, attr_name.indexOf("$parent_name")) +
+            while (attr_name.contains("$parent")){
+                attr_name = attr_name.substring(0, attr_name.indexOf("$parent")) +
                         "\" + parent_name.get(" + 
-                        attr_name.substring(attr_name.indexOf("$parent_name")+"$parent_name".length(), attr_name.indexOf("$parent_name")+"$parent_name".length()+1) + 
+                        attr_name.substring(attr_name.indexOf("$parent")+"$parent".length(), attr_name.indexOf("$parent")+"$parent".length()+1) + 
                         ") + \"" + 
-                        attr_name.substring(attr_name.indexOf("$parent_name")+"$parent_nameX$".length());
+                        attr_name.substring(attr_name.indexOf("$parent")+"$parentX$".length());
             }
             while (attr_name.contains("$STATIC_VAR(")){
                 attr_name = attr_name.substring(0, attr_name.indexOf("$STATIC_VAR(")) +"\" + get_static_variable(" + attr_name.substring(attr_name.indexOf("$STATIC_VAR(")+"$STATIC_VAR(".length());
@@ -180,12 +230,12 @@ public class TemplateRenderer {
             }
             template = replace_tag(template, "rule_name", ((RuleNode)node).get_name());
             String query = ((RuleNode)node).get_query_stmt();
-            while (query.contains("$parent_name")){
-                query = query.substring(0, query.indexOf("$parent_name")) +
+            while (query.contains("$parent")){
+                query = query.substring(0, query.indexOf("$parent")) +
                         "\" + parent_name.get(" + 
-                        query.substring(query.indexOf("$parent_name")+"$parent_name".length(), query.indexOf("$parent_name")+"$parent_name".length()+1) + 
+                        query.substring(query.indexOf("$parent")+"$parent".length(), query.indexOf("$parent")+"$parent".length()+1) + 
                         ") + \"" + 
-                        query.substring(query.indexOf("$parent_name")+"$parent_nameX$".length());
+                        query.substring(query.indexOf("$parent")+"$parentX$".length());
             }
             while (query.contains("$STATIC_VAR(")){
                 query = query.substring(0, query.indexOf("$STATIC_VAR(")) +"\" + get_static_variable(" + query.substring(query.indexOf("$STATIC_VAR(")+"$STATIC_VAR(".length());
@@ -196,12 +246,12 @@ public class TemplateRenderer {
                 query = query.substring(0, query.indexOf("\")$")) +"\") + \"" + query.substring(query.indexOf("\")$")+"\")$".length());
             }
             String attr_name = ((RuleNode)node).get_attribute_name();
-            while (attr_name.contains("$parent_name")){
-                attr_name = attr_name.substring(0, attr_name.indexOf("$parent_name")) +
+            while (attr_name.contains("$parent")){
+                attr_name = attr_name.substring(0, attr_name.indexOf("$parent")) +
                         "\" + parent_name.get(" + 
-                        attr_name.substring(attr_name.indexOf("$parent_name")+"$parent_name".length(), attr_name.indexOf("$parent_name")+"$parent_name".length()+1) + 
+                        attr_name.substring(attr_name.indexOf("$parent")+"$parent".length(), attr_name.indexOf("$parent")+"$parent".length()+1) + 
                         ") + \"" + 
-                        attr_name.substring(attr_name.indexOf("$parent_name")+"$parent_nameX$".length());
+                        attr_name.substring(attr_name.indexOf("$parent")+"$parentX$".length());
             }
             while (attr_name.contains("$STATIC_VAR(")){
                 attr_name = attr_name.substring(0, attr_name.indexOf("$STATIC_VAR(")) +"\" + get_static_variable(" + attr_name.substring(attr_name.indexOf("$STATIC_VAR(")+"$STATIC_VAR(".length());

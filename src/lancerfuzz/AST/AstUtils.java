@@ -7,8 +7,8 @@ import lancerfuzz.Utils;
 
 public class AstUtils {
 
-    public static final String EERR_DECL = "E_ERR(";
-    public static final int EERR_MIN_LENGTH = 10; // E_ERR("");
+    public static final String EERR_DECL = "ERR(";
+    public static final int EERR_MIN_LENGTH = 8; // ERR("");
     public static final String WGHT_DECL = "BRANCH_W(";
     public static final int WGHT_MIN_LENGTH = 11;  // BRANCH_W();
     public static final String RPLM_DECL = "RP_LIMIT(";
@@ -21,8 +21,8 @@ public class AstUtils {
     public static final int MEMBER_VAR_REF_MIN_LENGTH = 15;  // MEMBER_VAR("");
     public static final String VAR_REF_DECL = "VAR(";
     public static final int VAR_REF_MIN_LENGTH = 8;  // VAR("");
-    public static final String TYPE_DECL = "E_TYPE(";
-    public static final int TYPE_DECL_MIN_LENGTH = 11; //E_TYPE("");
+    public static final String TYPE_DECL = "TYPE(";
+    public static final int TYPE_DECL_MIN_LENGTH = 9; //TYPE("");
 
 
     // Implementation acquired from https://stackoverflow.com/q/220547
