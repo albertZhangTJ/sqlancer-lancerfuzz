@@ -90,7 +90,7 @@ updateStatement
     )* (WHERE (NOT)? columnName[sup=t, sub=cc] '=' expr[sup=cc])? SC
     ;
 
-expr locals [is_expr, query="SHOW COLUMNS FROM $parent0$ WHERE Field='$parent1$';", attr="Type"] : ( int_expr {TYPE("INT");} | text_val {TYPE("TEXT");} | int_expr {TYPE("FLOAT");} | least | greatest );
+expr locals [is_expr, query="SHOW COLUMNS FROM $parent0$ WHERE Field='$parent1$';", attr="Type"] : ( int_expr {TYPE("INT");} | text_val {TYPE("TEXT");} | int_expr {TYPE("FLOAT");} | least | greatest | if);
 
 selectStatement 
     : SELECT  columnName[sup=t, sub=c, iid=id1] (
@@ -102,7 +102,8 @@ selectStatement
 pre locals [is_dependent] : ('(' columnName[sup=t, sub=cc, iid=id1] comparison expr[sup=cc] ')' {BRANCH_W(5);}
             | '(' columnName[sup=t, sub=cc, iid=id1] comparison expr ')' {BRANCH_W(3);}
             | expr comparison expr
-            | ifnull )
+            | ifnull 
+            | if)
         ;
 
 comparison : ( LT | GT | EQ | LT EQ | GT EQ );
@@ -115,6 +116,7 @@ waitNowaitClause
 abs : ' ABS(' (float_expr | int_expr ) ')' ;
 bit_count : ' BIT_COUNT(' int_expr ')';
 coalesce : ' COALESCE(' expr ( ',' expr )* ')';
+if : ' IF(' expr comparison expr | ifnull ', ' expr ', ' expr ') '; 
 ifnull : ' IFNULL(' expr ', ' expr ') ';
 greatest : ' GREATEST(' expr ( ', ' expr )+ ')';
 least : ' LEAST(' expr ( ', ' expr )+ ')';
