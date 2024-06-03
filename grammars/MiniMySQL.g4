@@ -36,7 +36,7 @@ alterSpecification locals [is_component]
     | DROP COLUMN? columnName[sup=t, iid=a] {ERR("can't delete all"); ERR("has a partitioning function dependency");}
     | DROP PRIMARY KEY {ERR("primary");}
     | RENAME ( TO | AS ) tableName[is_new]
-    | RENAME COLUMN columnName[sup=t, iid=a] TO columnName[is_new]
+    | RENAME COLUMN columnName[sup=t, iid=a] TO columnName[is_new] { ERR("has a partitioning function dependency and cannot be dropped or renamed");}
     ;
 
 columnDefinition
@@ -65,7 +65,7 @@ createTable
         ifNotExists? tableName[is_new, iid=b] (LB
     	( { VAR("cn");} | columnName[is_new, iid=a]) columnDefinition (',' columnName[is_new, iid=a] columnDefinition { RP_LIMIT(1,6, true, 0.1); })* RB 
             (' ' {BRANCH_W(8);} |
-                    PARTITION BY (LINEAR)? 
+                    PARTITION BY (LINEAR)? {ERR("is of a not allowed type for this type of partitioning");}
                     ( 
                         'HASH(' ( { VAR("cn");} | columnName[is_new, iid=a]) ')' |
                         ' KEY ' ( 'ALGORITHM=' ('1'|'2'))? '(' ( { VAR("cn");} | columnName[is_new, iid=a]) ')'
@@ -90,7 +90,7 @@ updateStatement
     )* (WHERE (NOT)? columnName[sup=t, sub=cc] '=' expr[sup=cc])? SC
     ;
 
-expr locals [is_expr, query="SHOW COLUMNS FROM $parent0$ WHERE Field='$parent1$';", attr="Type"] : ( int_expr {TYPE("INT");} | text_val {TYPE("TEXT");} | int_expr {TYPE("FLOAT");} | least | greatest | if);
+expr locals [is_expr, query="SHOW COLUMNS FROM $parent0$ WHERE Field='$parent1$';", attr="Type"] : ( int_expr {TYPE("INT");} | text_expr {TYPE("TEXT");} | int_expr {TYPE("FLOAT");} | least | greatest | if_func);
 
 selectStatement 
     : SELECT  columnName[sup=t, sub=c, iid=id1] (
@@ -103,7 +103,7 @@ pre locals [is_dependent] : ('(' columnName[sup=t, sub=cc, iid=id1] comparison e
             | '(' columnName[sup=t, sub=cc, iid=id1] comparison expr ')' {BRANCH_W(3);}
             | expr comparison expr
             | ifnull 
-            | if)
+            | if_func)
         ;
 
 comparison : ( LT | GT | EQ | LT EQ | GT EQ );
@@ -116,15 +116,24 @@ waitNowaitClause
 abs : ' ABS(' (float_expr | int_expr ) ')' ;
 bit_count : ' BIT_COUNT(' int_expr ')';
 coalesce : ' COALESCE(' expr ( ',' expr )* ')';
-if : ' IF(' expr comparison expr | ifnull ', ' expr ', ' expr ') '; 
+if_func : ' IF(' (expr comparison expr | ifnull) ', ' expr ', ' expr ') '; 
 ifnull : ' IFNULL(' expr ', ' expr ') ';
-greatest : ' GREATEST(' expr ( ', ' expr )+ ')';
-least : ' LEAST(' expr ( ', ' expr )+ ')';
+greatest : ' GREATEST(' expr ( ', ' expr )+ ') ';
+least : ' LEAST(' expr ( ', ' expr )+ ') ';
+strcmp : ' STRCMP(' text_expr ', ' text_expr ') ';
+substr : ' SUBSTR(' text_val ', ' int_expr ', ' int_expr ') ';
+substring : ' SUBSTRING(' text_val ', ' int_expr ', ' int_expr ') ';
+trim : ' TRIM(' text_val') ';
+lcase : ' LCASE(' text_val ') ';
+ucase : ' UCASE(' text_val ') ';
+space : ' SPACE(' int_expr ') ';
+last_insert_id : ' LAST_INSERT_ID() ';
 
 float_expr : ( float_val {BRANCH_W(2);} | abs  | NULL ) ;
 float_val : int_val ('.' int_val )? ;
-int_expr : ( int_val {BRANCH_W(2);} | bit_count | NULL );
+int_expr : ( (DS {RP_LIMIT(0,1,true, 0.99); } )? int_val {BRANCH_W(2);} | bit_count | strcmp | last_insert_id | NULL );
 int_val :  (DIGIT {RP_LIMIT(1,5, false, 0.5); })+ ;
+text_expr : ( text_val | substr | substring | lcase | ucase | space | trim );
 text_val : ( DQ ( (CH | DIGIT) {RP_LIMIT(1,100, false, 0.1); })+ DQ | NULL);
 
 dbName locals [is_schema, query="SHOW DATABASES;", attr="Database"] : STUB ;
@@ -194,6 +203,7 @@ GT : '>';
 EQ : '=';
 SC : ';';
 US : '_';
+DS : '-';
 
 
 fragment DIGIT : [0-9];
