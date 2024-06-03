@@ -119,7 +119,7 @@ ifnull : ' IFNULL(' expr ', ' expr ') ';
 greatest : ' GREATEST(' expr ( ', ' expr )+ ')';
 least : ' LEAST(' expr ( ', ' expr )+ ')';
 
-float_expr : ( float_val {BRANCH_W(2); System.exit(134); /*aabbcc*/} | abs  | NULL ) ;
+float_expr : ( float_val {BRANCH_W(2);} | abs  | NULL ) ;
 float_val : int_val ('.' int_val )? ;
 int_expr : ( int_val {BRANCH_W(2);} | bit_count | NULL );
 int_val :  (DIGIT {RP_LIMIT(1,5, false, 0.5); })+ ;
