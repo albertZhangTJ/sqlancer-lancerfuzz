@@ -75,6 +75,15 @@ createTable
             tableName[iid=b])  SC
     ;
 
+createIndex
+    : {ERR("used in key specification without a key length");} CREATE  (UNIQUE | FULLTEXT | {ERR("A SPATIAL index may only contain a geometrical type column");} SPATIAL)? INDEX indexName[is_new]
+        ON tableName[sub=t] '(' columnName[sup=t, iid=a] (', ' columnName[sup=t, iid=a] {RP_LIMIT(0, 3);})* ')'
+        (
+            ALGORITHM EQ? (DEFAULT | INPLACE | COPY)
+            | LOCK EQ? (DEFAULT | NONE | SHARED | EXCLUSIVE)
+        )*
+    ;
+
 truncateTable : TRUNCATE TABLE tableName[sub=t] SC ;
     
 insertStatement
@@ -121,24 +130,25 @@ ifnull : ' IFNULL(' expr ', ' expr ') ';
 greatest : ' GREATEST(' expr ( ', ' expr )+ ') ';
 least : ' LEAST(' expr ( ', ' expr )+ ') ';
 strcmp : ' STRCMP(' text_expr ', ' text_expr ') ';
-substr : ' SUBSTR(' text_val ', ' int_expr ', ' int_expr ') ';
-substring : ' SUBSTRING(' text_val ', ' int_expr ', ' int_expr ') ';
-trim : ' TRIM(' text_val') ';
-lcase : ' LCASE(' text_val ') ';
-ucase : ' UCASE(' text_val ') ';
+substr : ' SUBSTR(' text_expr ', ' int_expr ', ' int_expr ') ';
+substring : ' SUBSTRING(' text_expr ', ' int_expr ', ' int_expr ') ';
+trim : ' TRIM(' text_expr') ';
+lcase : ' LCASE(' text_expr ') ';
+ucase : ' UCASE(' text_expr ') ';
 space : ' SPACE(' int_expr ') ';
 last_insert_id : ' LAST_INSERT_ID() ';
 
 float_expr : ( float_val {BRANCH_W(2);} | abs  | NULL ) ;
 float_val : int_val ('.' int_val )? ;
-int_expr : ( (DS {RP_LIMIT(0,1,true, 0.99); } )? int_val {BRANCH_W(2);} | bit_count | strcmp | last_insert_id | NULL );
+int_expr : ( (DS {RP_LIMIT(0,1,true, 0.9); } )? int_val {BRANCH_W(4);} | bit_count | strcmp | last_insert_id | NULL );
 int_val :  (DIGIT {RP_LIMIT(1,5, false, 0.5); })+ ;
-text_expr : ( text_val | substr | substring | lcase | ucase | space | trim );
-text_val : ( DQ ( (CH | DIGIT) {RP_LIMIT(1,100, false, 0.1); })+ DQ | NULL);
+text_expr : ( text_val {BRANCH_W(7);} | substr | substring | lcase | ucase | space | trim | NULL );
+text_val :  DQ ( (CH | DIGIT) {RP_LIMIT(1,100, false, 0.1); })+ DQ ;
 
 dbName locals [is_schema, query="SHOW DATABASES;", attr="Database"] : STUB ;
 tableName locals [is_schema, query="SHOW TABLES;", attr="Tables_in_$STATIC_VAR("db")$"] : STUB;
 columnName locals [is_schema, query="SHOW COLUMNS FROM $parent0$;", attr="Field"] : STUB;
+indexName locals [is_schema, query="SHOW INDEX FROM $parent0$", attr="Key_name"] : STUB;
 
 
     
@@ -146,29 +156,38 @@ ifNotExists : IF NOT EXISTS;
 ifExists : IF EXISTS;
 
 ADD : SPACE A D D SPACE;
+ALGORITHM : SPACE A L G O R I T H M SPACE;
 ALTER : SPACE A L T E R SPACE;
 AS : SPACE A S SPACE;
 BY : SPACE B Y SPACE;
 COLUMN : SPACE C O L U M N SPACE;
+COPY : SPACE C O P Y SPACE;
 CREATE : SPACE C R E A T E SPACE;
 DATABASE : SPACE D A T A B A S E SPACE;
+DEFAULT : SPACE D E F A U L T SPACE;
 DELAYED : SPACE D E L A Y E D SPACE;
 DROP : SPACE D R O P SPACE;
+EXCLUSIVE : SPACE E X C L U S I V E SPACE;
 EXISTS : SPACE E X I S T S SPACE;
 FIRST : SPACE F I R S T SPACE;
 FLOAT : SPACE F L O A T SPACE;
 FROM : SPACE F R O M SPACE;
+FULLTEXT : SPACE F U L L T E X T SPACE;
 HASH : SPACE H A S H SPACE;
 HIGH_PRIORITY : SPACE H I G H US P R I O R I T Y SPACE;
 IF : SPACE I F SPACE;
 IGNORE : SPACE I G N O R E SPACE;
+INDEX : SPACE I N D E X SPACE;
+INPLACE : SPACE I N P L A C E SPACE;
 INSERT : SPACE I N S E R T SPACE;
 INT : SPACE I N T SPACE;
 INTO : SPACE I N T O SPACE;
 KEY : SPACE K E Y SPACE;
 LIKE : SPACE L I K E SPACE;
 LINEAR : SPACE L I N E A R SPACE;
+LOCK : SPACE L O C K SPACE;
 LOW_PRIORITY : SPACE L O W US P R I O R I T Y SPACE;
+NONE : SPACE N O N E SPACE;
 NOT : SPACE N O T SPACE;
 NOWAIT : SPACE N O W A I T SPACE;
 NULL : SPACE N U L L SPACE;
@@ -182,18 +201,24 @@ REPLACE : SPACE R E P L A C E SPACE;
 SCHEMA : SPACE S C H E M A SPACE;
 SELECT : SPACE S E L E C T SPACE;
 SET : SPACE S E T SPACE;
+SHARED : SPACE S H A R E D SPACE;
+SPATIAL : SPACE S P A T I A L SPACE;
 TABLE : SPACE T A B L E SPACE;
 TEMPORARY : SPACE T E M P O R A R Y SPACE;
 TEXT : SPACE T E X T SPACE;
 TO : SPACE T O SPACE;
 TRUNCATE : SPACE T R U N C A T E SPACE;
+UNIQUE : SPACE U N I Q U E SPACE;
 UPDATE : SPACE U P D A T E SPACE;
 USE : SPACE U S E SPACE;
 VALUES : SPACE V A L U E S SPACE;
 VIEW : SPACE V I E W SPACE;
 WAIT : SPACE W A I T SPACE;
 WHERE : SPACE W H E R E SPACE;
+
+
 STUB : SPACE S T U B SPACE;
+
 
 
 LB : '(';

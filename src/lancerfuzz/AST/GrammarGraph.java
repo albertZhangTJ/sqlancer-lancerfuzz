@@ -533,11 +533,26 @@ public class GrammarGraph{
         int steps = 1;
         while (unrelaxed.size()>0){
             for (int i=0; i<unrelaxed.size(); i++){
-                for (int j=0; j<unrelaxed.get(i).get_outward_edges().size(); j++){
-                    if (relaxed.contains(unrelaxed.get(i).get_outward_edges().get(j).get_dest())){
+                if (unrelaxed.get(i) instanceof AlternationNode){
+                    for (int j=0; j<unrelaxed.get(i).get_outward_edges().size(); j++){
+                        if (relaxed.contains(unrelaxed.get(i).get_outward_edges().get(j).get_dest())){
+                            relaxing.add(unrelaxed.remove(i));
+                            i--;
+                            break;
+                        }
+                    }
+                }
+                else {
+                    boolean all_children_relaxed = true;
+                    for (int j=0; j<unrelaxed.get(i).get_outward_edges().size(); j++){
+                        if (!relaxed.contains(unrelaxed.get(i).get_outward_edges().get(j).get_dest())){
+                            all_children_relaxed = false;
+                            break;
+                        }
+                    }
+                    if (all_children_relaxed){
                         relaxing.add(unrelaxed.remove(i));
                         i--;
-                        break;
                     }
                 }
             }
