@@ -17,7 +17,7 @@ import sqlancer.MainOptions;
 
 @SuppressWarnings("unused")
 public class ProtoEntry {
-    private static final int ALLOWED_CONSECUTIVE_FAILS = 2;
+    private static final int ALLOWED_CONSECUTIVE_FAILS = 5;
     private static int failed_log_counter;
     private static void log_failed(String test_case, String error) throws Exception{
         // System.out.println(test_case);

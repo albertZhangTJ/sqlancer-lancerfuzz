@@ -62,38 +62,41 @@ useDatabase
 
 createTable
     : CREATE {ERR("A BLOB field is not allowed in partition function"); ERR("is of a not allowed type for this type of partitioning");} (' ' {BRANCH_W(9);} | TEMPORARY {ERR("Cannot create temporary table with partitions");}) TABLE 
-        ifNotExists? tableName[is_new, iid=b] (LB
+        ifNotExists? tableName[is_new, iid=b] 
+        (LB
     	( { VAR("cn");} | columnName[is_new, iid=a]) columnDefinition (',' columnName[is_new, iid=a] columnDefinition { RP_LIMIT(1,6, true, 0.1); })* RB 
             (' ' {BRANCH_W(8);} |
-                    PARTITION BY (LINEAR)? {ERR("is of a not allowed type for this type of partitioning");}
+                    ' ENGINE ' EQ (' MyISAM ' | ' InnoDB ' ) |
+                    PARTITION BY (LINEAR)? {ERR("allowed type");}
                     ( 
                         'HASH(' ( { VAR("cn");} | columnName[is_new, iid=a]) ')' |
                         ' KEY ' ( 'ALGORITHM=' ('1'|'2'))? '(' ( { VAR("cn");} | columnName[is_new, iid=a]) ')'
                     )
             ) {BRANCH_W(9);}
-            | LIKE 
-            tableName[iid=b])  SC
+            | LIKE tableName[iid=b]
+        )  SC
     ;
 
 createIndex
-    : {ERR("used in key specification without a key length");} CREATE  (UNIQUE | FULLTEXT | {ERR("A SPATIAL index may only contain a geometrical type column");} SPATIAL)? INDEX indexName[is_new]
+    : {ERR("used in key specification without a key length");} CREATE  (UNIQUE {ERR("Duplicate"); ERR("A UNIQUE INDEX must include all columns in the table's partitioning function");} | FULLTEXT {ERR("cannot be part of"); ERR("The used table type doesn't support FULLTEXT indexes");} | {ERR("A SPATIAL index may only contain a geometrical type column"); BRANCH_W(0.01); } SPATIAL)? INDEX indexName[is_new]
         ON tableName[sub=t] '(' columnName[sup=t, iid=a] (', ' columnName[sup=t, iid=a] {RP_LIMIT(0, 3);})* ')'
         (
-            ALGORITHM EQ? (DEFAULT | INPLACE | COPY)
-            | LOCK EQ? (DEFAULT | NONE | SHARED | EXCLUSIVE)
-        )*
+            ALGORITHM EQ (DEFAULT | INPLACE | COPY)
+            | LOCK EQ (DEFAULT | NONE | SHARED | EXCLUSIVE)
+        ) {ERR("is not supported");}
+        SC
     ;
 
 truncateTable : TRUNCATE TABLE tableName[sub=t] SC ;
     
 insertStatement
-    : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? tableName[sub=t]  (
+    : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? {ERR("Duplicate");} tableName[sub=t]  (
        '(' columnName[sup=t, sub=c, iid=id1] ( ',' columnName[sup=t, sub=c, iid=id1] { RP_LIMIT(0, 5); RP_ID("a"); })* ')' VALUES '(' expr[sup=c] (',' expr[sup=c] { RP_LIMIT(0, 5); RP_ID("a"); })* ')'
     ) SC
     ;
 
 updateStatement
-    : UPDATE LOW_PRIORITY? IGNORE? tableName[sub=t] SET columnName[sup=t, sub=c, iid=id1] '=' expr[sup=c] (
+    : UPDATE {ERR("Duplicate");} LOW_PRIORITY? IGNORE? tableName[sub=t] SET columnName[sup=t, sub=c, iid=id1] '=' expr[sup=c] (
         ',' columnName[sup=t, sub=c, iid=id1] '=' expr[sup=c]
             {RP_LIMIT(0, 5); }
     )* (WHERE (NOT)? columnName[sup=t, sub=cc] '=' expr[sup=cc])? SC
