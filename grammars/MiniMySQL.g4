@@ -102,7 +102,7 @@ updateStatement
     )* (WHERE (NOT)? columnName[ref=t, def=cc] '=' expr[ref=cc])? SC
     ;
 
-expr locals [is_expr, query="SHOW COLUMNS FROM $parent0$ WHERE Field='$parent1$';", attr="Type"] : ( int_expr {TYPE("INT");} | text_expr {TYPE("TEXT");} | int_expr {TYPE("FLOAT");} | least | greatest | if_func);
+expr locals [is_expr, query="SHOW COLUMNS FROM $parent0$ WHERE Field='$parent1$';", attr="Type"] : ( int_expr {TYPE("INT");} | text_expr {TYPE("TEXT");} | float_expr {TYPE("FLOAT");} | least | greatest | if_func);
 
 selectStatement 
     : SELECT  columnName[ref=t, def=c, uni=id1] (
