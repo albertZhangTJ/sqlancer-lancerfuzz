@@ -25,7 +25,7 @@ THE SOFTWARE.
 grammar MiniMySQL;
 
 alterTable
-    : {ERR("exist");} ALTER TABLE tableName[sub=t]
+    : {ERR("exist");} ALTER TABLE tableName[def=t]
     alterSpecification (',' alterSpecification)* SC
     ;
 
@@ -33,10 +33,10 @@ alterSpecification locals [is_component]
     : 
     ADD COLUMN? columnName[is_new] columnDefinition FIRST?    
     | ADD COLUMN? '(' columnName[is_new] columnDefinition (',' columnName[is_new] columnDefinition)* ')' 
-    | DROP COLUMN? columnName[sup=t, iid=a] {ERR("can't delete all"); ERR("has a partitioning function dependency");}
+    | DROP COLUMN? columnName[ref=t, uni=a] {ERR("can't delete all"); ERR("has a partitioning function dependency");}
     | DROP PRIMARY KEY {ERR("primary");}
     | RENAME ( TO | AS ) tableName[is_new]
-    | RENAME COLUMN columnName[sup=t, iid=a] TO columnName[is_new] { ERR("has a partitioning function dependency and cannot be dropped or renamed");}
+    | RENAME COLUMN columnName[ref=t, uni=a] TO columnName[is_new] { ERR("has a partitioning function dependency and cannot be dropped or renamed");}
     ;
 
 columnDefinition
@@ -62,24 +62,24 @@ useDatabase
 
 createTable
     : CREATE {ERR("A BLOB field is not allowed in partition function"); ERR("is of a not allowed type for this type of partitioning");} (' ' {BRANCH_W(9);} | TEMPORARY {ERR("Cannot create temporary table with partitions");}) TABLE 
-        ifNotExists? tableName[is_new, iid=b] 
+        ifNotExists? tableName[is_new, uni=b] 
         (LB
-    	( { VAR("cn");} | columnName[is_new, iid=a]) columnDefinition (',' columnName[is_new, iid=a] columnDefinition { RP_LIMIT(1,6, true, 0.1); })* RB 
+    	( { VAR("cn");} | columnName[is_new, uni=a]) columnDefinition (',' columnName[is_new, uni=a] columnDefinition { RP_LIMIT(1,6, true, 0.1); })* RB 
             (' ' {BRANCH_W(8);} |
                     ' ENGINE ' EQ (' MyISAM ' | ' InnoDB ' ) |
                     PARTITION BY (LINEAR)? {ERR("allowed type");}
                     ( 
-                        'HASH(' ( { VAR("cn");} | columnName[is_new, iid=a]) ')' |
-                        ' KEY ' ( 'ALGORITHM=' ('1'|'2'))? '(' ( { VAR("cn");} | columnName[is_new, iid=a]) ')'
+                        'HASH(' ( { VAR("cn");} | columnName[is_new, uni=a]) ')' |
+                        ' KEY ' ( 'ALGORITHM=' ('1'|'2'))? '(' ( { VAR("cn");} | columnName[is_new, uni=a]) ')'
                     )
             ) {BRANCH_W(9);}
-            | LIKE tableName[iid=b]
+            | LIKE tableName[uni=b]
         )  SC
     ;
 
 createIndex
     : {ERR("used in key specification without a key length");} CREATE  (UNIQUE {ERR("Duplicate"); ERR("A UNIQUE INDEX must include all columns in the table's partitioning function");} | FULLTEXT {ERR("cannot be part of"); ERR("The used table type doesn't support FULLTEXT indexes");} | {ERR("A SPATIAL index may only contain a geometrical type column"); BRANCH_W(0.01); } SPATIAL)? INDEX indexName[is_new]
-        ON tableName[sub=t] '(' columnName[sup=t, iid=a] (', ' columnName[sup=t, iid=a] {RP_LIMIT(0, 3);})* ')'
+        ON tableName[def=t] '(' columnName[ref=t, uni=a] (', ' columnName[ref=t, uni=a] {RP_LIMIT(0, 3);})* ')'
         (
             ALGORITHM EQ (DEFAULT | INPLACE | COPY)
             | LOCK EQ (DEFAULT | NONE | SHARED | EXCLUSIVE)
@@ -87,32 +87,32 @@ createIndex
         SC
     ;
 
-truncateTable : TRUNCATE TABLE tableName[sub=t] SC ;
+truncateTable : TRUNCATE TABLE tableName[def=t] SC ;
     
 insertStatement
-    : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? {ERR("Duplicate");} tableName[sub=t]  (
-       '(' columnName[sup=t, sub=c, iid=id1] ( ',' columnName[sup=t, sub=c, iid=id1] { RP_LIMIT(0, 5); RP_ID("a"); })* ')' VALUES '(' expr[sup=c] (',' expr[sup=c] { RP_LIMIT(0, 5); RP_ID("a"); })* ')'
+    : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? {ERR("Duplicate");} tableName[def=t]  (
+       '(' columnName[ref=t, def=c, uni=id1] ( ',' columnName[ref=t, def=c, uni=id1] { RP_LIMIT(0, 5); RP_ID("a"); })* ')' VALUES '(' expr[ref=c] (',' expr[ref=c] { RP_LIMIT(0, 5); RP_ID("a"); })* ')'
     ) SC
     ;
 
 updateStatement
-    : UPDATE {ERR("Duplicate");} LOW_PRIORITY? IGNORE? tableName[sub=t] SET columnName[sup=t, sub=c, iid=id1] '=' expr[sup=c] (
-        ',' columnName[sup=t, sub=c, iid=id1] '=' expr[sup=c]
+    : UPDATE {ERR("Duplicate");} LOW_PRIORITY? IGNORE? tableName[def=t] SET columnName[ref=t, def=c, uni=id1] '=' expr[ref=c] (
+        ',' columnName[ref=t, def=c, uni=id1] '=' expr[ref=c]
             {RP_LIMIT(0, 5); }
-    )* (WHERE (NOT)? columnName[sup=t, sub=cc] '=' expr[sup=cc])? SC
+    )* (WHERE (NOT)? columnName[ref=t, def=cc] '=' expr[ref=cc])? SC
     ;
 
 expr locals [is_expr, query="SHOW COLUMNS FROM $parent0$ WHERE Field='$parent1$';", attr="Type"] : ( int_expr {TYPE("INT");} | text_expr {TYPE("TEXT");} | int_expr {TYPE("FLOAT");} | least | greatest | if_func);
 
 selectStatement 
-    : SELECT  columnName[sup=t, sub=c, iid=id1] (
-        ',' columnName[sup=t, sub=c, iid=id1]
+    : SELECT  columnName[ref=t, def=c, uni=id1] (
+        ',' columnName[ref=t, def=c, uni=id1]
             {RP_LIMIT(0, 5); }
-    )*  FROM tableName[sub=t]
+    )*  FROM tableName[def=t]
     ;
 
-pre locals [is_dependent] : ('(' columnName[sup=t, sub=cc, iid=id1] comparison expr[sup=cc] ')' {BRANCH_W(5);}
-            | '(' columnName[sup=t, sub=cc, iid=id1] comparison expr ')' {BRANCH_W(3);}
+pre locals [is_dependent] : ('(' columnName[ref=t, def=cc, uni=id1] comparison expr[ref=cc] ')' {BRANCH_W(5);}
+            | '(' columnName[ref=t, def=cc, uni=id1] comparison expr ')' {BRANCH_W(3);}
             | expr comparison expr
             | ifnull 
             | if_func)

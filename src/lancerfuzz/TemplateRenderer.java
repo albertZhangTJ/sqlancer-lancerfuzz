@@ -107,7 +107,7 @@ public class TemplateRenderer {
         name = name + "(depth-1";
         HashMap<String, String> args = call.get_args();
         if (callee instanceof RuleNode && (((RuleNode)callee).is_schema_ref())){
-            String val = args.get("iid");
+            String val = args.get("uni");
             if (val==null){
                 val = "null";
             }
@@ -122,7 +122,7 @@ public class TemplateRenderer {
             else {
                 name = name + ", false";
             }
-            val = args.get("sub");
+            val = args.get("def");
             if (val==null){
                 val = "null";
             }
@@ -131,7 +131,7 @@ public class TemplateRenderer {
                 val = "\""+val+"\"";
             }
             name = name + ", " + val;
-            val = args.get("sup");
+            val = args.get("ref");
             if (val==null){
                 val = "null";
             }
@@ -141,8 +141,8 @@ public class TemplateRenderer {
             }
             name = name + ", " + val;
         }
-        else if (callee instanceof RuleNode && (((RuleNode)callee).is_expr()) && args.containsKey("sup")){
-            String val = args.get("sup");
+        else if (callee instanceof RuleNode && (((RuleNode)callee).is_expr()) && args.containsKey("ref")){
+            String val = args.get("ref");
             if (val==null){
                 val = "null";
             }

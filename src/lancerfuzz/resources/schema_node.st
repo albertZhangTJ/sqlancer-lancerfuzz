@@ -2,7 +2,7 @@
 //MIN_DEPTH = 1
 //IT IS THE TESTER'S RESPONSIBILITY TO ENSURE THE PROPER PARAMETERS ARE SPECIFIED IN THE GRAMMAR FILE
     private int <rule_name/>_count = 0;
-    private String <rule_name/>(int depth, String iid, boolean is_new, String sub, String sup) throws Exception{
+    private String <rule_name/>(int depth, String uni, boolean is_new, String def, String ref) throws Exception{
 <ee/>
         String ans = "";
         List<String> parent_name = null;
@@ -11,8 +11,8 @@
             ans = "<rule_name/>"+<rule_name/>_count;
         }
         else {
-            if (sup!=null){
-                parent_name = this.get_parent_hierarchy(sup);
+            if (ref!=null){
+                parent_name = this.get_parent_hierarchy(ref);
                 if (parent_name==null || parent_name.size()==0){
                     return ERROR_FLAG;
                 }
@@ -24,7 +24,7 @@
             while (rs.next()){
                 cnt++;
                 //this.log(rs.getString("<attribute_name/>"));
-                if (iid==null || this.is_identifier_available(iid, rs.getString("<attribute_name/>") )){
+                if (uni==null || this.is_identifier_available(uni, rs.getString("<attribute_name/>") )){
                     //this.log("Added");
                     values.add(rs.getString("<attribute_name/>"));
                 }
@@ -35,20 +35,20 @@
                 throw new Exception("IgnoreMe: quantifier node multiplier cannot be satisfied");
             }
             ans = random_from_list(values);
-            if (iid!=null){
-                this.mark_identifier_used(iid, ans);
+            if (uni!=null){
+                this.mark_identifier_used(uni, ans);
             }
         }
-        if (sub!=null){
+        if (def!=null){
             if (parent_name==null){
                 List<String> hierarchy = new ArrayList<>();
                 hierarchy.add(ans);
-                this.set_parent(sub, hierarchy);
+                this.set_parent(def, hierarchy);
             }
             else {
                 List<String> hierarchy = copy_list(parent_name);
                 hierarchy.add(ans);
-                this.set_parent(sub, hierarchy);
+                this.set_parent(def, hierarchy);
             }
         }
         return ans;
