@@ -91,8 +91,8 @@ truncateTable locals [is_statement] : TRUNCATE TABLE tableName SC ;
     
 insertStatement locals [is_statement]
     : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? {ERR("Duplicate");} t=tableName 
-    '('  ( c=columnName[t] )*{len=(1,6), id=a} ')' 
-    VALUES '(' ( expr[c] )*{id=a} ')'
+    '('  ( c=columnName[t] )*{len=(1,6), label=a} ')' 
+    VALUES '(' ( expr[c] )*{label=a} ')'
     SC
     ;
 
@@ -142,7 +142,7 @@ float_val : int_val ('.' int_val )? ;
 int_expr : ( (DS)?{len=(0,1), decay=0.99} int_val {BRANCH_W(4);} | bit_count | strcmp | last_insert_id | NULL );
 int_val :  (DIGIT)+{len(1,5), uniform} ;
 text_expr : ( text_val {BRANCH_W(7);} | substr | substring | lcase | ucase | space | trim | NULL );
-text_val :  DQ ( (CH | DIGIT) {RP_LIMIT(1,100, false, 0.1); })+ DQ ;
+text_val :  DQ ( (CH | DIGIT) )+{len=(1,100), decay=0.1} DQ ;
 
 dbName locals [is_schema, query="SHOW DATABASES;", attr="Database"] : STUB ;
 tableName locals [is_schema, query="SHOW TABLES;", attr="Tables_in_$STATIC_VAR("db")$"] : STUB;
