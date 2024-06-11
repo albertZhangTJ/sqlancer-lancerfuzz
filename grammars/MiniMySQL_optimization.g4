@@ -25,18 +25,18 @@ THE SOFTWARE.
 grammar MiniMySQL;
 
 alterTable locals [is_statement]
-    : {ERR("exist");} ALTER TABLE t=tableName
-    ( alterSpecification )*{len=(1,5), delimiter=","} SC
+    : <"exist"> ALTER TABLE t=tableName
+    ( alterSpecification ){1, 5, ","} SC
     ;
 
 alterSpecification
     : 
     ADD COLUMN? columnName[is_new] columnDefinition FIRST?    
-    | ADD COLUMN? '(' (columnName[is_new] columnDefinition)*{delimiter=","} ')' 
-    | DROP COLUMN? columnName[t, uni=a] {ERR("can't delete all"); ERR("has a partitioning function dependency");}
-    | DROP PRIMARY KEY {ERR("primary");}
+    | ADD COLUMN? '(' (columnName[is_new] columnDefinition){delimiter=","} ')' 
+    | DROP COLUMN? columnName[t, uni=a] <"can't delete all", "has a partitioning function dependency">
+    | DROP PRIMARY KEY <"primary">
     | RENAME ( TO | AS ) tableName[is_new]
-    | RENAME COLUMN columnName[t, uni=a] TO columnName[is_new] { ERR("has a partitioning function dependency and cannot be dropped or renamed");}
+    | RENAME COLUMN columnName[t, uni=a] TO columnName[is_new] <"has a partitioning function dependency and cannot be dropped or renamed">
     ;
 
 columnDefinition
@@ -61,57 +61,63 @@ useDatabase locals [is_statement]
     ;
 
 createTable locals [is_statement]
-    : CREATE {ERR("A BLOB field is not allowed in partition function"); ERR("is of a not allowed type for this type of partitioning");} (' ' {BRANCH_W(9);} | TEMPORARY {ERR("Cannot create temporary table with partitions");}) TABLE 
+    : CREATE <"A BLOB field is not allowed in partition function", "is of a not allowed type for this type of partitioning"> (' '  | TEMPORARY <"Cannot create temporary table with partitions">){[9,1]} TABLE 
         ifNotExists? tableName[is_new] 
-        (LB
-    	(cn=columnName[is_new] columnDefinition)*{len=(1,5), decay=0.1, delimiter=","} RB 
-            (' ' {BRANCH_W(8);} |
+        (
+            LB (cn=columnName[is_new] columnDefinition){1, 5, 0.1, ","} RB 
+            (' '  |
                     ' ENGINE ' EQ (' MyISAM ' | ' InnoDB ' ) |
-                    PARTITION BY (LINEAR)? {ERR("allowed type");}
+                    PARTITION BY (LINEAR)? <"allowed type">
                     ( 
                         'HASH(' $cn ')' |
                         ' KEY ' ( 'ALGORITHM=' ('1'|'2'))? '(' $cn ')'
                     )
-            ) {BRANCH_W(9);}
+            ){[8,1,1]} 
             | LIKE tableName
-        )  SC
+        ){[9,1]}  SC
     ;
 
 createIndex locals [is_statement]
-    : {ERR("used in key specification without a key length");} CREATE  (UNIQUE {ERR("Duplicate"); ERR("A UNIQUE INDEX must include all columns in the table's partitioning function");} | FULLTEXT {ERR("cannot be part of"); ERR("The used table type doesn't support FULLTEXT indexes");} | {ERR("A SPATIAL index may only contain a geometrical type column"); BRANCH_W(0.01); } SPATIAL)? INDEX indexName[is_new]
-        ON t=tableName '(' ( columnName[t] )*{len=(1,4), delimiter=","} ')'
-        (
-            ALGORITHM EQ (DEFAULT | INPLACE | COPY)
-            | LOCK EQ (DEFAULT | NONE | SHARED | EXCLUSIVE)
-        ) {ERR("is not supported");}
-        SC
+    : <"used in key specification without a key length"> CREATE  
+    ((
+        UNIQUE <"Duplicate", "A UNIQUE INDEX must include all columns in the table's partitioning function"> | 
+        FULLTEXT <"cannot be part of","The used table type doesn't support FULLTEXT indexes"> | 
+        <"A SPATIAL index may only contain a geometrical type column">  SPATIAL
+    ){[100, 100, 1]}){0, 1, 0.9, ""} 
+    INDEX indexName[is_new]
+    ON t=tableName '(' ( columnName[t] ){1,4,","} ')'
+    (
+        ALGORITHM EQ (DEFAULT | INPLACE | COPY)
+        | LOCK EQ (DEFAULT | NONE | SHARED | EXCLUSIVE)
+    ) <"is not supported">
+    SC
     ;
 
 truncateTable locals [is_statement] : TRUNCATE TABLE tableName SC ;
     
 insertStatement locals [is_statement]
-    : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? {ERR("Duplicate");} t=tableName 
-    '('  ( c=columnName[t] )*{len=(1,6), label=a} ')' 
-    VALUES '(' ( expr[c] )*{label=a} ')'
+    : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? <"Duplicate"> t=tableName 
+    '('  ( c=columnName[t] ){1,6,a} ')' 
+    VALUES '(' ( expr[c] ){a} ')'
     SC
     ;
 
 updateStatement locals [is_statement]
-    : UPDATE {ERR("Duplicate");} LOW_PRIORITY? IGNORE? t=tableName 
-    SET (c=columnName[t] '=' expr[c])*{len=(1,6), delimiter=","} (WHERE (NOT)? cc=columnName[t] '=' expr[cc])? SC
+    : UPDATE <"Duplicate"> LOW_PRIORITY? IGNORE? t=tableName 
+    SET (c=columnName[t] '=' expr[c]){1,6,","} (WHERE (NOT)? cc=columnName[t] '=' expr[cc])? SC
     ;
 
 expr locals [is_expr, query="SHOW COLUMNS FROM $parent0$ WHERE Field='$parent1$';", attr="Type"] : ( int_expr {TYPE("INT");} | text_expr {TYPE("TEXT");} | float_expr {TYPE("FLOAT");} | least | greatest | if_func);
 
 selectStatement locals [is_statement]
-    : SELECT (c=columnName[t])*{len=(1,6), delimiter=","}  FROM t=tableName
+    : SELECT (c=columnName[t]){1,6,","}  FROM t=tableName
     ;
 
-pre locals [is_dependent] : ('(' cc=columnName[t] comparison expr[cc] ')' {BRANCH_W(5);}
-            | '(' columnName[t, uni=a] comparison columnName[t, uni=a] ')' {BRANCH_W(3);}
+pre locals [is_dependent] : ('(' cc=columnName[t] comparison expr[cc] ')' 
+            | '(' columnName[t, uni=a] comparison columnName[t, uni=a] ')' 
             | expr comparison expr
             | ifnull 
-            | if_func)
+            | if_func){[5,3,1,1,1]}
         ;
 
 comparison : ( LT | GT | EQ | LT EQ | GT EQ );
@@ -137,15 +143,15 @@ ucase : ' UCASE(' text_expr ') ';
 space : ' SPACE(' int_expr ') ';
 last_insert_id : ' LAST_INSERT_ID() ';
 
-float_expr : ( float_val {BRANCH_W(2);} | abs  | NULL ) ;
+float_expr : ( float_val | abs  | NULL ){[2,1,1]} ;
 float_val : int_val ('.' int_val )? ;
-int_expr : ( (DS)?{len=(0,1), decay=0.99} int_val {BRANCH_W(4);} | bit_count | strcmp | last_insert_id | NULL );
-int_val :  (DIGIT)+{len(1,5), uniform} ;
-text_expr : ( text_val {BRANCH_W(7);} | substr | substring | lcase | ucase | space | trim | NULL );
-text_val :  DQ ( (CH | DIGIT) )+{len=(1,100), decay=0.1} DQ ;
+int_expr : ( (DS){0, 1, 0.99, ""} int_val | bit_count | strcmp | last_insert_id | NULL ){[5,1,1,1,1]};
+int_val :  (DIGIT){1,5, "", uniform} ;
+text_expr : ( text_val | substr | substring | lcase | ucase | space | trim | NULL ){[7,1,1,1,1,1,1,1]};
+text_val :  DQ ( (CH | DIGIT) ){1, 100, 0.1, ""} DQ ;
 
 dbName locals [is_schema, query="SHOW DATABASES;", attr="Database"] : STUB ;
-tableName locals [is_schema, query="SHOW TABLES;", attr="Tables_in_$STATIC_VAR("db")$"] : STUB;
+tableName locals [is_schema, query="SHOW TABLES;", attr="Tables_in_$DB"] : STUB;
 columnName locals [is_schema, query="SHOW COLUMNS FROM $parent0$;", attr="Field"] : STUB;
 indexName locals [is_schema, query="SHOW INDEX FROM $parent0$", attr="Key_name"] : STUB;
 
