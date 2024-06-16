@@ -107,10 +107,10 @@ updateStatement locals [is_statement]
     SET (c=columnName[t] '=' expr[c])_r(1,6) (WHERE (NOT)? cc=columnName[t] '=' expr[cc])? SC
     ;
 
-expr locals [is_expr, query="SHOW COLUMNS FROM $parent0$ WHERE Field='$parent1$';", attr="Type"] : ( int_expr {TYPE("INT");} | text_expr {TYPE("TEXT");} | float_expr {TYPE("FLOAT");} | least | greatest | if_func);
+expr locals [is_expr, query="SHOW COLUMNS FROM $parent0$ WHERE Field='$parent1$';", attr="Type"] : ( int_expr _t("INT") | text_expr _t("TEXT") | float_expr _t("FLOAT") | least | greatest | if_func);
 
-select_core locals [is_statement] :
-	SELECT ( ($t DOT)? c=$_c | $t_ DOT column_name[t_] | ($t DOT)? c=column_name[t] ) _r(1,5) 
+query_core locals [is_statement] :
+	SELECT ( ($t DOT)? c=$_c | $t_ DOT $c_ | ($t DOT)? c=column_name[t] | ($t DOT)? column_name[t] AS c=column_name[is_new]) _r(1,5) 
 	FROM ( t=table_name | '(' select_core ')' AS t=table_name[is_new] )
 	(
 		JOIN ( t=table_name | '(' select_core ')' AS t=table_name[is_new] )
@@ -120,13 +120,13 @@ select_core locals [is_statement] :
 	)?
 	;
 	
-select_predicate locals [is_dependent] :
+where_predicate locals [is_dependent] :
 	WHERE predicate
 	| WHERE $c IN '(' select_core ')'
 	| WHERE NOT? EXISTS '(' select_core ')'
 	;
 
-pre : ('(' cc=columnName[t] comparison expr[cc] ')' 
+predicate : ('(' cc=columnName[t] comparison expr[cc] ')' 
             | '(' columnName[t, uni=a] comparison columnName[t, uni=a] ')' 
             | expr comparison expr
             | ifnull 
