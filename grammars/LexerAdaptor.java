@@ -1,5 +1,3 @@
-package lancerfuzz.ANTLR;
-
 // Retrieved from https://github.com/antlr/grammars-v4/blob/master/antlr/antlr4/Java/LexerAdaptor.java
 // On Jul-19-2023
 /*
@@ -75,17 +73,17 @@ public abstract class LexerAdaptor extends Lexer {
 
     protected void handleBeginArgument() {
         if (inLexerRule()) {
-            pushMode(ANTLRv4Lexer.LexerCharSet);
+            pushMode(LancerSpecLexer.LexerCharSet);
             more();
         } else {
-            pushMode(ANTLRv4Lexer.Argument);
+            pushMode(LancerSpecLexer.Argument);
         }
     }
 
     protected void handleEndArgument() {
         popMode();
         if (_modeStack.size() > 0) {
-            setType(ANTLRv4Lexer.ARGUMENT_CONTENT);
+            setType(LancerSpecLexer.ARGUMENT_CONTENT);
         }
     }
 
@@ -93,45 +91,61 @@ public abstract class LexerAdaptor extends Lexer {
         int oldMode = _mode;
         int newMode = popMode();
         boolean isActionWithinAction = _modeStack.size() > 0
-            && newMode == ANTLRv4Lexer.TargetLanguageAction
+            && newMode == LancerSpecLexer.TargetLanguageAction
             && oldMode == newMode;
 
         if (isActionWithinAction) {
-            setType(ANTLRv4Lexer.ACTION_CONTENT);
+            setType(LancerSpecLexer.ACTION_CONTENT);
         }
+    }
+
+    protected void handleEndErrDecl() {
+        popMode();
+    }
+
+    protected void handleEndWeightDecl() {
+        popMode();
+    }
+
+    protected void handleEndRepetitionDecl() {
+        popMode();
+    }
+
+    protected void handleEndTypeDecl() {
+        popMode();
     }
 
     @Override
     public Token emit() {
-        if ((_type == ANTLRv4Lexer.OPTIONS || _type == ANTLRv4Lexer.TOKENS || _type == ANTLRv4Lexer.CHANNELS)
+        if ((_type == LancerSpecLexer.OPTIONS || _type == LancerSpecLexer.TOKENS || _type == LancerSpecLexer.CHANNELS)
                 && getCurrentRuleType() == Token.INVALID_TYPE) { // enter prequel construct ending with an RBRACE
             setCurrentRuleType(PREQUEL_CONSTRUCT);
-        } else if (_type == ANTLRv4Lexer.OPTIONS && getCurrentRuleType() == ANTLRv4Lexer.TOKEN_REF)
+        } else if (_type == LancerSpecLexer.OPTIONS && getCurrentRuleType() == LancerSpecLexer.TOKEN_REF)
         {
             setCurrentRuleType(OPTIONS_CONSTRUCT);
-        } else if (_type == ANTLRv4Lexer.RBRACE && getCurrentRuleType() == PREQUEL_CONSTRUCT) { // exit prequel construct
+        } else if (_type == LancerSpecLexer.RBRACE && getCurrentRuleType() == PREQUEL_CONSTRUCT) { // exit prequel construct
             setCurrentRuleType(Token.INVALID_TYPE);
-        } else if (_type == ANTLRv4Lexer.RBRACE && getCurrentRuleType() == OPTIONS_CONSTRUCT)
+        } else if (_type == LancerSpecLexer.RBRACE && getCurrentRuleType() == OPTIONS_CONSTRUCT)
         { // exit options
-            setCurrentRuleType(ANTLRv4Lexer.TOKEN_REF);
-        } else if (_type == ANTLRv4Lexer.AT && getCurrentRuleType() == Token.INVALID_TYPE) { // enter action
-            setCurrentRuleType(ANTLRv4Lexer.AT);
-        } else if (_type == ANTLRv4Lexer.SEMI && getCurrentRuleType() == OPTIONS_CONSTRUCT)
+            setCurrentRuleType(LancerSpecLexer.TOKEN_REF);
+        } else if (_type == LancerSpecLexer.AT && getCurrentRuleType() == Token.INVALID_TYPE) { // enter action
+            setCurrentRuleType(LancerSpecLexer.AT);
+        } else if (_type == LancerSpecLexer.SEMI && getCurrentRuleType() == OPTIONS_CONSTRUCT)
         { // ';' in options { .... }. Don't change anything.
-        } else if (_type == ANTLRv4Lexer.END_ACTION && getCurrentRuleType() == ANTLRv4Lexer.AT) { // exit action
+        } else if (_type == LancerSpecLexer.END_ACTION && getCurrentRuleType() == LancerSpecLexer.AT) { // exit action
             setCurrentRuleType(Token.INVALID_TYPE);
-        } else if (_type == ANTLRv4Lexer.ID) {
+        } else if (_type == LancerSpecLexer.ID) {
             String firstChar = _input.getText(Interval.of(_tokenStartCharIndex, _tokenStartCharIndex));
             if (Character.isUpperCase(firstChar.charAt(0))) {
-                _type = ANTLRv4Lexer.TOKEN_REF;
+                _type = LancerSpecLexer.TOKEN_REF;
             } else {
-                _type = ANTLRv4Lexer.RULE_REF;
+                _type = LancerSpecLexer.RULE_REF;
             }
 
             if (getCurrentRuleType() == Token.INVALID_TYPE) { // if outside of rule def
                 setCurrentRuleType(_type); // set to inside lexer or parser rule
             }
-        } else if (_type == ANTLRv4Lexer.SEMI) { // exit rule def
+        } else if (_type == LancerSpecLexer.SEMI) { // exit rule def
             setCurrentRuleType(Token.INVALID_TYPE);
         }
 
@@ -139,12 +153,12 @@ public abstract class LexerAdaptor extends Lexer {
     }
 
     private boolean inLexerRule() {
-        return getCurrentRuleType() == ANTLRv4Lexer.TOKEN_REF;
+        return getCurrentRuleType() == LancerSpecLexer.TOKEN_REF;
     }
 
     @SuppressWarnings("unused")
     private boolean inParserRule() { // not used, but added for clarity
-        return getCurrentRuleType() == ANTLRv4Lexer.RULE_REF;
+        return getCurrentRuleType() == LancerSpecLexer.RULE_REF;
     }
 
     @Override

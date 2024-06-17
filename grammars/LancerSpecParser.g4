@@ -123,6 +123,22 @@ actionBlock
    : BEGIN_ACTION ACTION_CONTENT* END_ACTION
    ;
 
+weightBlock
+   : BEGIN_WHT WGHT_CONTENT* END_WGHT_DECL
+   ;
+
+typeBlock
+   : BEGIN_TYP TYPE_CONTENT* END_TYPE_DECL
+   ;
+
+repetitionBlock
+   : BEGIN_REP REP_CONTENT* END_REP_DECL
+   ;
+
+errorBlock
+   : BEGIN_ERR ERR_CONTENT* END_ERR_DECL
+   ;
+
 argActionBlock
    : BEGIN_ARGUMENT ARGUMENT_CONTENT* END_ARGUMENT
    ;
@@ -238,6 +254,10 @@ lexerElement
    : lexerAtom ebnfSuffix?
    | lexerBlock ebnfSuffix?
    | actionBlock QUESTION?
+   | typeBlock QUESTION?
+   | weightBlock QUESTION?
+   | errorBlock QUESTION?
+   | repetitionBlock QUESTION?
    ;
    // but preds can be anywhere
 
@@ -282,6 +302,10 @@ element
    | atom (ebnfSuffix |)
    | ebnf
    | actionBlock QUESTION?
+   | typeBlock QUESTION?
+   | weightBlock QUESTION?
+   | errorBlock QUESTION?
+   | repetitionBlock QUESTION?
    ;
 
 labeledElement
