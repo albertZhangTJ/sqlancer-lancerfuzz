@@ -172,20 +172,20 @@ MODE
    // -------------------------
    // Punctuation
 
-ERR_DECL
-   : '_e('
+BEGIN_ERR
+   : '_e(' -> pushMode (ExpectedErrorDeclaration)
    ;
 
-REP_DECL
-   : '_r('
+BEGIN_REP
+   : '_r(' -> pushMode (RepetitionDeclaration)
    ;
 
-WHT_DECL
-   : '_w('
+BEGIN_WHT
+   : '_w(' -> pushMode (WeightDeclaration)
    ;
 
-TYP_DECL
-   : '_t('
+BEGIN_TYP
+   : '_t(' -> pushMode (TypeDeclaration)
    ;
 
 COLON
@@ -394,6 +394,85 @@ UNTERMINATED_ACTION
 ACTION_CONTENT
    : .
    ;
+
+mode ExpectedErrorDeclaration;
+
+
+ERROR_STRING_LITERAL
+   : DQuoteLiteral -> type (ERR_CONTENT)
+   ;
+
+ERROR_CHAR_LITERAL
+   : SQuoteLiteral -> type (ERR_CONTENT)
+   ;
+
+END_ERR_DECL
+   : RParen
+   { self.handleEndErrDecl(); }
+   ;
+
+UNTERMINATED_ERR_DECL
+   : EOF -> popMode
+   ;
+
+ERR_CONTENT
+   : .
+   ;
+
+mode TypeDeclaration;
+
+
+TYPE_STRING_LITERAL
+   : DQuoteLiteral -> type (TYPE_CONTENT)
+   ;
+
+TYPE_CHAR_LITERAL
+   : SQuoteLiteral -> type (TYPE_CONTENT)
+   ;
+
+END_TYPE_DECL
+   : RParen
+   { self.handleEndTypeDecl(); }
+   ;
+
+UNTERMINATED_TYPE_DECL
+   : EOF -> popMode
+   ;
+
+TYPE_CONTENT
+   : .
+   ;
+
+mode WeightDeclaration;
+
+END_WGHT_DECL
+   : RParen
+   { self.handleEndWeightDecl(); }
+   ;
+
+WGHT_DECL
+   : EOF -> popMode
+   ;
+
+WGHT_CONTENT
+   : .
+   ;
+
+mode RepetitionDeclaration;
+
+END_REP_DECL
+   : RParen
+   { self.handleEndRepetitionDecl(); }
+   ;
+
+UNTERMINATED_REP_DECL
+   : EOF -> popMode
+   ;
+
+REP_CONTENT
+   : .
+   ;
+
 
 // -------------------------
 mode LexerCharSet;
