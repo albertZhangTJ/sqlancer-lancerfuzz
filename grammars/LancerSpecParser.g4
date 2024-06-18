@@ -251,13 +251,16 @@ lexerElements
    ;
 
 lexerElement
-   : lexerAtom ebnfSuffix?
-   | lexerBlock ebnfSuffix?
-   | actionBlock QUESTION?
+   : actionBlock QUESTION?
    | typeBlock QUESTION?
    | weightBlock QUESTION?
    | errorBlock QUESTION?
    | repetitionBlock QUESTION?
+   | variableAccess
+   | variableAssignment
+   | lexerAtom ebnfSuffix?
+   | lexerBlock ebnfSuffix?
+   
    ;
    // but preds can be anywhere
 
@@ -297,15 +300,24 @@ alternative
    // explicitly allow empty alts
    ;
 
+variableAccess
+   : DOLLAR ID
+   ;
+
 element
-   : labeledElement (ebnfSuffix |)
-   | atom (ebnfSuffix |)
-   | ebnf
+   : variableAssignment (ebnfSuffix |)
+   | variableAccess
    | actionBlock QUESTION?
    | typeBlock QUESTION?
    | weightBlock QUESTION?
    | errorBlock QUESTION?
    | repetitionBlock QUESTION?
+   | atom (ebnfSuffix |)
+   | ebnf
+   ;
+
+variableAssignment
+   : labeledElement
    ;
 
 labeledElement
