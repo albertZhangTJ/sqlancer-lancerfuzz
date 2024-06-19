@@ -1,3 +1,5 @@
+package lancerfuzz.parser;
+
 // Generated from grammars/LancerSpecParser.g4 by ANTLR 4.13.0
 import org.antlr.v4.runtime.atn.*;
 import org.antlr.v4.runtime.dfa.DFA;
@@ -5,6 +7,9 @@ import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.*;
 import org.antlr.v4.runtime.tree.*;
 import java.util.List;
+
+import javax.management.AttributeList;
+
 import java.util.Iterator;
 import java.util.ArrayList;
 
@@ -2480,8 +2485,10 @@ public class LancerSpecParser extends Parser {
 
 	@SuppressWarnings("CheckReturnValue")
 	public static class LabeledAltContext extends FlexibleParserRuleContext {
-		public AlternativeContext alternative() {
-			return getRuleContext(AlternativeContext.class,0);
+		public List<AlternativeContext> alternative() {
+			List<AlternativeContext> ans = new ArrayList<>();
+			ans.add(getRuleContext(AlternativeContext.class,0));
+			return ans;
 		}
 		public TerminalNode POUND() { return getToken(LancerSpecParser.POUND, 0); }
 		public IdentifierContext identifier() {
@@ -2867,7 +2874,11 @@ public class LancerSpecParser extends Parser {
 		public ActionBlockContext actionBlock() {
 			return getRuleContext(ActionBlockContext.class,0);
 		}
-		public TerminalNode QUESTION() { return getToken(LancerSpecParser.QUESTION, 0); }
+		public List<TerminalNode> QUESTION() { 
+			List<TerminalNode> res = new ArrayList<>();
+			res.add(getToken(LancerSpecParser.QUESTION, 0));
+			return res; 
+		}
 		public TypeBlockContext typeBlock() {
 			return getRuleContext(TypeBlockContext.class,0);
 		}
@@ -3570,7 +3581,11 @@ public class LancerSpecParser extends Parser {
 		public ActionBlockContext actionBlock() {
 			return getRuleContext(ActionBlockContext.class,0);
 		}
-		public TerminalNode QUESTION() { return getToken(LancerSpecParser.QUESTION, 0); }
+		public List<TerminalNode> QUESTION() { 
+			List<TerminalNode> res = new ArrayList<>();
+			res.add(getToken(LancerSpecParser.QUESTION, 0));
+			return res; 
+		}
 		public TypeBlockContext typeBlock() {
 			return getRuleContext(TypeBlockContext.class,0);
 		}
@@ -4126,7 +4141,11 @@ public class LancerSpecParser extends Parser {
 			return getRuleContext(NotSetContext.class,0);
 		}
 		public TerminalNode LEXER_CHAR_SET() { return getToken(LancerSpecParser.LEXER_CHAR_SET, 0); }
-		public TerminalNode DOT() { return getToken(LancerSpecParser.DOT, 0); }
+		public List<TerminalNode> DOT() { 
+			List<TerminalNode> res = new ArrayList<>();
+			res.add(getToken(LancerSpecParser.DOT, 0));
+			return res; 
+		}
 		public ElementOptionsContext elementOptions() {
 			return getRuleContext(ElementOptionsContext.class,0);
 		}
@@ -4221,7 +4240,11 @@ public class LancerSpecParser extends Parser {
 		public NotSetContext notSet() {
 			return getRuleContext(NotSetContext.class,0);
 		}
-		public TerminalNode DOT() { return getToken(LancerSpecParser.DOT, 0); }
+		public List<TerminalNode> DOT() { 
+			List<TerminalNode> res = new ArrayList<>();
+			res.add(getToken(LancerSpecParser.DOT, 0));
+			return res; 
+		}
 		public ElementOptionsContext elementOptions() {
 			return getRuleContext(ElementOptionsContext.class,0);
 		}

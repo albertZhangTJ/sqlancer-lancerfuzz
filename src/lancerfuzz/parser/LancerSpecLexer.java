@@ -1,3 +1,5 @@
+package lancerfuzz.parser;
+
 // Generated from grammars/LancerSpecLexer.g4 by ANTLR 4.13.0
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.CharStream;
@@ -189,49 +191,49 @@ public class LancerSpecLexer extends LexerAdaptor {
 	private void BEGIN_ARGUMENT_action(RuleContext _localctx, int actionIndex) {
 		switch (actionIndex) {
 		case 0:
-			 self.handleBeginArgument() 
+			this.handleBeginArgument(); 
 			break;
 		}
 	}
 	private void END_ARGUMENT_action(RuleContext _localctx, int actionIndex) {
 		switch (actionIndex) {
 		case 1:
-			 self.handleEndArgument() 
+			 this.handleEndArgument() ;
 			break;
 		}
 	}
 	private void END_ACTION_action(RuleContext _localctx, int actionIndex) {
 		switch (actionIndex) {
 		case 2:
-			 self.handleEndAction() 
+			 this.handleEndAction() ;
 			break;
 		}
 	}
 	private void END_ERR_DECL_action(RuleContext _localctx, int actionIndex) {
 		switch (actionIndex) {
 		case 3:
-			 self.handleEndErrDecl(); 
+			 this.handleEndErrDecl(); 
 			break;
 		}
 	}
 	private void END_TYPE_DECL_action(RuleContext _localctx, int actionIndex) {
 		switch (actionIndex) {
 		case 4:
-			 self.handleEndTypeDecl(); 
+			 this.handleEndTypeDecl(); 
 			break;
 		}
 	}
 	private void END_WGHT_DECL_action(RuleContext _localctx, int actionIndex) {
 		switch (actionIndex) {
 		case 5:
-			 self.handleEndWeightDecl(); 
+			 this.handleEndWeightDecl(); 
 			break;
 		}
 	}
 	private void END_REP_DECL_action(RuleContext _localctx, int actionIndex) {
 		switch (actionIndex) {
 		case 6:
-			 self.handleEndRepetitionDecl(); 
+			 this.handleEndRepetitionDecl(); 
 			break;
 		}
 	}

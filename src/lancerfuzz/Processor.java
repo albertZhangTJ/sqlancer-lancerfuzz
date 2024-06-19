@@ -13,13 +13,13 @@ import java.io.FileWriter;
 import org.antlr.v4.runtime.*;
 import org.json.JSONObject;
 
-import lancerfuzz.ANTLR.ANTLRv4Lexer;
-import lancerfuzz.ANTLR.ANTLRv4Parser;
-import lancerfuzz.ANTLR.ANTLRv4Parser.DelegateGrammarContext;
-import lancerfuzz.ANTLR.ANTLRv4Parser.GrammarSpecContext;
-import lancerfuzz.ANTLR.ANTLRv4Parser.IdentifierContext;
-import lancerfuzz.ANTLR.ANTLRv4Parser.PrequelConstructContext;
-import lancerfuzz.ANTLR.ANTLRv4Parser.RuleSpecContext;
+import lancerfuzz.parser.LancerSpecLexer;
+import lancerfuzz.parser.LancerSpecParser;
+import lancerfuzz.parser.LancerSpecParser.DelegateGrammarContext;
+import lancerfuzz.parser.LancerSpecParser.GrammarSpecContext;
+import lancerfuzz.parser.LancerSpecParser.IdentifierContext;
+import lancerfuzz.parser.LancerSpecParser.PrequelConstructContext;
+import lancerfuzz.parser.LancerSpecParser.RuleSpecContext;
 import lancerfuzz.AST.GrammarGraph;
 import lancerfuzz.AST.GrammarGraphBuilder;
 
@@ -61,9 +61,9 @@ public class Processor {
             try {
                 @SuppressWarnings("deprecation")
                 CharStream fis = new ANTLRFileStream(grammar_file);
-                ANTLRv4Lexer antlr_lexer = new ANTLRv4Lexer(fis);
+                LancerSpecLexer antlr_lexer = new LancerSpecLexer(fis);
                 TokenStream t_stream = new CommonTokenStream(antlr_lexer);
-                ANTLRv4Parser antlr_parser = new ANTLRv4Parser(t_stream);
+                LancerSpecParser antlr_parser = new LancerSpecParser(t_stream);
                 GrammarSpecContext current_root = antlr_parser.grammarSpec();
                 // what if there is a syntax error in the grammar file?
                 // looked for antlr_parser._syntaxError as in the python version

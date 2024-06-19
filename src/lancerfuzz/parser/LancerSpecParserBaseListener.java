@@ -1,3 +1,4 @@
+package lancerfuzz.parser;
 // Generated from grammars/LancerSpecParser.g4 by ANTLR 4.13.0
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -9,7 +10,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
  * which can be extended to create a listener which only needs to handle a subset
  * of the available methods.
  */
-@SuppressWarnings("CheckReturnValue")
+//@SuppressWarnings("CheckReturnValue")
 public class LancerSpecParserBaseListener implements LancerSpecParserListener {
 	/**
 	 * {@inheritDoc}
