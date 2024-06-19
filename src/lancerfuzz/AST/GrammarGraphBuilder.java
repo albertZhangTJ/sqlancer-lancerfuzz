@@ -12,8 +12,8 @@ import org.antlr.v4.runtime.ParserRuleContext;
 
 import lancerfuzz.Options;
 import lancerfuzz.Utils;
-import lancerfuzz.ANTLR.ANTLRv4Parser;
-import lancerfuzz.ANTLR.ANTLRv4Parser.*;
+import lancerfuzz.parser.LancerSpecParser;
+import lancerfuzz.parser.LancerSpecParser.*;
 
 // TODO: remove suppress after complete
 @SuppressWarnings("unused")
@@ -277,22 +277,22 @@ public class GrammarGraphBuilder {
     //indices == [alt_idx, quant_idx, chr_idx]
     public static void build_expr(GrammarGraph graph, RuleNode rule, FlexibleParserRuleContext node, 
                                     int parent_id, List<Integer> indices, Options options){
-        if (node instanceof ANTLRv4Parser.ParserRuleSpecContext){
+        if (node instanceof LancerSpecParser.ParserRuleSpecContext){
             rule.set_args(arg_action_block((ParserRuleSpecContext)node));
             rule.set_locals(arg_action_block(((ParserRuleSpecContext)node).localsSpec()));
             rule.set_returns(arg_action_block(((ParserRuleSpecContext)node).ruleReturns()));
             build_expr(graph, rule, ((ParserRuleSpecContext)node).ruleBlock(), parent_id, indices, options);
         }
 
-        else if (node instanceof ANTLRv4Parser.RuleAltListContext || node instanceof ANTLRv4Parser.AltListContext || node instanceof ANTLRv4Parser.LexerAltListContext){
+        else if (node instanceof LancerSpecParser.RuleAltListContext || node instanceof LancerSpecParser.AltListContext || node instanceof LancerSpecParser.LexerAltListContext){
             List<ParseTree> children_list = null;
-            if (node instanceof ANTLRv4Parser.RuleAltListContext){
+            if (node instanceof LancerSpecParser.RuleAltListContext){
                 children_list = ((RuleAltListContext)node).children;
             }
-            else if (node instanceof ANTLRv4Parser.AltListContext){
+            else if (node instanceof LancerSpecParser.AltListContext){
                 children_list = ((AltListContext)node).children;
             }
-            else if (node instanceof ANTLRv4Parser.LexerAltListContext) {
+            else if (node instanceof LancerSpecParser.LexerAltListContext) {
                 children_list = ((LexerAltListContext)node).children;
             }
             List<FlexibleParserRuleContext> children = new ArrayList<>();
@@ -319,7 +319,7 @@ public class GrammarGraphBuilder {
                 build_expr(graph, rule, children.get(i), alter_id, indices, options);
             }
         }
-        else if (node instanceof ANTLRv4Parser.LabeledAltContext){
+        else if (node instanceof LancerSpecParser.LabeledAltContext){
             if (((LabeledAltContext)node).identifier()==null){
                 build_expr(graph, rule, ((LabeledAltContext)node).alternative().get(0), parent_id, indices, options);
                 return;
@@ -335,14 +335,14 @@ public class GrammarGraphBuilder {
             graph.add_edge(parent_id, graph.add_node(rule_node), null);
             build_rule(graph, rule_node,  ((LabeledAltContext)node).alternative().get(0), options);
         }
-        else if (node instanceof ANTLRv4Parser.AlternativeContext || node instanceof ANTLRv4Parser.LexerAltContext){
-            if (node instanceof ANTLRv4Parser.AlternativeContext){
-                for (ElementContext child : ((ANTLRv4Parser.AlternativeContext)node).element()){
+        else if (node instanceof LancerSpecParser.AlternativeContext || node instanceof LancerSpecParser.LexerAltContext){
+            if (node instanceof LancerSpecParser.AlternativeContext){
+                for (ElementContext child : ((LancerSpecParser.AlternativeContext)node).element()){
                     build_expr(graph, rule, child, parent_id, indices, options);
                 }
             }
             else {
-                for (LexerElementContext child : ((ANTLRv4Parser.LexerAltContext)node).lexerElements().lexerElement()){
+                for (LexerElementContext child : ((LancerSpecParser.LexerAltContext)node).lexerElements().lexerElement()){
                     build_expr(graph, rule, child, parent_id, indices, options);
                 }
             }
@@ -351,7 +351,7 @@ public class GrammarGraphBuilder {
             }
         }
         
-        else if (node instanceof ANTLRv4Parser.ElementContext || node instanceof ANTLRv4Parser.LexerElementContext){
+        else if (node instanceof LancerSpecParser.ElementContext || node instanceof LancerSpecParser.LexerElementContext){
             if (node.actionBlock()!=null){
                 //System.out.println("Action found");
                 //System.out.println("options.ignore_actions: "+options.ignore_actions);
@@ -398,7 +398,7 @@ public class GrammarGraphBuilder {
                 build_expr(graph, rule, (FlexibleParserRuleContext)(node.children.get(0)), quant_id, indices, options);
             }
         }
-        else if (node instanceof ANTLRv4Parser.LabeledElementContext){
+        else if (node instanceof LancerSpecParser.LabeledElementContext){
             build_expr(graph, rule, node.atom()==null ? node.atom() : node.block() , parent_id, indices, options);
             IdentifierContext ident = ((LabeledElementContext)node).identifier();
             String name = ident.RULE_REF()==null ? ident.RULE_REF().toString() : ident.TOKEN_REF().toString();
@@ -406,13 +406,13 @@ public class GrammarGraphBuilder {
             graph.add_edge(parent_id, graph.add_node(new VariableNode(name, is_list)), null);
             rule.add_label(name, String.valueOf(is_list));
         }
-        else if (node instanceof ANTLRv4Parser.RulerefContext){
+        else if (node instanceof LancerSpecParser.RulerefContext){
             int ref_id = graph.get_node_id_with_identifier(((RulerefContext)node).RULE_REF().toString());
             if (ref_id!=-1){
                 graph.add_edge(parent_id, ref_id, arg_action_block(node)); 
             }
         }
-        else if (node instanceof ANTLRv4Parser.LexerAtomContext || node instanceof ANTLRv4Parser.AtomContext){
+        else if (node instanceof LancerSpecParser.LexerAtomContext || node instanceof LancerSpecParser.AtomContext){
             if (node.DOT().get(0)!=null){
                 graph.add_edge(parent_id, graph.add_node(new CharsetNode(rule.get_id(), indices.get(2), graph.get_encoding())), null);
                 indices.set(2, indices.get(2)+1);
@@ -434,7 +434,7 @@ public class GrammarGraphBuilder {
                 graph.add_edge(parent_id, graph.add_node(new CharsetNode(rule.get_id(), indices.get(2), charset_id)), null);
                 indices.set(2, indices.get(2)+1);
             }
-            else if (node instanceof ANTLRv4Parser.LexerAtomContext && ((LexerAtomContext)node).characterRange()!=null){
+            else if (node instanceof LancerSpecParser.LexerAtomContext && ((LexerAtomContext)node).characterRange()!=null){
                 List<Integer> vals = character_range_interval((LexerAtomContext)node);
                 if (rule instanceof UnlexerRuleNode){
                     ((UnlexerRuleNode)rule).append_start_ranges(vals);
@@ -443,7 +443,7 @@ public class GrammarGraphBuilder {
                 graph.add_edge(parent_id, graph.add_node(new CharsetNode(rule.get_id(), indices.get(2), charset_id)), null);
                 indices.set(2, indices.get(2)+1);
             }
-            else if (node instanceof ANTLRv4Parser.LexerAtomContext && ((LexerAtomContext)node).LEXER_CHAR_SET()!=null){
+            else if (node instanceof LancerSpecParser.LexerAtomContext && ((LexerAtomContext)node).LEXER_CHAR_SET()!=null){
                 String s = ((LexerAtomContext)node).LEXER_CHAR_SET().toString();
                 s = s.substring(1, s.length()-1);
                 List<Integer> vals = lexer_charset_interval(s);
@@ -463,7 +463,7 @@ public class GrammarGraphBuilder {
                 }
             }
         }
-        else if (node instanceof ANTLRv4Parser.TerminalContext){
+        else if (node instanceof LancerSpecParser.TerminalContext){
             TerminalContext t_node = (TerminalContext)node;
             if (t_node.TOKEN_REF()!=null){
                 int ref_id = graph.get_node_id_with_identifier(t_node.TOKEN_REF().toString());
