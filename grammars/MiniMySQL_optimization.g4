@@ -24,7 +24,7 @@ THE SOFTWARE.
 */
 grammar MiniMySQL;
 
-alterTable locals [is_statement]
+alterTable flags [is_statement]
     : _e("exist") ALTER TABLE t=tableName
     ( alterSpecification )_r(1, 5) SC
     ;
@@ -43,24 +43,24 @@ columnDefinition
     : ' FLOAT ' | ' INT ' | ' TEXT '
     ;
 
-dropDatabase locals [is_statement]
+dropDatabase flags [is_statement]
     : DROP DATABASE ifExists DB = dbName[is_new] SC
     ;
 
-dropSchema locals [is_statement]
+dropSchema flags [is_statement]
     : DROP SCHEMA ifExists $DB SC
     ;
 
 
-createDatabase locals [is_statement]
+createDatabase flags [is_statement]
     : CREATE (DATABASE | SCHEMA) ifNotExists? $DB SC
     ;
 
-useDatabase locals [is_statement]
+useDatabase flags [is_statement]
     : USE $DB SC
     ;
 
-createTable locals [is_statement]
+createTable flags [is_statement]
     : CREATE _e("A BLOB field is not allowed in partition function", "is of a not allowed type for this type of partitioning") (' '  | TEMPORARY _e("Cannot create temporary table with partitions") )_w(9,1) TABLE 
         ifNotExists? tableName[is_new] 
         (
@@ -77,7 +77,7 @@ createTable locals [is_statement]
         )_w(9,1)  SC
     ;
 
-createIndex locals [is_statement]
+createIndex flags [is_statement]
     : _e("used in key specification without a key length") CREATE  
     ((
         UNIQUE _e("Duplicate", "A UNIQUE INDEX must include all columns in the table's partitioning function") | 
@@ -93,41 +93,47 @@ createIndex locals [is_statement]
     SC
     ;
 
-truncateTable locals [is_statement] : TRUNCATE TABLE tableName SC ;
+truncateTable flags [is_statement] : TRUNCATE TABLE tableName SC ;
     
-insertStatement locals [is_statement]
+insertStatement flags [is_statement]
     : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? _e("Duplicate") t=tableName 
-    '('  ( c=columnName[t] )_r(1, 6, rpid=a) ')' 
-    VALUES '(' ( expr[c] )_r(rpid=a) ')'
+    '('  ( c=columnName[t] )_r(1, 6) ')' 
+    VALUES '(' ( expr[t, c.next] )_r(c.len) ')'
     SC
     ;
 
-updateStatement locals [is_statement]
+updateStatement flags [is_statement]
     : UPDATE _e("Duplicate") LOW_PRIORITY? IGNORE? t=tableName 
-    SET (c=columnName[t] '=' expr[c])_r(1,6) (WHERE (NOT)? cc=columnName[t] '=' expr[cc])? SC
+    SET (c+=columnName[t] '=' expr[t, c.last_added])_r(1,6) (WHERE (NOT)? cc=columnName[t] '=' expr[t, cc])? SC
     ;
 
-expr locals [is_expr, query="SHOW COLUMNS FROM $parent0$ WHERE Field='$parent1$';", attr="Type"] : ( int_expr _t("INT") | text_expr _t("TEXT") | float_expr _t("FLOAT") | least | greatest | if_func);
+expr flags [is_expr, query="SHOW COLUMNS FROM $parent0$ WHERE Field='$parent1$';", attr="Type"] : ( int_expr _t("INT") | text_expr _t("TEXT") | float_expr _t("FLOAT") | least | greatest | if_func);
 
-query_core locals [is_statement] :
-	SELECT ( ($t DOT)? c=$_c | $t_ DOT $c_ | ($t DOT)? c=column_name[t] | ($t DOT)? column_name[t] AS c=column_name[is_new]) _r(1,5) 
-	FROM ( t=table_name | '(' select_core ')' AS t=table_name[is_new] )
+query_core [rep=_r(1,5)] flags [is_statement] returns [c] :
+	SELECT (
+        (   ($t DOT | t) 
+            (c+=column_name[t.cur] |  c+=$t.cur.c)
+            | column_expression
+        )  rep
+        | ASTERISK
+    ) _w(10)
+	FROM ( t+=table_name | '(' cc=query_core ')' AS t+=table_name[is_new] t.last_added.c=cc)
 	(
-		JOIN ( t=table_name | '(' select_core ')' AS t=table_name[is_new] )
+		JOIN ( t+=table_name | '(' cc=query_core ')' AS t+=table_name[is_new] t.last_added.c=cc)
 	)?
 	( 
-		( UNION | INTERSECT ) select_core
+		( UNION | INTERSECT ) query_core[rep=_r(c.len)]
 	)?
 	;
 	
-where_predicate locals [is_dependent] :
+where_predicate flags [is_dependent] :
 	WHERE predicate
-	| WHERE $c IN '(' select_core ')'
-	| WHERE NOT? EXISTS '(' select_core ')'
+	| WHERE $c IN '(' query_core[rep=_r(1,1)] ')'
+	| WHERE NOT? EXISTS '(' query_core ')'
 	;
 
-predicate : ('(' cc=columnName[t] comparison expr[cc] ')' 
-            | '(' columnName[t, uni=a] comparison columnName[t, uni=a] ')' 
+predicate : ('(' ($t DOT | t )  ( cc=columnName[t] | $t.cur.c) comparison expr[t, cc] ')' 
+            | '(' ( cc=columnName[t] | $t.cur.c) comparison ( cc=columnName[t] | $t.cur.c) ')' 
             | expr comparison expr
             | ifnull 
             | if_func)_w(5,3,1,1,1)
@@ -163,10 +169,10 @@ int_val :  (DIGIT)_r(1, 5, uniform=true) ;
 text_expr : ( text_val | substr | substring | lcase | ucase | space | trim | NULL )_w(7);
 text_val :  DQ ( (CH | DIGIT) )_r(1, 100) DQ ;
 
-dbName locals [is_schema, query="SHOW DATABASES;", attr="Database"] : STUB ;
-tableName locals [is_schema, query="SHOW TABLES;", attr="Tables_in_$DB"] : STUB;
-columnName locals [is_schema, query="SHOW COLUMNS FROM $parent0$;", attr="Field"] : STUB;
-indexName locals [is_schema, query="SHOW INDEX FROM $parent0$", attr="Key_name"] : STUB;
+dbName flags [is_schema, query="SHOW DATABASES;", attr="Database"] : STUB ;
+tableName flags [is_schema, query="SHOW TABLES;", attr="Tables_in_$DB"] : STUB;
+columnName flags [is_schema, query="SHOW COLUMNS FROM $parent0$;", attr="Field"] : STUB;
+indexName flags [is_schema, query="SHOW INDEX FROM $parent0$", attr="Key_name"] : STUB;
 
 
     
@@ -247,6 +253,7 @@ EQ : '=';
 SC : ';';
 US : '_';
 DS : '-';
+ASTERISK : '*';
 
 
 fragment DIGIT : [0-9];

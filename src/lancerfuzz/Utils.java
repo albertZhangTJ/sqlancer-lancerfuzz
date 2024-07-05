@@ -25,11 +25,11 @@ public class Utils {
     // Compares whether two objects are equals
     // returns true if both are null or obj1.equals(obj2)
     public static boolean null_safe_equals(Object obj1, Object obj2){
-        return (obj1==null && obj2==null) || (obj1.equals(obj2));
+        return (obj1==null && obj2==null) || (obj1!=null && obj1.equals(obj2));
     }
 
     // Print error message and shutdown
-    // Also print the the stack trace so tof help debugging
+    // Also print the the stack trace so to help debugging
     public static void panic(String message){
         System.out.println("["+ANSI_RED+"ERROR"+ANSI_RESET+"] "+message);
         Exception e = new Exception();
