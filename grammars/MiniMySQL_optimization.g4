@@ -111,30 +111,30 @@ expr flags [is_expr, query="SHOW COLUMNS FROM $parent0$ WHERE Field='$parent1$';
 
 query_core [rep=_r(1,5)] flags [is_statement] returns [c] :
 	SELECT (
-        (   ($t DOT | t) 
-            (c+=column_name[t.cur] |  c+=$t.cur.c)
+        (   (tt=t DOT | tt=$t) 
+            (c+=column_name[tt] |  c+=tt.c)
             | column_expression
         )  rep
         | ASTERISK
     ) _w(10)
-	FROM ( t+=table_name | '(' cc=query_core ')' AS t+=table_name[is_new] t.last_added.c=cc)
+	FROM ( t+=table_name | '(' cc:=query_core ')' AS tt=table_name[is_new] tt.c:=cc t+=$tt)
 	(
-		JOIN ( t+=table_name | '(' cc=query_core ')' AS t+=table_name[is_new] t.last_added.c=cc)
+		JOIN ( t+=table_name | '(' cc:=query_core ')' AS tt=table_name[is_new] tt.c:=cc t+=$tt)
 	)?
+    where_predicate?
 	( 
 		( UNION | INTERSECT ) query_core[rep=_r(c.len)]
 	)?
 	;
 	
-where_predicate flags [is_dependent] :
+where_predicate:
 	WHERE predicate
-	| WHERE $c IN '(' query_core[rep=_r(1,1)] ')'
+	| WHERE c IN '(' query_core[rep=_r(1)] ')'
 	| WHERE NOT? EXISTS '(' query_core ')'
 	;
 
-predicate : ('(' ($t DOT | t )  ( cc=columnName[t] | $t.cur.c) comparison expr[t, cc] ')' 
-            | '(' ( cc=columnName[t] | $t.cur.c) comparison ( cc=columnName[t] | $t.cur.c) ')' 
-            | expr comparison expr
+predicate : ('(' ( expr[tt, cc] | (tt=t DOT | tt=$t )  ( cc=columnName[tt] | cc=tt.c) ) 
+                comparison ( expr[tt, cc] | (tt=t DOT | tt=$t )  ( cc=columnName[tt] | cc=tt.c) ) ')' 
             | ifnull 
             | if_func)_w(5,3,1,1,1)
         ;
