@@ -24,68 +24,68 @@ THE SOFTWARE.
 */
 grammar MiniMySQL;
 
-alterTable flags [is_statement]
-    : _e("exist") ALTER TABLE t=tableName
+alterTable locals [is_statement]
+    : _e("exist") ALTER TABLE t=table.any
     ( alterSpecification )_r(1, 5) SC
     ;
 
 alterSpecification
     : 
-    ADD COLUMN? columnName[is_new] columnDefinition FIRST?    
-    | ADD COLUMN? '(' (columnName[is_new] columnDefinition){delimiter=","} ')' 
-    | DROP COLUMN? columnName[t, uni=a] _e("can't delete all", "has a partitioning function dependency")
+    ADD COLUMN? column.new columnDefinition FIRST?    
+    | ADD COLUMN? '(' (column.new columnDefinition){delimiter=","} ')' 
+    | DROP COLUMN? column[t].unique_any _e("can't delete all", "has a partitioning function dependency")
     | DROP PRIMARY KEY _e("primary")
-    | RENAME ( TO | AS ) tableName[is_new]
-    | RENAME COLUMN columnName[t, uni=a] TO columnName[is_new] _e("has a partitioning function dependency and cannot be dropped or renamed")
+    | RENAME ( TO | AS ) table.new
+    | RENAME COLUMN column[t].unique_any TO column.unique_any _e("has a partitioning function dependency and cannot be dropped or renamed")
     ;
 
 columnDefinition
     : ' FLOAT ' | ' INT ' | ' TEXT '
     ;
 
-dropDatabase flags [is_statement]
-    : DROP DATABASE ifExists DB = dbName[is_new] SC
+dropDatabase locals [is_statement]
+    : DROP DATABASE ifExists DB = db.new SC
     ;
 
-dropSchema flags [is_statement]
-    : DROP SCHEMA ifExists $DB SC
+dropSchema locals [is_statement]
+    : DROP SCHEMA ifExists DB SC
     ;
 
 
-createDatabase flags [is_statement]
-    : CREATE (DATABASE | SCHEMA) ifNotExists? $DB SC
+createDatabase locals [is_statement]
+    : CREATE (DATABASE | SCHEMA) ifNotExists? DB SC
     ;
 
-useDatabase flags [is_statement]
-    : USE $DB SC
+useDatabase locals [is_statement]
+    : USE DB SC
     ;
 
-createTable flags [is_statement]
+createTable locals [is_statement]
     : CREATE _e("A BLOB field is not allowed in partition function", "is of a not allowed type for this type of partitioning") (' '  | TEMPORARY _e("Cannot create temporary table with partitions") )_w(9,1) TABLE 
-        ifNotExists? tableName[is_new] 
+        ifNotExists? table.new
         (
-            LB (cn=columnName[is_new] columnDefinition)_r(1, 5, 0.1, ",") RB 
+            LB (cn+=column.new columnDefinition) _r(1, 5, 0.1, ",") RB 
             (' '  |
                     ' ENGINE ' EQ (' MyISAM ' | ' InnoDB ' ) |
                     PARTITION BY (LINEAR)? _e("allowed type")
                     ( 
-                        'HASH(' $cn ')' |
-                        ' KEY ' ( 'ALGORITHM=' ('1'|'2'))? '(' $cn ')'
+                        'HASH(' cn.any ')' |
+                        ' KEY ' ( 'ALGORITHM=' ('1'|'2'))? '(' cn.any ')'
                     )
             )_w(8)
-            | LIKE tableName
+            | LIKE table.any
         )_w(9,1)  SC
     ;
 
-createIndex flags [is_statement]
+createIndex locals [is_statement]
     : _e("used in key specification without a key length") CREATE  
     ((
         UNIQUE _e("Duplicate", "A UNIQUE INDEX must include all columns in the table's partitioning function") | 
         FULLTEXT _e("cannot be part of","The used table type doesn't support FULLTEXT indexes") | 
         _e("A SPATIAL index may only contain a geometrical type column")  SPATIAL
     )_w(100,100,1) )_r(0, 1, 0.9)
-    INDEX indexName[is_new]
-    ON t=tableName '(' ( columnName[t] )_r(1, 4) ')'
+    INDEX index.new
+    ON t=table.any c=$column[t] '(' ( c.unique_any )_r(1, 4) ')'
     (
         ALGORITHM EQ (DEFAULT | INPLACE | COPY)
         | LOCK EQ (DEFAULT | NONE | SHARED | EXCLUSIVE)
@@ -93,33 +93,32 @@ createIndex flags [is_statement]
     SC
     ;
 
-truncateTable flags [is_statement] : TRUNCATE TABLE tableName SC ;
+truncateTable locals [is_statement] : TRUNCATE TABLE table.any SC ;
     
-insertStatement flags [is_statement]
-    : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? _e("Duplicate") t=tableName 
-    '('  ( c=columnName[t] )_r(1, 6) ')' 
-    VALUES '(' ( expr[t, c.next] )_r(c.len) ')'
+insertStatement locals [is_statement]
+    : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? _e("Duplicate") t=table.any
+    '('  ( c+=column[t] )_r(1, 6) ')' 
+    VALUES '(' ( expr[c.next] )_r(c.len) ')'
     SC
     ;
 
-updateStatement flags [is_statement]
+updateStatement locals [is_statement]
     : UPDATE _e("Duplicate") LOW_PRIORITY? IGNORE? t=tableName 
     SET (c+=columnName[t] '=' expr[t, c.last_added])_r(1,6) (WHERE (NOT)? cc=columnName[t] '=' expr[t, cc])? SC
     ;
 
-expr flags [is_expr, query="SHOW COLUMNS FROM $parent0$ WHERE Field='$parent1$';", attr="Type"] : ( int_expr _t("INT") | text_expr _t("TEXT") | float_expr _t("FLOAT") | least | greatest | if_func);
+expr [column_name] locals [is_expr, type=column_name.type] : ( int_expr <type=="INT"> | text_expr <type=="TEXT">  | float_expr <type=="FLOAT"> | least | greatest | if_func);
 
 query_core [rep=_r(1,5)] flags [is_statement] returns [c] :
 	SELECT (
-        (   (tt=t DOT | tt=$t) 
-            (c+=column_name[tt] |  c+=tt.c)
+        (   (tt=t.any DOT | tt=$t.any) c+=tt.c.unique_any
             | column_expression
         )  rep
         | ASTERISK
     ) _w(10)
-	FROM ( t+=table_name | '(' cc:=query_core ')' AS tt=table_name[is_new] tt.c:=cc t+=$tt)
+	FROM ( tt=table_name.any tt.c=$column_name[tt] t+=$tt | '(' cc=query_core ')' AS tt=table_name.new tt.c:=$cc t+=$tt)
 	(
-		JOIN ( t+=table_name | '(' cc:=query_core ')' AS tt=table_name[is_new] tt.c:=cc t+=$tt)
+		JOIN ( tt=table_name tt.c=$column_name[tt] t+=$tt | '(' cc:=query_core ')' AS tt=table_name.new tt.c:=$cc t+=$tt)
 	)?
     where_predicate?
 	( 
@@ -133,8 +132,9 @@ where_predicate:
 	| WHERE NOT? EXISTS '(' query_core ')'
 	;
 
-predicate : ('(' ( expr[tt, cc] | (tt=t DOT | tt=$t )  ( cc=columnName[tt] | cc=tt.c) ) 
-                comparison ( expr[tt, cc] | (tt=t DOT | tt=$t )  ( cc=columnName[tt] | cc=tt.c) ) ')' 
+predicate : ('(' pivot=$t.any.c.any ( expr[pivot] | (tt=t DOT | tt=$t )  cc=tt.c.filter[type=pivot.type].any ) 
+                    comparison 
+                    ( expr[cc] | (tt=t DOT | tt=$t )  cc=tt.c.filter[type=pivot.type].any ) ')' 
             | ifnull 
             | if_func)_w(5,3,1,1,1)
         ;
@@ -169,10 +169,10 @@ int_val :  (DIGIT)_r(1, 5, uniform=true) ;
 text_expr : ( text_val | substr | substring | lcase | ucase | space | trim | NULL )_w(7);
 text_val :  DQ ( (CH | DIGIT) )_r(1, 100) DQ ;
 
-dbName flags [is_schema, query="SHOW DATABASES;", attr="Database"] : STUB ;
-tableName flags [is_schema, query="SHOW TABLES;", attr="Tables_in_$DB"] : STUB;
-columnName flags [is_schema, query="SHOW COLUMNS FROM $parent0$;", attr="Field"] : STUB;
-indexName flags [is_schema, query="SHOW INDEX FROM $parent0$", attr="Key_name"] : STUB;
+db locals [is_schema, query="SHOW DATABASES;", d="Database"] returns [d] : STUB ;
+table locals [is_schema, query="SHOW TABLES;", t="Tables_in_"+DB] returns [t] : STUB;
+column [table] locals [is_schema, query="SHOW COLUMNS FROM "+table, c="Field"] returns [c] : STUB;
+index [table] locals [is_schema, query="SHOW INDEX FROM "+table, i="Key_name"] returns [i] : STUB;
 
 
     
