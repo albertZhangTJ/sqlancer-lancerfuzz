@@ -104,7 +104,7 @@ insertStatement locals [is_statement]
 
 updateStatement locals [is_statement]
     : UPDATE _e("Duplicate") LOW_PRIORITY? IGNORE? t=tableName 
-    SET (c+=columnName[t] '=' expr[t, c.last_added])_r(1,6) (WHERE (NOT)? cc=columnName[t] '=' expr[t, cc])? SC
+    SET (cc=columnName[t].any '=' expr[cc])_r(1,6) (WHERE (NOT)? cc=columnName[t].any '=' expr[cc])? SC
     ;
 
 expr [column_name] locals [is_expr, type=column_name.type] : ( int_expr <type=="INT"> | text_expr <type=="TEXT">  | float_expr <type=="FLOAT"> | least | greatest | if_func);
