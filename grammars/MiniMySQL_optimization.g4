@@ -116,9 +116,9 @@ query_core [rep=_r(1,5)] flags [is_statement] returns [c] :
         )  rep
         | ASTERISK
     ) _w(10)
-	FROM ( tt=table_name.any tt.c=$column_name[tt] t+=$tt | '(' cc=query_core ')' AS tt=table_name.new tt.c:=$cc t+=$tt)
+	FROM ( tt=table_name.any tt.c=$column_name[tt] t+=$tt | '(' cc=query_core ')' AS tt=table_name.new tt.c=$cc t+=$tt)
 	(
-		JOIN ( tt=table_name tt.c=$column_name[tt] t+=$tt | '(' cc:=query_core ')' AS tt=table_name.new tt.c:=$cc t+=$tt)
+		JOIN ( tt=table_name tt.c=$column_name[tt] t+=$tt | '(' cc=query_core ')' AS tt=table_name.new tt.c=$cc t+=$tt)
 	)?
     where_predicate?
 	( 
