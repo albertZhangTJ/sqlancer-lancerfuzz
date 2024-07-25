@@ -43,16 +43,14 @@ parser grammar LancerSpecParser;
 options { tokenVocab = LancerSpecLexer; }
 // The main entry point for parsing a v4 grammar.
 grammarSpec
-   : grammarDecl prequelConstruct* rules modeSpec* EOF
+   : grammarDecl prequelConstruct* rules EOF
    ;
 
 grammarDecl
-   : grammarType identifier SEMI
+   : GRAMMAR identifier SEMI
    ;
 
-grammarType
-   : (LEXER GRAMMAR | PARSER GRAMMAR | GRAMMAR)
-   ;
+
    // This is the list of all constructs that can be declared before
    // the set of rules that compose the grammar, and is invoked 0..n
    // times by the grammarPrequel rule.
@@ -61,7 +59,6 @@ prequelConstruct
    : optionsSpec
    | delegateGrammars
    | tokensSpec
-   | channelsSpec
    | action_
    ;
    // ------------
@@ -99,9 +96,6 @@ tokensSpec
    : TOKENS idList? RBRACE
    ;
 
-channelsSpec
-   : CHANNELS idList? RBRACE
-   ;
 
 idList
    : identifier (COMMA identifier)* COMMA?
@@ -127,9 +121,6 @@ weightBlock
    : BEGIN_WHT WGHT_CONTENT* END_WGHT_DECL
    ;
 
-typeBlock
-   : BEGIN_TYP TYPE_CONTENT* END_TYPE_DECL
-   ;
 
 repetitionBlock
    : BEGIN_REP REP_CONTENT* END_REP_DECL
@@ -143,10 +134,6 @@ argActionBlock
    : BEGIN_ARGUMENT ARGUMENT_CONTENT* END_ARGUMENT
    ;
 
-modeSpec
-   : MODE identifier SEMI lexerRuleSpec*
-   ;
-
 rules
    : ruleSpec*
    ;
@@ -157,20 +144,9 @@ ruleSpec
    ;
 
 parserRuleSpec
-   : ruleModifiers? RULE_REF argActionBlock? ruleReturns? throwsSpec? localsSpec? rulePrequel* COLON ruleBlock SEMI exceptionGroup
+   : ruleModifiers? RULE_REF argActionBlock? ruleReturns? localsSpec? rulePrequel* COLON ruleBlock SEMI
    ;
 
-exceptionGroup
-   : exceptionHandler* finallyClause?
-   ;
-
-exceptionHandler
-   : CATCH argActionBlock actionBlock
-   ;
-
-finallyClause
-   : FINALLY actionBlock
-   ;
 
 rulePrequel
    : optionsSpec
@@ -181,11 +157,6 @@ ruleReturns
    : RETURNS argActionBlock
    ;
 
-// --------------
-// Exception spec
-throwsSpec
-   : THROWS identifier (COMMA identifier)*
-   ;
 
 localsSpec
    : LOCALS argActionBlock
@@ -207,10 +178,9 @@ ruleModifiers
    // if they are of no use in that language.
 
 ruleModifier
-   : PUBLIC
-   | PRIVATE
-   | PROTECTED
-   | FRAGMENT
+   : SCHEMA
+   | EXPR
+   | STATEMENT
    ;
 
 ruleBlock
@@ -240,7 +210,7 @@ lexerAltList
    ;
 
 lexerAlt
-   : lexerElements lexerCommands?
+   : lexerElements
    |
    // explicitly allow empty alts
    ;
@@ -252,7 +222,6 @@ lexerElements
 
 lexerElement
    : actionBlock QUESTION?
-   | typeBlock QUESTION?
    | weightBlock QUESTION?
    | errorBlock QUESTION?
    | repetitionBlock QUESTION?
@@ -267,35 +236,14 @@ lexerElement
 lexerBlock
    : LPAREN lexerAltList RPAREN
    ;
-   // E.g., channel(HIDDEN), skip, more, mode(INSIDE), push(INSIDE), pop
-
-lexerCommands
-   : RARROW lexerCommand (COMMA lexerCommand)*
-   ;
-
-lexerCommand
-   : lexerCommandName LPAREN lexerCommandExpr RPAREN
-   | lexerCommandName
-   ;
-
-lexerCommandName
-   : identifier
-   | MODE
-   ;
-
-lexerCommandExpr
-   : identifier
-   | INT
-   ;
-   // --------------------
-   // Rule Alts
+   
 
 altList
    : alternative (OR alternative)*
    ;
 
 alternative
-   : elementOptions? element+
+   : element+
    |
    // explicitly allow empty alts
    ;
@@ -308,7 +256,6 @@ element
    : variableAssignment (ebnfSuffix |)
    | variableAccess
    | actionBlock QUESTION?
-   | typeBlock QUESTION?
    | weightBlock QUESTION?
    | errorBlock QUESTION?
    | repetitionBlock QUESTION?
@@ -345,14 +292,12 @@ lexerAtom
    | terminal
    | notSet
    | LEXER_CHAR_SET
-   | DOT elementOptions?
    ;
 
 atom
    : terminal
    | ruleref
    | notSet
-   | DOT elementOptions?
    ;
 
 // --------------------
@@ -367,8 +312,8 @@ blockSet
    ;
 
 setElement
-   : TOKEN_REF elementOptions?
-   | STRING_LITERAL elementOptions?
+   : TOKEN_REF
+   | STRING_LITERAL 
    | characterRange
    | LEXER_CHAR_SET
    ;
@@ -382,7 +327,7 @@ block
 // ----------------
 // Parser rule ref
 ruleref
-   : RULE_REF argActionBlock? elementOptions?
+   : RULE_REF argActionBlock?
    ;
 
 // ---------------
@@ -392,19 +337,8 @@ characterRange
    ;
 
 terminal
-   : TOKEN_REF elementOptions?
-   | STRING_LITERAL elementOptions?
-   ;
-
-// Terminals may be adorned with certain options when
-// reference in the grammar: TOK<,,,>
-elementOptions
-   : LT elementOption (COMMA elementOption)* GT
-   ;
-
-elementOption
-   : identifier
-   | identifier ASSIGN (identifier | STRING_LITERAL)
+   : TOKEN_REF
+   | STRING_LITERAL
    ;
 
 identifier

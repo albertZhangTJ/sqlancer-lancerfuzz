@@ -92,7 +92,7 @@ UNTERMINATED_STRING_LITERAL
 // are contained within square brackets.
 BEGIN_ARGUMENT
    : LBrack
-   { self.handleBeginArgument() }
+   { this.handleBeginArgument() }
    ;
 
 // -------------------------
@@ -120,6 +120,18 @@ IMPORT
 
 FRAGMENT
    : 'fragment'
+   ;
+
+SCHEMA
+   : 'schema'
+   ;
+
+EXPR
+   : 'expr'
+   ;
+
+STATEMENT
+   : 'statement'
    ;
 
 LEXER
@@ -184,9 +196,6 @@ BEGIN_WHT
    : '_w(' -> pushMode (WeightDeclaration)
    ;
 
-BEGIN_TYP
-   : '_t(' -> pushMode (TypeDeclaration)
-   ;
 
 COLON
    : Colon
@@ -332,7 +341,7 @@ ARGUMENT_CHAR_LITERAL
 
 END_ARGUMENT
    : RBrack
-   { self.handleEndArgument() }
+   { this.handleEndArgument() }
    ;
 
 // added this to return non-EOF token type here. EOF does something weird
@@ -384,7 +393,7 @@ ACTION_LINE_COMMENT
 
 END_ACTION
    : RBrace
-   { self.handleEndAction() }
+   { this.handleEndAction() }
    ;
 
 UNTERMINATED_ACTION
@@ -408,7 +417,7 @@ ERROR_CHAR_LITERAL
 
 END_ERR_DECL
    : RParen
-   { self.handleEndErrDecl(); }
+   { this.handleEndErrDecl(); }
    ;
 
 UNTERMINATED_ERR_DECL
@@ -419,35 +428,12 @@ ERR_CONTENT
    : .
    ;
 
-mode TypeDeclaration;
-
-
-TYPE_STRING_LITERAL
-   : DQuoteLiteral -> type (TYPE_CONTENT)
-   ;
-
-TYPE_CHAR_LITERAL
-   : SQuoteLiteral -> type (TYPE_CONTENT)
-   ;
-
-END_TYPE_DECL
-   : RParen
-   { self.handleEndTypeDecl(); }
-   ;
-
-UNTERMINATED_TYPE_DECL
-   : EOF -> popMode
-   ;
-
-TYPE_CONTENT
-   : .
-   ;
 
 mode WeightDeclaration;
 
 END_WGHT_DECL
    : RParen
-   { self.handleEndWeightDecl(); }
+   { this.handleEndWeightDecl(); }
    ;
 
 WGHT_DECL
@@ -462,7 +448,7 @@ mode RepetitionDeclaration;
 
 END_REP_DECL
    : RParen
-   { self.handleEndRepetitionDecl(); }
+   { this.handleEndRepetitionDecl(); }
    ;
 
 UNTERMINATED_REP_DECL
