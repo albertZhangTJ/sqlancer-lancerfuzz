@@ -58,7 +58,6 @@ grammarDecl
 prequelConstruct
    : optionsSpec //confirm to be needed
    | delegateGrammars //confirm to be needed
-   | tokensSpec 
    | action_ 
    ;
    // ------------
@@ -96,14 +95,7 @@ delegateGrammar
    // ------------
    // Tokens & Channels
 
-tokensSpec
-   : TOKENS idList? RBRACE
-   ;
 
-
-idList
-   : identifier (COMMA identifier)* COMMA?
-   ;
 
 // Match stuff like @members {int i;}
 action_
@@ -173,6 +165,11 @@ ruleModifier
    | STATEMENT
    ;
 
+
+
+
+
+
 ruleBlock
    : ruleAltList
    ;
@@ -184,49 +181,6 @@ ruleAltList
 labeledAlt
    : alternative (POUND identifier)?
    ;
-   // --------------------
-   // Lexer rules
-
-lexerRuleSpec
-   : TOKEN_REF optionsSpec? COLON lexerRuleBlock SEMI
-   ;
-
-lexerRuleBlock
-   : lexerAltList
-   ;
-
-lexerAltList
-   : lexerAlt (OR lexerAlt)*
-   ;
-
-lexerAlt
-   : lexerElements
-   |
-   // explicitly allow empty alts
-   ;
-
-lexerElements
-   : lexerElement+
-   |
-   ;
-
-lexerElement
-   : actionBlock QUESTION?
-   | weightBlock
-   | errorBlock
-   | repetitionBlock
-   | variableAccess
-   | variableAssignment
-   | lexerAtom ebnfSuffix?
-   | lexerBlock ebnfSuffix?
-   
-   ;
-   // but preds can be anywhere
-
-lexerBlock
-   : LPAREN lexerAltList RPAREN
-   ;
-   
 
 altList
    : alternative (OR alternative)*
@@ -238,19 +192,14 @@ alternative
    // explicitly allow empty alts
    ;
 
-variableAccess
-   : DOLLAR ID
-   ;
-
 element
-   : variableAssignment (ebnfSuffix |)
-   | variableAccess
-   | actionBlock QUESTION?
-   | weightBlock
-   | errorBlock
-   | repetitionBlock
-   | atom (ebnfSuffix |)
-   | ebnf
+   : variableAssignment ebnfSuffix? //handles variable assignment
+   | actionBlock QUESTION?  //handles both ANTLR action and ANTLR predicates
+   | weightBlock //handles weight declaration
+   | errorBlock //handles error declaration
+   | repetitionBlock //handles repetition declaration
+   | atom ebnfSuffix? //string literals, variable access,
+   | ebnf //non-root alternation nodes, parenthesized repetitions, and basically just any blocks
    ;
 
 variableAssignment
@@ -283,11 +232,12 @@ lexerAtom
    | terminal
    | notSet
    | LEXER_CHAR_SET
+   | DOLLAR? compIdentifier
    ;
 
 atom
    : terminal
-   | ruleref
+   | DOLLAR? compIdentifier
    | notSet
    ;
 
@@ -316,11 +266,6 @@ block
    : LPAREN altList RPAREN
    ;
 
-// ----------------
-// Parser rule ref
-ruleref
-   : RULE_REF argActionBlock?
-   ;
 
 // ---------------
 // Character Range
@@ -342,3 +287,43 @@ identifier
    | TOKEN_REF
    ;
    
+
+
+lexerRuleSpec
+   : TOKEN_REF optionsSpec? COLON lexerRuleBlock SEMI
+   ;
+
+lexerRuleBlock
+   : lexerAltList
+   ;
+
+lexerAltList
+   : lexerAlt (OR lexerAlt)*
+   ;
+
+lexerAlt
+   : lexerElements
+   |
+   // explicitly allow empty alts
+   ;
+
+lexerElements
+   : lexerElement+
+   |
+   ;
+
+lexerElement
+   : actionBlock QUESTION?
+   | weightBlock
+   | errorBlock
+   | repetitionBlock
+   | variableAssignment
+   | lexerAtom ebnfSuffix?
+   | lexerBlock ebnfSuffix?
+   
+   ;
+   // but preds can be anywhere
+
+lexerBlock
+   : LPAREN lexerAltList RPAREN
+   ;
