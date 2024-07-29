@@ -33,7 +33,7 @@ alterSpecification
     : 
     ADD COLUMN? column.new columnDefinition FIRST?    
     | ADD COLUMN? '(' (column.new columnDefinition){delimiter=","} ')' 
-    | DROP COLUMN? column[t].unique_any _e("can't delete all", "has a partitioning function dependency")
+    | DROP COLUMN? column[t].unique_any _e("delete all", "has a partitioning function dependency")
     | DROP PRIMARY KEY _e("primary")
     | RENAME ( TO | AS ) table.new
     | RENAME COLUMN column[t].unique_any TO column.unique_any _e("has a partitioning function dependency and cannot be dropped or renamed")

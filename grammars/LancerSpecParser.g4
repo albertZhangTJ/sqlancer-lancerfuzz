@@ -56,18 +56,20 @@ grammarDecl
    // times by the grammarPrequel rule.
 
 prequelConstruct
-   : optionsSpec
-   | delegateGrammars
-   | tokensSpec
-   | action_
+   : optionsSpec //confirm to be needed
+   | delegateGrammars //confirm to be needed
+   | tokensSpec 
+   | action_ 
    ;
    // ------------
    // Options - things that affect analysis and/or code generation
 
+//confirm to be needed
 optionsSpec
    : OPTIONS (option SEMI)* RBRACE
    ;
 
+//confirm to be needed
 option
    : identifier ASSIGN optionValue
    ;
@@ -81,10 +83,12 @@ optionValue
    // ------------
    // Delegates
 
+//confirm to be needed
 delegateGrammars
    : IMPORT delegateGrammar (COMMA delegateGrammar)* SEMI
    ;
 
+//confirm to be needed
 delegateGrammar
    : identifier ASSIGN identifier
    | identifier
@@ -100,17 +104,10 @@ tokensSpec
 idList
    : identifier (COMMA identifier)* COMMA?
    ;
-   // Match stuff like @parser::members {int i;}
 
+// Match stuff like @members {int i;}
 action_
-   : AT (actionScopeName COLONCOLON)? identifier actionBlock
-   ;
-   // Scope names could collide with keywords; allow them as ids for action scopes
-
-actionScopeName
-   : identifier
-   | LEXER
-   | PARSER
+   : AT identifier actionBlock
    ;
 
 actionBlock
@@ -144,14 +141,10 @@ ruleSpec
    ;
 
 parserRuleSpec
-   : ruleModifiers? RULE_REF argActionBlock? ruleReturns? localsSpec? rulePrequel* COLON ruleBlock SEMI
+   : ruleModifiers? RULE_REF argActionBlock?  (ruleReturns localsSpec | localsSpec? ruleReturns?) COLON ruleBlock SEMI
    ;
 
 
-rulePrequel
-   : optionsSpec
-   | ruleAction
-   ;
 
 ruleReturns
    : RETURNS argActionBlock
@@ -162,10 +155,7 @@ localsSpec
    : LOCALS argActionBlock
    ;
 
-/** Match stuff like @init {int i;} */
-ruleAction
-   : AT identifier actionBlock
-   ;
+
 
 ruleModifiers
    : ruleModifier+
@@ -198,7 +188,7 @@ labeledAlt
    // Lexer rules
 
 lexerRuleSpec
-   : FRAGMENT? TOKEN_REF optionsSpec? COLON lexerRuleBlock SEMI
+   : TOKEN_REF optionsSpec? COLON lexerRuleBlock SEMI
    ;
 
 lexerRuleBlock
@@ -222,9 +212,9 @@ lexerElements
 
 lexerElement
    : actionBlock QUESTION?
-   | weightBlock QUESTION?
-   | errorBlock QUESTION?
-   | repetitionBlock QUESTION?
+   | weightBlock
+   | errorBlock
+   | repetitionBlock
    | variableAccess
    | variableAssignment
    | lexerAtom ebnfSuffix?
@@ -256,9 +246,9 @@ element
    : variableAssignment (ebnfSuffix |)
    | variableAccess
    | actionBlock QUESTION?
-   | weightBlock QUESTION?
-   | errorBlock QUESTION?
-   | repetitionBlock QUESTION?
+   | weightBlock
+   | errorBlock
+   | repetitionBlock
    | atom (ebnfSuffix |)
    | ebnf
    ;
@@ -268,7 +258,7 @@ variableAssignment
    ;
 
 labeledElement
-   : identifier (ASSIGN | PLUS_ASSIGN) (atom | block)
+   : compIdentifier (ASSIGN | PLUS_ASSIGN) (atom | block)
    ;
    // --------------------
    // EBNF and blocks
@@ -281,10 +271,11 @@ blockSuffix
    : ebnfSuffix
    ;
 
+//nongreedy matching are no longer supported
 ebnfSuffix
-   : QUESTION QUESTION?
-   | STAR QUESTION?
-   | PLUS QUESTION?
+   : QUESTION
+   | STAR
+   | PLUS
    ;
 
 lexerAtom
@@ -302,6 +293,7 @@ atom
 
 // --------------------
 // Inverted element set
+//confirm to be needed
 notSet
    : NOT setElement
    | NOT blockSet
@@ -321,7 +313,7 @@ setElement
 // -------------
 // Grammar Block
 block
-   : LPAREN (optionsSpec? ruleAction* COLON)? altList RPAREN
+   : LPAREN altList RPAREN
    ;
 
 // ----------------
@@ -339,6 +331,10 @@ characterRange
 terminal
    : TOKEN_REF
    | STRING_LITERAL
+   ;
+
+compIdentifier
+   : identifier argActionBlock? ( DOT compIdentifier)*
    ;
 
 identifier
