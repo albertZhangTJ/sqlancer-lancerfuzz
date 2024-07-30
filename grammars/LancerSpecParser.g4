@@ -198,26 +198,18 @@ element
    | weightBlock //handles weight declaration
    | errorBlock //handles error declaration
    | repetitionBlock //handles repetition declaration
-   | atom ebnfSuffix? //string literals, variable access,
+   | atom ebnfSuffix? //string literals, variable access, rule reference
    | ebnf //non-root alternation nodes, parenthesized repetitions, and basically just any blocks
    ;
 
 variableAssignment
-   : labeledElement
-   ;
-
-labeledElement
    : compIdentifier (ASSIGN | PLUS_ASSIGN) (atom | block)
    ;
    // --------------------
    // EBNF and blocks
 
 ebnf
-   : block blockSuffix?
-   ;
-
-blockSuffix
-   : ebnfSuffix
+   : block ebnfSuffix?
    ;
 
 //nongreedy matching are no longer supported
@@ -228,7 +220,7 @@ ebnfSuffix
    ;
 
 lexerAtom
-   : characterRange
+   : characterRange 
    | terminal
    | notSet
    | LEXER_CHAR_SET
@@ -274,8 +266,7 @@ characterRange
    ;
 
 terminal
-   : TOKEN_REF
-   | STRING_LITERAL
+   : STRING_LITERAL
    ;
 
 compIdentifier
