@@ -369,8 +369,8 @@ public class GrammarGraphBuilder {
             if (node.ebnfSuffix()!=null){
                 suffix = node.ebnfSuffix();
             }
-            else if (node.ebnf()!=null && node.ebnf().blockSuffix()!=null){
-                suffix = node.ebnf().blockSuffix().ebnfSuffix();
+            else if (node.ebnf()!=null && node.ebnf().ebnfSuffix()!=null){
+                suffix = node.ebnf().ebnfSuffix().ebnfSuffix();
             }
             if (suffix==null){
                 build_expr(graph, rule, (FlexibleParserRuleContext)(node.children.get(0)), parent_id, indices, options);
@@ -398,9 +398,9 @@ public class GrammarGraphBuilder {
                 build_expr(graph, rule, (FlexibleParserRuleContext)(node.children.get(0)), quant_id, indices, options);
             }
         }
-        else if (node instanceof LancerSpecParser.LabeledElementContext){
+        else if (node instanceof LancerSpecParser.VariableAssignmentContext){
             build_expr(graph, rule, node.atom()==null ? node.atom() : node.block() , parent_id, indices, options);
-            IdentifierContext ident = ((LabeledElementContext)node).identifier();
+            CompIdentifierContext ident = ((VariableAssignmentContext)node).compIdentifier();
             String name = ident.RULE_REF()==null ? ident.RULE_REF().toString() : ident.TOKEN_REF().toString();
             boolean is_list = ((LabeledElementContext)node).PLUS_ASSIGN()!=null;
             graph.add_edge(parent_id, graph.add_node(new VariableNode(name, is_list)), null);
@@ -465,27 +465,16 @@ public class GrammarGraphBuilder {
         }
         else if (node instanceof LancerSpecParser.TerminalContext){
             TerminalContext t_node = (TerminalContext)node;
-            if (t_node.TOKEN_REF()!=null){
-                int ref_id = graph.get_node_id_with_identifier(t_node.TOKEN_REF().toString());
-                if (ref_id==-1){
-                    Utils.panic("GrammarGraphBuilder::build_expr : cannot find referenced node "+t_node.TOKEN_REF().toString());
-                }
-                else {
-                    graph.add_edge(parent_id, ref_id, null);
-                }
+            String raw = t_node.STRING_LITERAL().toString();
+            raw = raw.substring(1, raw.length()-1);
+            String src = unescape_string(raw);
+            if (rule instanceof UnlexerRuleNode){
+                List<Integer> strt_r = new ArrayList<>();
+                strt_r.add((int)(src.charAt(0)));
+                strt_r.add((int)(src.charAt(0))+1);
+                ((UnlexerRuleNode)rule).append_start_ranges(strt_r); 
             }
-            else if (t_node.STRING_LITERAL()!=null){
-                String raw = t_node.STRING_LITERAL().toString();
-                raw = raw.substring(1, raw.length()-1);
-                String src = unescape_string(raw);
-                if (rule instanceof UnlexerRuleNode){
-                    List<Integer> strt_r = new ArrayList<>();
-                    strt_r.add((int)(src.charAt(0)));
-                    strt_r.add((int)(src.charAt(0))+1);
-                    ((UnlexerRuleNode)rule).append_start_ranges(strt_r); 
-                }
-                graph.add_edge(parent_id, graph.add_node(new LiteralNode(src)), null);
-            }
+            graph.add_edge(parent_id, graph.add_node(new LiteralNode(src)), null);
         }
         else if (node!=null && node.getChildCount()>0){
             for (ParseTree child : node.children){

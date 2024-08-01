@@ -5,6 +5,9 @@ import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.*;
 import org.antlr.v4.runtime.tree.*;
+
+import net.sf.jsqlparser.statement.alter.Alter;
+
 import java.util.List;
 import java.util.Iterator;
 import java.util.ArrayList;
@@ -1615,8 +1618,10 @@ public class LancerSpecParser extends Parser {
 
 	@SuppressWarnings("CheckReturnValue")
 	public static class LabeledAltContext extends FlexibleParserRuleContext {
-		public AlternativeContext alternative() {
-			return getRuleContext(AlternativeContext.class,0);
+		public List<AlternativeContext> alternative() {
+			List<AlternativeContext> res = new ArrayList<>();
+			res.add(getRuleContext(AlternativeContext.class,0));
+			return res;
 		}
 		public TerminalNode POUND() { return getToken(LancerSpecParser.POUND, 0); }
 		public IdentifierContext identifier() {
