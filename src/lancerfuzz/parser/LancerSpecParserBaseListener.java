@@ -353,18 +353,6 @@ public class LancerSpecParserBaseListener implements LancerSpecParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterLabeledElement(LancerSpecParser.LabeledElementContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitLabeledElement(LancerSpecParser.LabeledElementContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterEbnf(LancerSpecParser.EbnfContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -372,18 +360,6 @@ public class LancerSpecParserBaseListener implements LancerSpecParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitEbnf(LancerSpecParser.EbnfContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterBlockSuffix(LancerSpecParser.BlockSuffixContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitBlockSuffix(LancerSpecParser.BlockSuffixContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

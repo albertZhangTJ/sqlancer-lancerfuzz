@@ -1,3 +1,4 @@
+package lancerfuzz.parser;
 // Generated from grammars/LexBasic.g4 by ANTLR 4.13.0
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.CharStream;

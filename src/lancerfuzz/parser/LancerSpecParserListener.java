@@ -288,16 +288,6 @@ public interface LancerSpecParserListener extends ParseTreeListener {
 	 */
 	void exitVariableAssignment(LancerSpecParser.VariableAssignmentContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link LancerSpecParser#labeledElement}.
-	 * @param ctx the parse tree
-	 */
-	void enterLabeledElement(LancerSpecParser.LabeledElementContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link LancerSpecParser#labeledElement}.
-	 * @param ctx the parse tree
-	 */
-	void exitLabeledElement(LancerSpecParser.LabeledElementContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link LancerSpecParser#ebnf}.
 	 * @param ctx the parse tree
 	 */
@@ -307,16 +297,6 @@ public interface LancerSpecParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitEbnf(LancerSpecParser.EbnfContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link LancerSpecParser#blockSuffix}.
-	 * @param ctx the parse tree
-	 */
-	void enterBlockSuffix(LancerSpecParser.BlockSuffixContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link LancerSpecParser#blockSuffix}.
-	 * @param ctx the parse tree
-	 */
-	void exitBlockSuffix(LancerSpecParser.BlockSuffixContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link LancerSpecParser#ebnfSuffix}.
 	 * @param ctx the parse tree

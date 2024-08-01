@@ -112,10 +112,6 @@ public abstract class LexerAdaptor extends Lexer {
         popMode();
     }
 
-    protected void handleEndTypeDecl() {
-        popMode();
-    }
-
     @Override
     public Token emit() {
         if ((_type == LancerSpecLexer.OPTIONS || _type == LancerSpecLexer.TOKENS || _type == LancerSpecLexer.CHANNELS)
