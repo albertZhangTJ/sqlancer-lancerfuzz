@@ -186,21 +186,21 @@ public class LancerSpecLexer extends LexerAdaptor {
 	private void BEGIN_ARGUMENT_action(RuleContext _localctx, int actionIndex) {
 		switch (actionIndex) {
 		case 0:
-			 this.handleBeginArgument() 
+			 this.handleBeginArgument(); 
 			break;
 		}
 	}
 	private void END_ARGUMENT_action(RuleContext _localctx, int actionIndex) {
 		switch (actionIndex) {
 		case 1:
-			 this.handleEndArgument() 
+			 this.handleEndArgument(); 
 			break;
 		}
 	}
 	private void END_ACTION_action(RuleContext _localctx, int actionIndex) {
 		switch (actionIndex) {
 		case 2:
-			 this.handleEndAction() 
+			 this.handleEndAction(); 
 			break;
 		}
 	}

@@ -139,8 +139,75 @@ public class LancerSpecParser extends Parser {
 		_interp = new ParserATNSimulator(this,_ATN,_decisionToDFA,_sharedContextCache);
 	}
 
+	// This class is an encapsulation of the FlexibleParserRuleContext class
+	// Provides an API to call these methods of any subclasses of FlexibleParserRuleContext
+	public static class FlexibleParserRuleContext extends ParserRuleContext {
+		public FlexibleParserRuleContext(ParserRuleContext parent, int invokingState) {
+			super(parent, invokingState);
+		}
+		public ArgActionBlockContext argActionBlock(){
+			return null;
+		}
+		public ActionBlockContext actionBlock() {
+			return null;
+		}
+		public LocalsSpecContext localsSpec(){
+			return null;
+		}
+		public RuleReturnsContext ruleReturns(){
+			return null;
+		}
+		public List<TerminalNode> QUESTION(){
+			return null;
+		}
+		public TerminalNode QUESTION(int i){
+			return null;
+		}
+		public List<ElementContext> element() {
+			return null;
+		}
+		public ElementContext element(int i) {
+			return null;
+		}
+		public List<LexerElementContext> lexerElement() {
+			return null;
+		}
+		public LexerElementContext lexerElement(int i) {
+			return null;
+		}
+		public List<AlternativeContext> alternative() {
+			return null;
+		}
+		public AlternativeContext alternative(int i) {
+			return null;
+		}
+		// really not a fan of the naming convention here
+		// but hey, this whole parser is auto-generated lol
+		public LexerElementsContext lexerElements(){
+			return null;
+		}
+		public EbnfSuffixContext ebnfSuffix(){
+			return null;
+		}
+		public EbnfContext ebnf() {
+			return null;
+		}
+		public AtomContext atom() {
+			return null;
+		}
+		public BlockContext block(){
+			return null;
+		}
+		public List<TerminalNode> DOT(){
+			return null;
+		}
+		public NotSetContext notSet(){
+			return null;
+		}
+	}
+
 	@SuppressWarnings("CheckReturnValue")
-	public static class GrammarSpecContext extends ParserRuleContext {
+	public static class GrammarSpecContext extends FlexibleParserRuleContext {
 		public GrammarDeclContext grammarDecl() {
 			return getRuleContext(GrammarDeclContext.class,0);
 		}
@@ -209,7 +276,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class GrammarDeclContext extends ParserRuleContext {
+	public static class GrammarDeclContext extends FlexibleParserRuleContext {
 		public TerminalNode GRAMMAR() { return getToken(LancerSpecParser.GRAMMAR, 0); }
 		public IdentifierContext identifier() {
 			return getRuleContext(IdentifierContext.class,0);
@@ -255,7 +322,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class PrequelConstructContext extends ParserRuleContext {
+	public static class PrequelConstructContext extends FlexibleParserRuleContext {
 		public OptionsSpecContext optionsSpec() {
 			return getRuleContext(OptionsSpecContext.class,0);
 		}
@@ -323,7 +390,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class OptionsSpecContext extends ParserRuleContext {
+	public static class OptionsSpecContext extends FlexibleParserRuleContext {
 		public TerminalNode OPTIONS() { return getToken(LancerSpecParser.OPTIONS, 0); }
 		public TerminalNode RBRACE() { return getToken(LancerSpecParser.RBRACE, 0); }
 		public List<OptionContext> option() {
@@ -391,7 +458,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class OptionContext extends ParserRuleContext {
+	public static class OptionContext extends FlexibleParserRuleContext {
 		public IdentifierContext identifier() {
 			return getRuleContext(IdentifierContext.class,0);
 		}
@@ -439,7 +506,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class OptionValueContext extends ParserRuleContext {
+	public static class OptionValueContext extends FlexibleParserRuleContext {
 		public List<IdentifierContext> identifier() {
 			return getRuleContexts(IdentifierContext.class);
 		}
@@ -538,7 +605,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class DelegateGrammarsContext extends ParserRuleContext {
+	public static class DelegateGrammarsContext extends FlexibleParserRuleContext {
 		public TerminalNode IMPORT() { return getToken(LancerSpecParser.IMPORT, 0); }
 		public List<DelegateGrammarContext> delegateGrammar() {
 			return getRuleContexts(DelegateGrammarContext.class);
@@ -608,7 +675,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class DelegateGrammarContext extends ParserRuleContext {
+	public static class DelegateGrammarContext extends FlexibleParserRuleContext {
 		public List<IdentifierContext> identifier() {
 			return getRuleContexts(IdentifierContext.class);
 		}
@@ -669,7 +736,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class Action_Context extends ParserRuleContext {
+	public static class Action_Context extends FlexibleParserRuleContext {
 		public TerminalNode AT() { return getToken(LancerSpecParser.AT, 0); }
 		public IdentifierContext identifier() {
 			return getRuleContext(IdentifierContext.class,0);
@@ -717,7 +784,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class ActionBlockContext extends ParserRuleContext {
+	public static class ActionBlockContext extends FlexibleParserRuleContext {
 		public TerminalNode BEGIN_ACTION() { return getToken(LancerSpecParser.BEGIN_ACTION, 0); }
 		public TerminalNode END_ACTION() { return getToken(LancerSpecParser.END_ACTION, 0); }
 		public List<TerminalNode> ACTION_CONTENT() { return getTokens(LancerSpecParser.ACTION_CONTENT); }
@@ -777,7 +844,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class WeightBlockContext extends ParserRuleContext {
+	public static class WeightBlockContext extends FlexibleParserRuleContext {
 		public TerminalNode BEGIN_WHT() { return getToken(LancerSpecParser.BEGIN_WHT, 0); }
 		public TerminalNode END_WGHT_DECL() { return getToken(LancerSpecParser.END_WGHT_DECL, 0); }
 		public List<TerminalNode> WGHT_CONTENT() { return getTokens(LancerSpecParser.WGHT_CONTENT); }
@@ -837,7 +904,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class RepetitionBlockContext extends ParserRuleContext {
+	public static class RepetitionBlockContext extends FlexibleParserRuleContext {
 		public TerminalNode BEGIN_REP() { return getToken(LancerSpecParser.BEGIN_REP, 0); }
 		public TerminalNode END_REP_DECL() { return getToken(LancerSpecParser.END_REP_DECL, 0); }
 		public List<TerminalNode> REP_CONTENT() { return getTokens(LancerSpecParser.REP_CONTENT); }
@@ -897,7 +964,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class ErrorBlockContext extends ParserRuleContext {
+	public static class ErrorBlockContext extends FlexibleParserRuleContext {
 		public TerminalNode BEGIN_ERR() { return getToken(LancerSpecParser.BEGIN_ERR, 0); }
 		public TerminalNode END_ERR_DECL() { return getToken(LancerSpecParser.END_ERR_DECL, 0); }
 		public List<TerminalNode> ERR_CONTENT() { return getTokens(LancerSpecParser.ERR_CONTENT); }
@@ -957,7 +1024,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class ArgActionBlockContext extends ParserRuleContext {
+	public static class ArgActionBlockContext extends FlexibleParserRuleContext {
 		public TerminalNode BEGIN_ARGUMENT() { return getToken(LancerSpecParser.BEGIN_ARGUMENT, 0); }
 		public TerminalNode END_ARGUMENT() { return getToken(LancerSpecParser.END_ARGUMENT, 0); }
 		public List<TerminalNode> ARGUMENT_CONTENT() { return getTokens(LancerSpecParser.ARGUMENT_CONTENT); }
@@ -1017,7 +1084,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class RulesContext extends ParserRuleContext {
+	public static class RulesContext extends FlexibleParserRuleContext {
 		public List<RuleSpecContext> ruleSpec() {
 			return getRuleContexts(RuleSpecContext.class);
 		}
@@ -1073,7 +1140,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class RuleSpecContext extends ParserRuleContext {
+	public static class RuleSpecContext extends FlexibleParserRuleContext {
 		public ParserRuleSpecContext parserRuleSpec() {
 			return getRuleContext(ParserRuleSpecContext.class,0);
 		}
@@ -1134,7 +1201,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class ParserRuleSpecContext extends ParserRuleContext {
+	public static class ParserRuleSpecContext extends FlexibleParserRuleContext {
 		public TerminalNode RULE_REF() { return getToken(LancerSpecParser.RULE_REF, 0); }
 		public TerminalNode COLON() { return getToken(LancerSpecParser.COLON, 0); }
 		public RuleBlockContext ruleBlock() {
@@ -1252,7 +1319,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class RuleReturnsContext extends ParserRuleContext {
+	public static class RuleReturnsContext extends FlexibleParserRuleContext {
 		public TerminalNode RETURNS() { return getToken(LancerSpecParser.RETURNS, 0); }
 		public ArgActionBlockContext argActionBlock() {
 			return getRuleContext(ArgActionBlockContext.class,0);
@@ -1295,7 +1362,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class LocalsSpecContext extends ParserRuleContext {
+	public static class LocalsSpecContext extends FlexibleParserRuleContext {
 		public TerminalNode LOCALS() { return getToken(LancerSpecParser.LOCALS, 0); }
 		public ArgActionBlockContext argActionBlock() {
 			return getRuleContext(ArgActionBlockContext.class,0);
@@ -1338,7 +1405,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class RuleModifiersContext extends ParserRuleContext {
+	public static class RuleModifiersContext extends FlexibleParserRuleContext {
 		public List<RuleModifierContext> ruleModifier() {
 			return getRuleContexts(RuleModifierContext.class);
 		}
@@ -1394,7 +1461,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class RuleModifierContext extends ParserRuleContext {
+	public static class RuleModifierContext extends FlexibleParserRuleContext {
 		public TerminalNode SCHEMA() { return getToken(LancerSpecParser.SCHEMA, 0); }
 		public TerminalNode EXPR() { return getToken(LancerSpecParser.EXPR, 0); }
 		public TerminalNode STATEMENT() { return getToken(LancerSpecParser.STATEMENT, 0); }
@@ -1443,7 +1510,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class RuleBlockContext extends ParserRuleContext {
+	public static class RuleBlockContext extends FlexibleParserRuleContext {
 		public RuleAltListContext ruleAltList() {
 			return getRuleContext(RuleAltListContext.class,0);
 		}
@@ -1483,7 +1550,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class RuleAltListContext extends ParserRuleContext {
+	public static class RuleAltListContext extends FlexibleParserRuleContext {
 		public List<LabeledAltContext> labeledAlt() {
 			return getRuleContexts(LabeledAltContext.class);
 		}
@@ -1547,7 +1614,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class LabeledAltContext extends ParserRuleContext {
+	public static class LabeledAltContext extends FlexibleParserRuleContext {
 		public AlternativeContext alternative() {
 			return getRuleContext(AlternativeContext.class,0);
 		}
@@ -1604,7 +1671,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class AltListContext extends ParserRuleContext {
+	public static class AltListContext extends FlexibleParserRuleContext {
 		public List<AlternativeContext> alternative() {
 			return getRuleContexts(AlternativeContext.class);
 		}
@@ -1668,7 +1735,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class AlternativeContext extends ParserRuleContext {
+	public static class AlternativeContext extends FlexibleParserRuleContext {
 		public List<ElementContext> element() {
 			return getRuleContexts(ElementContext.class);
 		}
@@ -1749,7 +1816,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class ElementContext extends ParserRuleContext {
+	public static class ElementContext extends FlexibleParserRuleContext {
 		public VariableAssignmentContext variableAssignment() {
 			return getRuleContext(VariableAssignmentContext.class,0);
 		}
@@ -1759,7 +1826,11 @@ public class LancerSpecParser extends Parser {
 		public ActionBlockContext actionBlock() {
 			return getRuleContext(ActionBlockContext.class,0);
 		}
-		public TerminalNode QUESTION() { return getToken(LancerSpecParser.QUESTION, 0); }
+		public List<TerminalNode> QUESTION() { 
+			List<TerminalNode> res = new ArrayList<>();
+			res.add(getToken(LancerSpecParser.QUESTION, 0));
+			return res; 
+		}
 		public WeightBlockContext weightBlock() {
 			return getRuleContext(WeightBlockContext.class,0);
 		}
@@ -1890,7 +1961,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class VariableAssignmentContext extends ParserRuleContext {
+	public static class VariableAssignmentContext extends FlexibleParserRuleContext {
 		public CompIdentifierContext compIdentifier() {
 			return getRuleContext(CompIdentifierContext.class,0);
 		}
@@ -1971,7 +2042,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class EbnfContext extends ParserRuleContext {
+	public static class EbnfContext extends FlexibleParserRuleContext {
 		public BlockContext block() {
 			return getRuleContext(BlockContext.class,0);
 		}
@@ -2025,8 +2096,12 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class EbnfSuffixContext extends ParserRuleContext {
-		public TerminalNode QUESTION() { return getToken(LancerSpecParser.QUESTION, 0); }
+	public static class EbnfSuffixContext extends FlexibleParserRuleContext {
+		public List<TerminalNode> QUESTION() { 
+			List<TerminalNode> res = new ArrayList<>();
+			res.add(getToken(LancerSpecParser.QUESTION, 0));
+			return res; 
+		}
 		public TerminalNode STAR() { return getToken(LancerSpecParser.STAR, 0); }
 		public TerminalNode PLUS() { return getToken(LancerSpecParser.PLUS, 0); }
 		public EbnfSuffixContext(ParserRuleContext parent, int invokingState) {
@@ -2074,7 +2149,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class LexerAtomContext extends ParserRuleContext {
+	public static class LexerAtomContext extends FlexibleParserRuleContext {
 		public CharacterRangeContext characterRange() {
 			return getRuleContext(CharacterRangeContext.class,0);
 		}
@@ -2170,7 +2245,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class AtomContext extends ParserRuleContext {
+	public static class AtomContext extends FlexibleParserRuleContext {
 		public TerminalContext terminal() {
 			return getRuleContext(TerminalContext.class,0);
 		}
@@ -2252,7 +2327,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class NotSetContext extends ParserRuleContext {
+	public static class NotSetContext extends FlexibleParserRuleContext {
 		public TerminalNode NOT() { return getToken(LancerSpecParser.NOT, 0); }
 		public SetElementContext setElement() {
 			return getRuleContext(SetElementContext.class,0);
@@ -2313,7 +2388,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class BlockSetContext extends ParserRuleContext {
+	public static class BlockSetContext extends FlexibleParserRuleContext {
 		public TerminalNode LPAREN() { return getToken(LancerSpecParser.LPAREN, 0); }
 		public List<SetElementContext> setElement() {
 			return getRuleContexts(SetElementContext.class);
@@ -2383,7 +2458,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class SetElementContext extends ParserRuleContext {
+	public static class SetElementContext extends FlexibleParserRuleContext {
 		public TerminalNode TOKEN_REF() { return getToken(LancerSpecParser.TOKEN_REF, 0); }
 		public TerminalNode STRING_LITERAL() { return getToken(LancerSpecParser.STRING_LITERAL, 0); }
 		public CharacterRangeContext characterRange() {
@@ -2453,7 +2528,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class BlockContext extends ParserRuleContext {
+	public static class BlockContext extends FlexibleParserRuleContext {
 		public TerminalNode LPAREN() { return getToken(LancerSpecParser.LPAREN, 0); }
 		public AltListContext altList() {
 			return getRuleContext(AltListContext.class,0);
@@ -2499,7 +2574,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class CharacterRangeContext extends ParserRuleContext {
+	public static class CharacterRangeContext extends FlexibleParserRuleContext {
 		public List<TerminalNode> STRING_LITERAL() { return getTokens(LancerSpecParser.STRING_LITERAL); }
 		public TerminalNode STRING_LITERAL(int i) {
 			return getToken(LancerSpecParser.STRING_LITERAL, i);
@@ -2545,7 +2620,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class TerminalContext extends ParserRuleContext {
+	public static class TerminalContext extends FlexibleParserRuleContext {
 		public TerminalNode STRING_LITERAL() { return getToken(LancerSpecParser.STRING_LITERAL, 0); }
 		public TerminalContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
@@ -2583,7 +2658,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class CompIdentifierContext extends ParserRuleContext {
+	public static class CompIdentifierContext extends FlexibleParserRuleContext {
 		public IdentifierContext identifier() {
 			return getRuleContext(IdentifierContext.class,0);
 		}
@@ -2666,7 +2741,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class IdentifierContext extends ParserRuleContext {
+	public static class IdentifierContext extends FlexibleParserRuleContext {
 		public TerminalNode RULE_REF() { return getToken(LancerSpecParser.RULE_REF, 0); }
 		public TerminalNode TOKEN_REF() { return getToken(LancerSpecParser.TOKEN_REF, 0); }
 		public IdentifierContext(ParserRuleContext parent, int invokingState) {
@@ -2714,7 +2789,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class LexerRuleSpecContext extends ParserRuleContext {
+	public static class LexerRuleSpecContext extends FlexibleParserRuleContext {
 		public TerminalNode TOKEN_REF() { return getToken(LancerSpecParser.TOKEN_REF, 0); }
 		public TerminalNode COLON() { return getToken(LancerSpecParser.COLON, 0); }
 		public LexerRuleBlockContext lexerRuleBlock() {
@@ -2777,7 +2852,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class LexerRuleBlockContext extends ParserRuleContext {
+	public static class LexerRuleBlockContext extends FlexibleParserRuleContext {
 		public LexerAltListContext lexerAltList() {
 			return getRuleContext(LexerAltListContext.class,0);
 		}
@@ -2817,7 +2892,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class LexerAltListContext extends ParserRuleContext {
+	public static class LexerAltListContext extends FlexibleParserRuleContext {
 		public List<LexerAltContext> lexerAlt() {
 			return getRuleContexts(LexerAltContext.class);
 		}
@@ -2881,7 +2956,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class LexerAltContext extends ParserRuleContext {
+	public static class LexerAltContext extends FlexibleParserRuleContext {
 		public LexerElementsContext lexerElements() {
 			return getRuleContext(LexerElementsContext.class,0);
 		}
@@ -2932,7 +3007,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class LexerElementsContext extends ParserRuleContext {
+	public static class LexerElementsContext extends FlexibleParserRuleContext {
 		public List<LexerElementContext> lexerElement() {
 			return getRuleContexts(LexerElementContext.class);
 		}
@@ -3013,11 +3088,15 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class LexerElementContext extends ParserRuleContext {
+	public static class LexerElementContext extends FlexibleParserRuleContext {
 		public ActionBlockContext actionBlock() {
 			return getRuleContext(ActionBlockContext.class,0);
 		}
-		public TerminalNode QUESTION() { return getToken(LancerSpecParser.QUESTION, 0); }
+		public List<TerminalNode> QUESTION() { 
+			List<TerminalNode> res = new ArrayList<>();
+			res.add(getToken(LancerSpecParser.QUESTION, 0));
+			return res; 
+		}
 		public WeightBlockContext weightBlock() {
 			return getRuleContext(WeightBlockContext.class,0);
 		}
@@ -3154,7 +3233,7 @@ public class LancerSpecParser extends Parser {
 	}
 
 	@SuppressWarnings("CheckReturnValue")
-	public static class LexerBlockContext extends ParserRuleContext {
+	public static class LexerBlockContext extends FlexibleParserRuleContext {
 		public TerminalNode LPAREN() { return getToken(LancerSpecParser.LPAREN, 0); }
 		public LexerAltListContext lexerAltList() {
 			return getRuleContext(LexerAltListContext.class,0);

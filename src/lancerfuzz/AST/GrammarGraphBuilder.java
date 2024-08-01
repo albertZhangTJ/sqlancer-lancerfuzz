@@ -609,19 +609,19 @@ public class GrammarGraphBuilder {
             }
         }
 
-
-        for (ModeSpecContext mode_spec : node.modeSpec()){
-            for (LexerRuleSpecContext rule_spec : mode_spec.lexerRuleSpec()){
-                UnlexerRuleNode rule_node = new UnlexerRuleNode(rule_spec.TOKEN_REF().toString());
-                if (!graph.contains_node_with_identifier(rule_spec.TOKEN_REF().toString())){
-                    graph.add_node(rule_node);
-                    generator_rules.put(rule_node, rule_spec.lexerRuleBlock());
-                }
-                else {
-                    duplicate_rules.add(rule_node.get_identifier());
-                }
-            }
-        }
+        // handling of modes is no longer needed since 
+        // for (ModeSpecContext mode_spec : node.modeSpec()){
+        //     for (LexerRuleSpecContext rule_spec : mode_spec.lexerRuleSpec()){
+        //         UnlexerRuleNode rule_node = new UnlexerRuleNode(rule_spec.TOKEN_REF().toString());
+        //         if (!graph.contains_node_with_identifier(rule_spec.TOKEN_REF().toString())){
+        //             graph.add_node(rule_node);
+        //             generator_rules.put(rule_node, rule_spec.lexerRuleBlock());
+        //         }
+        //         else {
+        //             duplicate_rules.add(rule_node.get_identifier());
+        //         }
+        //     }
+        // }
 
         if (duplicate_rules.size()>0){
             Utils.panic("GrammarGraphBuilder::build_rules : Redefinition of the following rule(s) "+duplicate_rules.toString());
@@ -630,12 +630,14 @@ public class GrammarGraphBuilder {
         for (RuleNode rule_node : generator_rules.keySet()){
             build_rule(graph, rule_node, generator_rules.get(rule_node), options);
         }
-        if (options.defaultRule!=null){
-            graph.set_default_rule(options.defaultRule);
-        }
-        else if (node.grammarDecl().grammarType().PARSER()!=null || !(node.grammarDecl().grammarType().LEXER()!=null || node.grammarDecl().grammarType().LEXER()!=null)){
-            graph.set_default_rule(generator_rules.entrySet().iterator().next().getKey().get_name());
-        }
+
+        // Default rule is not needed since there will have to be a json config file to handle calling of rules
+        // if (options.defaultRule!=null){
+        //     graph.set_default_rule(options.defaultRule);
+        // }
+        // else if (node.grammarDecl().grammarType().PARSER()!=null || !(node.grammarDecl().grammarType().LEXER()!=null || node.grammarDecl().grammarType().LEXER()!=null)){
+        //     graph.set_default_rule(generator_rules.entrySet().iterator().next().getKey().get_name());
+        // }
         // TODO: build a single rule
     }
     
