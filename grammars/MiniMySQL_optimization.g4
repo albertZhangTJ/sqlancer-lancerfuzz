@@ -107,7 +107,7 @@ updateStatement locals [is_statement]
     SET (cc=columnName[t].any '=' expr[cc])_r(1,6) (WHERE (NOT)? cc=columnName[t].any '=' expr[cc])? SC
     ;
 
-expr [column_name] locals [is_expr, type=column_name.type] : ( int_expr <type=="INT"> | text_expr <type=="TEXT">  | float_expr <type=="FLOAT"> | least | greatest | if_func);
+expr [column_name] locals [is_expr, type=column_name.type] : ( int_expr {type=="INT"}? | text_expr {type=="TEXT"}?  | float_expr {type=="FLOAT"}? | least | greatest | if_func);
 
 query_core [rep=_r(1,5)] flags [is_statement] returns [c] :
 	SELECT (

@@ -64,7 +64,7 @@ public class GrammarGraph{
 
     public int add_node(Node node){
         if (this.vertices.get(node.get_id())!=null) {
-            Utils.oops("GrammarGraph::add_node : node with id "+node.get_id()+"already exists, replacing");
+            Utils.panic("GrammarGraph::add_node : node with id "+node.get_id()+" already exists, do not add the same node twice to the graph");
         }
         this.vertices.put(node.get_id(), node);
         return node.get_id();
