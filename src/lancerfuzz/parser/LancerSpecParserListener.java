@@ -98,6 +98,16 @@ public interface LancerSpecParserListener extends ParseTreeListener {
 	 */
 	void exitAction_(LancerSpecParser.Action_Context ctx);
 	/**
+	 * Enter a parse tree produced by {@link LancerSpecParser#tokensSpec}.
+	 * @param ctx the parse tree
+	 */
+	void enterTokensSpec(LancerSpecParser.TokensSpecContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link LancerSpecParser#tokensSpec}.
+	 * @param ctx the parse tree
+	 */
+	void exitTokensSpec(LancerSpecParser.TokensSpecContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link LancerSpecParser#actionBlock}.
 	 * @param ctx the parse tree
 	 */
@@ -107,6 +117,16 @@ public interface LancerSpecParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitActionBlock(LancerSpecParser.ActionBlockContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link LancerSpecParser#idList}.
+	 * @param ctx the parse tree
+	 */
+	void enterIdList(LancerSpecParser.IdListContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link LancerSpecParser#idList}.
+	 * @param ctx the parse tree
+	 */
+	void exitIdList(LancerSpecParser.IdListContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link LancerSpecParser#weightBlock}.
 	 * @param ctx the parse tree
@@ -327,6 +347,16 @@ public interface LancerSpecParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitAtom(LancerSpecParser.AtomContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link LancerSpecParser#precedence}.
+	 * @param ctx the parse tree
+	 */
+	void enterPrecedence(LancerSpecParser.PrecedenceContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link LancerSpecParser#precedence}.
+	 * @param ctx the parse tree
+	 */
+	void exitPrecedence(LancerSpecParser.PrecedenceContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link LancerSpecParser#notSet}.
 	 * @param ctx the parse tree

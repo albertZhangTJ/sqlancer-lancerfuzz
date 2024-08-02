@@ -59,6 +59,7 @@ prequelConstruct
    : optionsSpec //confirm to be needed
    | delegateGrammars //confirm to be needed
    | action_ 
+   | tokensSpec
    ;
    // ------------
    // Options - things that affect analysis and/or code generation
@@ -102,8 +103,16 @@ action_
    : AT identifier actionBlock
    ;
 
+tokensSpec
+   : TOKENS idList? RBRACE
+   ;
+
 actionBlock
    : BEGIN_ACTION ACTION_CONTENT* END_ACTION
+   ;
+
+idList
+   : identifier (COMMA identifier)* COMMA?
    ;
 
 weightBlock
@@ -231,6 +240,11 @@ atom
    : terminal
    | DOLLAR? compIdentifier
    | notSet
+   | precedence
+   ;
+
+precedence
+   : AT INT
    ;
 
 // --------------------

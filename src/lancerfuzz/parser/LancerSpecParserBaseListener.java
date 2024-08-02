@@ -125,6 +125,18 @@ public class LancerSpecParserBaseListener implements LancerSpecParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterTokensSpec(LancerSpecParser.TokensSpecContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitTokensSpec(LancerSpecParser.TokensSpecContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterActionBlock(LancerSpecParser.ActionBlockContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -132,6 +144,18 @@ public class LancerSpecParserBaseListener implements LancerSpecParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitActionBlock(LancerSpecParser.ActionBlockContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterIdList(LancerSpecParser.IdListContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitIdList(LancerSpecParser.IdListContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -396,6 +420,18 @@ public class LancerSpecParserBaseListener implements LancerSpecParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitAtom(LancerSpecParser.AtomContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterPrecedence(LancerSpecParser.PrecedenceContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitPrecedence(LancerSpecParser.PrecedenceContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
