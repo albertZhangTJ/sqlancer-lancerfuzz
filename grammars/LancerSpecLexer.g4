@@ -48,6 +48,16 @@ import LexBasic;
 tokens { TOKEN_REF , RULE_REF , LEXER_CHAR_SET }
 channels { OFF_CHANNEL , COMMENT }
 
+GRAMMAR_OPERATOR
+   : Equal Equal
+   | PLUS Equal
+   | GT Equal
+   | LT Equal
+   | GT
+   | LT
+   | Equal
+   ;
+
 // -------------------------
 // Comments
 DOC_COMMENT

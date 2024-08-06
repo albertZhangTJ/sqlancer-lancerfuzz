@@ -129,7 +129,7 @@ errorBlock
    ;
 
 argActionBlock
-   : BEGIN_ARGUMENT ARGUMENT_CONTENT* END_ARGUMENT
+   : BEGIN_ARGUMENT compIdentifier (GRAMMAR_OPERATOR compIdentifier)? END_ARGUMENT
    ;
 
 rules
@@ -212,7 +212,7 @@ element
    ;
 
 variableAssignment
-   : compIdentifier (ASSIGN | PLUS_ASSIGN) (atom | block)
+   : compIdentifier (ASSIGN | PLUS_ASSIGN) DOLLAR? (atom | block)
    ;
    // --------------------
    // EBNF and blocks
@@ -233,12 +233,12 @@ lexerAtom
    | terminal
    | notSet
    | LEXER_CHAR_SET
-   | DOLLAR? compIdentifier
+   | compIdentifier
    ;
 
 atom
    : terminal
-   | DOLLAR? compIdentifier
+   | compIdentifier
    | notSet
    | precedence
    ;

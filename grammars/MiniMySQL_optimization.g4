@@ -132,7 +132,7 @@ where_predicate:
 	| WHERE NOT? EXISTS '(' query_core ')'
 	;
 
-predicate : ('(' pivot=$t.any.c.any ( expr[pivot] | (tt=t DOT | tt=$t )  cc=tt.c.filter[type=pivot.type].any ) 
+predicate : ('(' pivot=$t.any.c.any ( expr[pivot] | (tt=t DOT | tt=$t )  cc=tt.c.filter[type==pivot.type].any ) 
                     comparison 
                     ( expr[cc] | (tt=t DOT | tt=$t )  cc=tt.c.filter[type=pivot.type].any ) ')' 
             | ifnull 
