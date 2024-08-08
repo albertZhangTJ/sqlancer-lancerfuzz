@@ -24,12 +24,12 @@ THE SOFTWARE.
 */
 grammar MiniMySQL;
 
-alterTable locals [is_statement]
+alterTable
     : _e("exist") ALTER TABLE t=table.any
     ( alterSpecification )_r(1, 5) SC
     ;
 
-alterSpecification
+fragment alterSpecification
     : 
     ADD COLUMN? column.new columnDefinition FIRST?    
     | ADD COLUMN? '(' (column.new columnDefinition){delimiter=","} ')' 
@@ -39,28 +39,28 @@ alterSpecification
     | RENAME COLUMN column[t].unique_any TO column.unique_any _e("has a partitioning function dependency and cannot be dropped or renamed")
     ;
 
-columnDefinition
+fragment columnDefinition
     : ' FLOAT ' | ' INT ' | ' TEXT '
     ;
 
-dropDatabase locals [is_statement]
+dropDatabase
     : DROP DATABASE ifExists DB = db.new SC
     ;
 
-dropSchema locals [is_statement]
+dropSchema
     : DROP SCHEMA ifExists DB SC
     ;
 
 
-createDatabase locals [is_statement]
+createDatabase
     : CREATE (DATABASE | SCHEMA) ifNotExists? DB SC
     ;
 
-useDatabase locals [is_statement]
+useDatabase
     : USE DB SC
     ;
 
-createTable locals [is_statement]
+createTable
     : CREATE _e("A BLOB field is not allowed in partition function", "is of a not allowed type for this type of partitioning") (' '  | TEMPORARY _e("Cannot create temporary table with partitions") )_w(9,1) TABLE 
         ifNotExists? table.new
         (
@@ -77,7 +77,7 @@ createTable locals [is_statement]
         )_w(9,1)  SC
     ;
 
-createIndex locals [is_statement]
+createIndex
     : _e("used in key specification without a key length") CREATE  
     ((
         UNIQUE _e("Duplicate", "A UNIQUE INDEX must include all columns in the table's partitioning function") | 
@@ -93,21 +93,21 @@ createIndex locals [is_statement]
     SC
     ;
 
-truncateTable locals [is_statement] : TRUNCATE TABLE table.any SC ;
+truncateTable : TRUNCATE TABLE table.any SC ;
     
-insertStatement locals [is_statement]
+insertStatement
     : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? _e("Duplicate") t=table.any
     '('  ( c+=column[t] )_r(1, 6) ')' 
-    VALUES '(' ( expr[c.next] )_r(c.len) ')'
+    VALUES '(' ( expression[c.next] )_r(c.len) ')'
     SC
     ;
 
-updateStatement locals [is_statement]
+updateStatement
     : UPDATE _e("Duplicate") LOW_PRIORITY? IGNORE? t=tableName 
-    SET (cc=columnName[t].any '=' expr[cc])_r(1,6) (WHERE (NOT)? cc=columnName[t].any '=' expr[cc])? SC
+    SET (cc=columnName[t].any '=' expression[cc])_r(1,6) (WHERE (NOT)? cc=columnName[t].any '=' expression[cc])? SC
     ;
 
-expr [column_name] locals [is_expr, type=column_name.type] : ( int_expr {type=="INT"}? | text_expr {type=="TEXT"}?  | float_expr {type=="FLOAT"}? | least | greatest | if_func);
+expression [column_name] locals [type=column_name.type] : ( int_expr {type=="INT"}? | text_expr {type=="TEXT"}?  | float_expr {type=="FLOAT"}? | least | greatest | if_func);
 
 query_core [rep=_r(1,5)] flags [is_statement] returns [c] :
 	SELECT (
@@ -132,9 +132,9 @@ where_predicate:
 	| WHERE NOT? EXISTS '(' query_core ')'
 	;
 
-predicate : ('(' pivot=$t.any.c.any ( expr[pivot] | (tt=t DOT | tt=$t )  cc=tt.c.filter[type==pivot.type].any ) 
+predicate : ('(' pivot=$t.any.c.any ( expression[pivot] | (tt=t DOT | tt=$t )  cc=tt.c.filter[type==pivot.type].any ) 
                     comparison 
-                    ( expr[cc] | (tt=t DOT | tt=$t )  cc=tt.c.filter[type=pivot.type].any ) ')' 
+                    ( expression[cc] | (tt=t DOT | tt=$t )  cc=tt.c.filter[type=pivot.type].any ) ')' 
             | ifnull 
             | if_func)_w(5,3,1,1,1)
         ;
@@ -148,11 +148,11 @@ waitNowaitClause
 
 abs : ' ABS(' (float_expr | int_expr ) ')' ;
 bit_count : ' BIT_COUNT(' int_expr ')';
-coalesce : ' COALESCE(' expr ( ',' expr )* ')';
-if_func : ' IF(' (expr comparison expr | ifnull) ', ' expr ', ' expr ') '; 
-ifnull : ' IFNULL(' expr ', ' expr ') ';
-greatest : ' GREATEST(' expr ( ', ' expr )+ ') ';
-least : ' LEAST(' expr ( ', ' expr )+ ') ';
+coalesce : ' COALESCE(' expression ( ',' expression )* ')';
+if_func : ' IF(' (expression comparison expression | ifnull) ', ' expression ', ' expression ') '; 
+ifnull : ' IFNULL(' expression ', ' expression ') ';
+greatest : ' GREATEST(' expression ( ', ' expression )+ ') ';
+least : ' LEAST(' expression ( ', ' expression )+ ') ';
 strcmp : ' STRCMP(' text_expr ', ' text_expr ') ';
 substr : ' SUBSTR(' text_expr ', ' int_expr ', ' int_expr ') ';
 substring : ' SUBSTRING(' text_expr ', ' int_expr ', ' int_expr ') ';
@@ -169,10 +169,10 @@ int_val :  (DIGIT)_r(1, 5, uniform=true) ;
 text_expr : ( text_val | substr | substring | lcase | ucase | space | trim | NULL )_w(7);
 text_val :  DQ ( (CH | DIGIT) )_r(1, 100) DQ ;
 
-db locals [is_schema, query="SHOW DATABASES;", d="Database"] returns [d] : STUB ;
-table locals [is_schema, query="SHOW TABLES;", t="Tables_in_"+DB] returns [t] : STUB;
-column [table] locals [is_schema, query="SHOW COLUMNS FROM "+table, c="Field"] returns [c] : STUB;
-index [table] locals [is_schema, query="SHOW INDEX FROM "+table, i="Key_name"] returns [i] : STUB;
+db returns [d] : d=$query["SHOW DATABASES;"].getColumn["Database"] ;
+table returns [t] : t=$query["SHOW TABLES;"].getColumn["Tables_in_"+DB];
+column [table] returns [c] : c=$query["SHOW COLUMNS FROM "+table].getColumn["Field'];
+index [table] returns [i] : i=$query["SHOW INDEX FROM "+table].getColumn["Key_name"];
 
 
     

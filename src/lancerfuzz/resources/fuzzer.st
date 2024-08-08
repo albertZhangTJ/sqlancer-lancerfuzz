@@ -55,6 +55,14 @@ public class <graph_name/>Fuzzer {
 
     private String crash_log;
 
+    static class Variable {
+        private String name;
+        private List<String> values;
+        private List<Variable> attributes;
+
+        
+    }
+
 
     public <graph_name/>Fuzzer(SQLConnection con, int fuzzing_depth, int loop_threshold){
         this.con = con;
