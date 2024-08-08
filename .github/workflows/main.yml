@@ -176,7 +176,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       databend:
-        image: datafuselabs/databend:v1.2.452
+        image: datafuselabs/databend:v1.2.542-nightly
         env:
           QUERY_DEFAULT_USER: sqlancer
           QUERY_DEFAULT_PASSWORD: sqlancer
@@ -197,7 +197,37 @@ jobs:
         run: mvn -B package -DskipTests=true
       - name: Run Tests
         run: |
-          DATABEND_AVAILABLE=true mvn -Dtest=TestDatabend test
+          DATABEND_AVAILABLE=true mvn -Dtest=TestDatabendTLP test
+          DATABEND_AVAILABLE=true mvn -Dtest=TestDatabendNoREC test
+          DATABEND_AVAILABLE=true mvn -Dtest=TestDatabendPQS test
+
+  datafusion:
+    name: DBMS Tests (DataFusion)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Run DataFusion Server
+        run: |
+          cd src/sqlancer/datafusion/server/datafusion_server
+          cargo run & sleep 300
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+          cache: 'maven'
+      - name: Build SQLancer
+        run: mvn -B package -DskipTests=true
+      - name: Run Tests
+        run: |
+          DATAFUSION_AVAILABLE=true mvn test -Pdatafusion-tests
 
   duckdb:
     name: DBMS Tests (DuckDB)
