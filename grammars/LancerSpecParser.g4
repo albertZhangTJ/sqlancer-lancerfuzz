@@ -129,9 +129,12 @@ errorBlock
    ;
 
 argActionBlock
-   : BEGIN_ARGUMENT compIdentifier (GRAMMAR_OPERATOR compIdentifier)? END_ARGUMENT
+   : BEGIN_ARGUMENT arg (COMMA arg)* END_ARGUMENT
    ;
 
+arg
+   : compIdentifier (GRAMMAR_OPERATOR ( compIdentifier | STRING_LITERAL))?
+   ;
 rules
    : ruleSpec*
    ;
@@ -142,7 +145,7 @@ ruleSpec
    ;
 
 parserRuleSpec
-   : ruleModifiers? RULE_REF argActionBlock?  (ruleReturns localsSpec | localsSpec? ruleReturns?) COLON ruleBlock SEMI
+   : ruleModifier? RULE_REF argActionBlock?  (ruleReturns localsSpec | localsSpec? ruleReturns?) COLON ruleBlock SEMI
    ;
 
 
@@ -157,21 +160,8 @@ localsSpec
    ;
 
 
-
-ruleModifiers
-   : ruleModifier+
-   ;
-   // An individual access modifier for a rule. The 'fragment' modifier
-   // is an internal indication for lexer rules that they do not match
-   // from the input but are like subroutines for other lexer rules to
-   // reuse for certain lexical patterns. The other modifiers are passed
-   // to the code generation templates and may be ignored by the template
-   // if they are of no use in that language.
-
 ruleModifier
-   : SCHEMA
-   | EXPR
-   | STATEMENT
+   : FRAGMENT
    ;
 
 
@@ -202,13 +192,18 @@ alternative
    ;
 
 element
-   : variableAssignment ebnfSuffix? //handles variable assignment
-   | actionBlock QUESTION?  //handles both ANTLR action and ANTLR predicates
+   : actionBlock QUESTION?  //handles both ANTLR action and ANTLR predicates
    | weightBlock //handles weight declaration
    | errorBlock //handles error declaration
    | repetitionBlock //handles repetition declaration
+   | expression
    | atom ebnfSuffix? //string literals, variable access, rule reference
    | ebnf //non-root alternation nodes, parenthesized repetitions, and basically just any blocks
+   ;
+
+expression
+   : variableAssignment
+   | compIdentifier
    ;
 
 variableAssignment
@@ -233,12 +228,10 @@ lexerAtom
    | terminal
    | notSet
    | LEXER_CHAR_SET
-   | compIdentifier
    ;
 
 atom
    : terminal
-   | compIdentifier
    | notSet
    | precedence
    ;
@@ -322,7 +315,7 @@ lexerElement
    | weightBlock
    | errorBlock
    | repetitionBlock
-   | variableAssignment
+   | expression
    | lexerAtom ebnfSuffix?
    | lexerBlock ebnfSuffix?
    

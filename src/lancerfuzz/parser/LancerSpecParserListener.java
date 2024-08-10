@@ -168,6 +168,16 @@ public interface LancerSpecParserListener extends ParseTreeListener {
 	 */
 	void exitArgActionBlock(LancerSpecParser.ArgActionBlockContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link LancerSpecParser#arg}.
+	 * @param ctx the parse tree
+	 */
+	void enterArg(LancerSpecParser.ArgContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link LancerSpecParser#arg}.
+	 * @param ctx the parse tree
+	 */
+	void exitArg(LancerSpecParser.ArgContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link LancerSpecParser#rules}.
 	 * @param ctx the parse tree
 	 */
@@ -217,16 +227,6 @@ public interface LancerSpecParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitLocalsSpec(LancerSpecParser.LocalsSpecContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link LancerSpecParser#ruleModifiers}.
-	 * @param ctx the parse tree
-	 */
-	void enterRuleModifiers(LancerSpecParser.RuleModifiersContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link LancerSpecParser#ruleModifiers}.
-	 * @param ctx the parse tree
-	 */
-	void exitRuleModifiers(LancerSpecParser.RuleModifiersContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link LancerSpecParser#ruleModifier}.
 	 * @param ctx the parse tree
@@ -297,6 +297,16 @@ public interface LancerSpecParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitElement(LancerSpecParser.ElementContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link LancerSpecParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterExpression(LancerSpecParser.ExpressionContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link LancerSpecParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitExpression(LancerSpecParser.ExpressionContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link LancerSpecParser#variableAssignment}.
 	 * @param ctx the parse tree
