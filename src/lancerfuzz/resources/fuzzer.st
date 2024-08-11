@@ -55,11 +55,66 @@ public class <graph_name/>Fuzzer {
 
     private String crash_log;
 
-    static class Variable {
-        private String name;
-        private List<String> values;
-        private List<Variable> attributes;
+    public static class UnavailableException extends Exception {
+        public boolean is_undefined; //the variable/attr requested does not exist
+        public boolean is_uninitialized; //the variable/attr requests exists but has no value associated
+        public boolean is_out; //the variable/attr requested exists but is insufficient in numbers (no more unique ones exists)
+        public UnavailableException(String message, boolean is_undefined, boolean is_uninitialized, boolean is_out){
+            super(message);
+            this.is_undefined = is_undefined;
+            this.is_uninitialized = is_uninitialized;
+            this.is_out = is_out;
+        }
+    }
 
+    public static class Variable {
+        private String value;
+        private List<String> entries;
+        private List<Integer> unique_usage_count;
+        private HashMap<String, Variable> attributes;
+        private int cursor;
+        public static final List<String> RESERVED_ATTR = Collections.unmodifiableList(Arrays.asList("new", "any", "next", "len", "unique_any", "query", "filter", "cur", "getColumn", "withColumnAsAttr"));
+
+        public Variable(String value){
+            this.values = value;
+            this.entries = new ArrayList<>();
+            this.unique_usage_count = new ArrayList<>();
+            this.attributes = new HashMap<>();
+        }
+        public void set_attribute(String attr_name, Variable value){
+            if (RESERVED_ATTR.contains(attr_name)){
+                System.out.println("ERROR: "+attr_name+" is a reserved attribute name, please use another name instead");
+                System.exit(1);
+            }
+            this.attributes.put(attr_name, value);
+        }
+        public Variable get_attr(String name) throws UnavailableException{
+            if (name.equals("any")){
+                if (this.entries.size()==0){
+                    throw new UnavailableException("", false, true, false);
+                }
+                return random_from_list(entries);
+            }
+            else if (name.equals("unique_any")){
+                if (this.entries.size()==0){
+                    throw new UnavailableException("", false, true, false);
+                }
+                List<Integer> avail_idx = new ArrayList<>();
+                for (int i=0; i<this.unique_usage_count.size(); i++){
+                    if (this.unique_usage_count.get(i)==0){
+                        avail_idx.add(i);
+                    }
+                }
+                if (avail_idx.size()==0){
+                    throw new UnavailableException("", false, false, true);
+                }
+                int idx = random_from_list(avail_idx);
+                this.unique_usage_count.set(idx, 1);
+                return this.entries.get(idx);
+            }
+
+
+        }
         
     }
 
