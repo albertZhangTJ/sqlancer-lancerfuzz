@@ -61,7 +61,7 @@ useDatabase
     ;
 
 createTable
-    : CREATE _e("A BLOB field is not allowed in partition function", "is of a not allowed type for this type of partitioning") (' '  | TEMPORARY _e("Cannot create temporary table with partitions") )_w(9,1) TABLE 
+    : CREATE _e("A BLOB field is not allowed in par tition function", "is of a not allowed type for this type of partitioning") (' '  | TEMPORARY _e("Cannot create temporary table with partitions") )_w(9,1) TABLE 
         ifNotExists? table.new
         (
             LB (cn+=column.new columnDefinition) _r(1, 5, 0.1, ",") RB 
@@ -110,14 +110,17 @@ updateStatement
 expression [column_name] locals [type=column_name.type] : ( int_expr {type=="INT"}? | text_expr {type=="TEXT"}?  | float_expr {type=="FLOAT"}? | least | greatest | if_func);
 
 query_core [rep=_r(1,5)] flags [is_statement] returns [c] :
+    @2
 	SELECT (
         (   (tt=t.any DOT | tt=$t.any) c+=tt.c.unique_any
             | column_expression
         )  rep
         | ASTERISK
     ) _w(10)
+    @1
 	FROM ( tt=table_name.any tt.c=$column_name[tt] t+=$tt | '(' cc=query_core ')' AS tt=table_name.new tt.c=$cc t+=$tt)
-	(
+	//no separate needed since it is directly positioned after the FROM clause
+    (
 		JOIN ( tt=table_name tt.c=$column_name[tt] t+=$tt | '(' cc=query_core ')' AS tt=table_name.new tt.c=$cc t+=$tt)
 	)?
     where_predicate?

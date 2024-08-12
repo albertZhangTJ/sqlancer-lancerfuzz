@@ -72,7 +72,7 @@ public class <graph_name/>Fuzzer {
         private List<String> entries;
         private List<Integer> unique_usage_count;
         private HashMap<String, Variable> attributes;
-        private int cursor;
+        private int cursor; //non-decreasing, modulus entries.size() will be used for extracting index 
         public static final List<String> RESERVED_ATTR = Collections.unmodifiableList(Arrays.asList("new", "any", "next", "len", "unique_any", "query", "filter", "cur", "getColumn", "withColumnAsAttr"));
 
         public Variable(String value){
@@ -80,6 +80,7 @@ public class <graph_name/>Fuzzer {
             this.entries = new ArrayList<>();
             this.unique_usage_count = new ArrayList<>();
             this.attributes = new HashMap<>();
+            this.cursor = 0;
         }
         public void set_attribute(String attr_name, Variable value){
             if (RESERVED_ATTR.contains(attr_name)){
@@ -88,7 +89,10 @@ public class <graph_name/>Fuzzer {
             }
             this.attributes.put(attr_name, value);
         }
-        public Variable get_attr(String name) throws UnavailableException{
+
+        // new, query, getColumn, withColumnAsAttr will not be handled as those are not attributes but functions
+        // those will be implemented in the Context class
+        public Variable get_attr(String name, List<String> args) throws UnavailableException{
             if (name.equals("any")){
                 if (this.entries.size()==0){
                     throw new UnavailableException("", false, true, false);
@@ -112,10 +116,65 @@ public class <graph_name/>Fuzzer {
                 this.unique_usage_count.set(idx, 1);
                 return this.entries.get(idx);
             }
+            else if (name.equals("len")){
+                return new Variable(String.valueOf(this.entries.size()));
+            }
+            else if (name.equals("next")){
+                if (this.entries.size()==0){
+                    throw new UnavailableException("", false, true, false);
+                }
+                this.cursor += 1;
+                return this.entries.get((this.cursor-1)%this.entries.size());
+            }
+            else if (name.equals("cur")){
+                if (this.entries.size()==0){
+                    throw new UnavailableException("", false, true, false);
+                }
+                return this.entries.get(this.cursor%this.entries.size());
+            }
+            else if (name.equals("filter")){
 
+            }
 
         }
-        
+        private Variable filter(String attr, String comparator, Variable target){
+            Variable result = new Variable();
+            for (Variable v : this.entries){
+                if (comparator.equals("==")){
+                    if (v.get_attr(attr).equals(target)){
+                        result.add_entry(v);
+                    }
+                }
+                //TODO
+            }
+        }
+        //TODO: Add a method for comparing with all kinds of comparators
+        public String get_value(){
+            return this.value;
+        }
+        public void add_entry(Variable v){
+            this.entries.add(v);
+            this.unique_usage_count.add(0);
+        }
+        // making sure this.value and this.entries are the same
+        // does not check for reference counters and cursor (differences in those will be considered as same variable in different state)
+        @Override
+        public boolean equals(Object another){
+            if (another instanceof Variable){
+                Variable other = (Variable)another;
+                if (this.value==other.value || (this.value!=null && this.value.equals(other.value))){
+                    if (this.entries.size()==other.entries.size()){
+                        for (int i=0; i<this.entries.size(); i++){
+                            if (!this.entries.get(i).equals(other.entries.get(i))){
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
     }
 
 
