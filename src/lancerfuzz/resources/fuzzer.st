@@ -68,6 +68,7 @@ public class <graph_name/>Fuzzer {
     }
 
     public static class Variable {
+        public boolean is_single_valued;
         private String value;
         private List<String> entries;
         private List<Integer> unique_usage_count;
@@ -75,8 +76,16 @@ public class <graph_name/>Fuzzer {
         private int cursor; //non-decreasing, modulus entries.size() will be used for extracting index 
         public static final List<String> RESERVED_ATTR = Collections.unmodifiableList(Arrays.asList("new", "any", "next", "len", "unique_any", "query", "filter", "cur", "getColumn", "withColumnAsAttr"));
 
+        public Variable(){
+            this.is_single_valued = false;
+            this.entries = new ArrayList<>();
+            this.unique_usage_count = new ArrayList<>();
+            this.attributes = new HashMap<>();
+            this.cursor = 0;
+        }
         public Variable(String value){
             this.values = value;
+            this.is_single_valued = true;
             this.entries = new ArrayList<>();
             this.unique_usage_count = new ArrayList<>();
             this.attributes = new HashMap<>();
@@ -94,12 +103,18 @@ public class <graph_name/>Fuzzer {
         // those will be implemented in the Context class
         public Variable get_attr(String name, List<String> args) throws Exception{
             if (name.equals("any")){
+                if (this.is_single_valued){
+                    throw new IllegalArgumentException("Fuzzer.Variable.get_attr :: attribute any is not applicable to single-valued variables");
+                }
                 if (this.entries.size()==0){
                     throw new UnavailableException("", false, true, false);
                 }
                 return random_from_list(entries);
             }
             else if (name.equals("unique_any")){
+                if (this.is_single_valued){
+                    throw new IllegalArgumentException("Fuzzer.Variable.get_attr :: attribute unique_any is not applicable to single-valued variables");
+                }
                 if (this.entries.size()==0){
                     throw new UnavailableException("", false, true, false);
                 }
@@ -117,9 +132,15 @@ public class <graph_name/>Fuzzer {
                 return this.entries.get(idx);
             }
             else if (name.equals("len")){
+                if (this.is_single_valued){
+                    return new Variable(String.valueOf(1));
+                }
                 return new Variable(String.valueOf(this.entries.size()));
             }
             else if (name.equals("next")){
+                if (this.is_single_valued){
+                    throw new IllegalArgumentException("Fuzzer.Variable.get_attr :: attribute next is not applicable to single-valued variables");
+                }
                 if (this.entries.size()==0){
                     throw new UnavailableException("", false, true, false);
                 }
@@ -127,6 +148,9 @@ public class <graph_name/>Fuzzer {
                 return this.entries.get((this.cursor-1)%this.entries.size());
             }
             else if (name.equals("cur")){
+                if (this.is_single_valued){
+                    throw new IllegalArgumentException("Fuzzer.Variable.get_attr :: attribute cur is not applicable to single-valued variables");
+                }
                 if (this.entries.size()==0){
                     throw new UnavailableException("", false, true, false);
                 }
@@ -134,12 +158,16 @@ public class <graph_name/>Fuzzer {
             }
             else if (name.equals("filter")){
                 if (args.size()!=3){
-
+                    throw new IllegalArgumentException("Fuzzer.Variable.get_attr :: filter function expects 3 arguments: attribute to be filtered, comparator, and a pivot value. "+args.size()+" are given");
                 }
+                return this.filter(args.get(0), args.get(1), args.get(2));
             }
 
         }
         private Variable filter(String attr, String comparator, Variable target) throws Exception{
+            if (this.is_single_valued){
+                throw new IllegalArgumentException("Fuzzer.Variable.filter :: filter operation is not allowed on single-valued variables");
+            }
             Variable result = new Variable();
             for (Variable v : this.entries){
                 if (v.get_attr(attr).compare(comparator, target)){
@@ -211,9 +239,15 @@ public class <graph_name/>Fuzzer {
             throw new IllegalArgumentException("Fuzzer.Variable.compare :: comparator "+comparator+" is not recognizable");
         }
         public String get_value(){
+            if (!this.is_single_valued){
+                throw new IllegalArgumentException("Fuzzer.Variable.get_value :: get_value is not applicable to multi-valued variable");
+            }
             return this.value;
         }
         public void add_entry(Variable v){
+            if (this.is_single_valued){
+                throw new IllegalArgumentException("Fuzzer.Variable.add_entry :: add_entry is not applicable to single-valued variable");
+            }
             this.entries.add(v);
             this.unique_usage_count.add(0);
         }
