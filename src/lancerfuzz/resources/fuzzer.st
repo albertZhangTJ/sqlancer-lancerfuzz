@@ -92,7 +92,7 @@ public class <graph_name/>Fuzzer {
 
         // new, query, getColumn, withColumnAsAttr will not be handled as those are not attributes but functions
         // those will be implemented in the Context class
-        public Variable get_attr(String name, List<String> args) throws UnavailableException{
+        public Variable get_attr(String name, List<String> args) throws Exception{
             if (name.equals("any")){
                 if (this.entries.size()==0){
                     throw new UnavailableException("", false, true, false);
@@ -133,22 +133,83 @@ public class <graph_name/>Fuzzer {
                 return this.entries.get(this.cursor%this.entries.size());
             }
             else if (name.equals("filter")){
+                if (args.size()!=3){
 
+                }
             }
 
         }
-        private Variable filter(String attr, String comparator, Variable target){
+        private Variable filter(String attr, String comparator, Variable target) throws Exception{
             Variable result = new Variable();
             for (Variable v : this.entries){
-                if (comparator.equals("==")){
-                    if (v.get_attr(attr).equals(target)){
-                        result.add_entry(v);
-                    }
+                if (v.get_attr(attr).compare(comparator, target)){
+                    result.add_entry(v);
                 }
-                //TODO
             }
+            return result;
         }
-        //TODO: Add a method for comparing with all kinds of comparators
+        public boolean compare(String comparator, Variable other) throws IllegalArgumentException{
+            if (comparator.equals("==")){
+                return this.equals(other);
+            }
+            if (comparator.equals("!=")){
+                return !this.equals(other);
+            }
+
+            if (comparator.equals(">=")){
+                try {
+                    Double operand_a = Double.valueOf(this.value);
+                    Double operand_b = Double.valueOf(other.value);
+                    return operand_a.doubleValue()>=operand_b.doubleValue();
+                }
+                catch (NumberFormatException e){
+                    throw new NumberFormatException(
+                        "Fuzzer.Variable.compare :: >= comparator expects both variables to contain numerical value\n"+e.getMessage(), 
+                        e
+                    );
+                }
+            }
+            if (comparator.equals("<=")){
+                try {
+                    Double operand_a = Double.valueOf(this.value);
+                    Double operand_b = Double.valueOf(other.value);
+                    return operand_a.doubleValue()<=operand_b.doubleValue();
+                }
+                catch (NumberFormatException e){
+                    throw new NumberFormatException(
+                        "Fuzzer.Variable.compare :: <= comparator expects both variables to contain numerical value\n"+e.getMessage(), 
+                        e
+                    );
+                }
+            }
+            if (comparator.equals(">")){
+                try {
+                    Double operand_a = Double.valueOf(this.value);
+                    Double operand_b = Double.valueOf(other.value);
+                    return operand_a.doubleValue()>operand_b.doubleValue();
+                }
+                catch (NumberFormatException e){
+                    throw new NumberFormatException(
+                        "Fuzzer.Variable.compare :: > comparator expects both variables to contain numerical value\n"+e.getMessage(), 
+                        e
+                    );
+                }
+            }
+            if (comparator.equals("<")){
+                try {
+                    Double operand_a = Double.valueOf(this.value);
+                    Double operand_b = Double.valueOf(other.value);
+                    return operand_a.doubleValue()<operand_b.doubleValue();
+                }
+                catch (NumberFormatException e){
+                    throw new NumberFormatException(
+                        "Fuzzer.Variable.compare :: < comparator expects both variables to contain numerical value\n"+e.getMessage(), 
+                        e
+                    );
+                }
+            }
+            throw new IllegalArgumentException("Fuzzer.Variable.compare :: comparator "+comparator+" is not recognizable");
+        }
         public String get_value(){
             return this.value;
         }
