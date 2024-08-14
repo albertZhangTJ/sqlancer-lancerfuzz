@@ -67,6 +67,33 @@ public class <graph_name/>Fuzzer {
         }
     }
 
+    public static class Context {
+        private HashMap<String, Variable> symbols;
+        private List<HashMap<String, Variable>> symbol_stack;
+        private Variable result;
+        
+        public Context(){
+            this.symbols = new HashMap<>();
+            this.symbol_stack = new ArrayList<>();
+        }
+
+        public void call(List<String> arg_symbols){
+            HashMap<String, Variable> newFrame = new HashMap<>();
+            for (String symbol: arg_symbols){
+                if (this.get_var(symbol)==null){
+                    System.out.println("ERROR: Fuzzer.Context.call :: cannot find symbol "+symbol);
+                    System.exit(1);
+                }
+                newFrame.add(this.get_var(symbol));
+            }
+
+            //preserve current symbols
+            this.symbol_stack.add(this.symbols);
+            this.symbols = newFrame;
+
+        }
+    }
+
     public static class Variable {
         public boolean is_single_valued;
         private String value;
