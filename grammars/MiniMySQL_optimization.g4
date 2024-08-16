@@ -172,10 +172,10 @@ int_val :  (DIGIT)_r(1, 5, uniform=true) ;
 text_expr : ( text_val | substr | substring | lcase | ucase | space | trim | NULL )_w(7);
 text_val :  DQ ( (CH | DIGIT) )_r(1, 100) DQ ;
 
-db returns [d] : d=$query["SHOW DATABASES;"].getColumn["Database"] ;
-table returns [t] : t=$query["SHOW TABLES;"].getColumn["Tables_in_"+DB];
-column [table] returns [c] : c=$query["SHOW COLUMNS FROM "+table].getColumn["Field'];
-index [table] returns [i] : i=$query["SHOW INDEX FROM "+table].getColumn["Key_name"];
+db returns [d] : d=$query["SHOW DATABASES;", "Database"] ;
+table returns [t] : t=$query["SHOW TABLES;", "Tables_in_"+DB];
+column [table] returns [c] : c=$query["SHOW COLUMNS FROM "+table, "Field"];
+index [table] returns [i] : i=$query["SHOW INDEX FROM "+table, "Key_name"];
 
 
     

@@ -67,14 +67,39 @@ public class <graph_name/>Fuzzer {
         }
     }
 
+    public static class Buffer {
+        private String content; //only for terminals
+        //only for non-terminals, or temporary leaf-nodes whose children are not yet built
+        private List<Buffer> children; 
+        private int size;
+
+        public Buffer(int size){
+            this.children = new ArrayList<>();
+            this.size = size;
+
+        }
+        public Buffer(String content){
+            this.content = content;
+        }
+
+        public void add(int index, Buffer child){
+            this.children.add(index, child);
+        }
+
+
+    }
+
     public static class Context {
+        private HashMap<String, Variable> 
         private HashMap<String, Variable> symbols;
         private List<HashMap<String, Variable>> symbol_stack;
         private Variable result;
+        private SQLConnection conn;
         
-        public Context(){
+        public Context(SQLConnection conn){
             this.symbols = new HashMap<>();
             this.symbol_stack = new ArrayList<>();
+            this.conn = conn;
         }
 
         public void call(List<String> arg_symbols){
@@ -91,6 +116,40 @@ public class <graph_name/>Fuzzer {
             this.symbol_stack.add(this.symbols);
             this.symbols = newFrame;
 
+            //set the return value to null to avoid confusion
+            //wait actually we can not override it to allow for more performant operation chaining 
+            //not sure ..... emmm
+            //update: doesn't matter, that performance hit does not matter
+            this.result = null;
+        }
+
+        public void ret(String returnSymbol){
+            //move the return value into the cache slot
+            if (returnSymbol!=null){
+                this.result = this.get_var(returnSymbol);
+            }
+
+            //restore context for caller
+            this.symbols = this.symbol_stack.get(this.symbol_stack.size()-1);
+            this.symbol_stack.remove(this.symbol_stack.size()-1);
+        }
+
+
+        // the symbol here might be either a variable or a function
+        // that is why the args arg this there, it won't even be looked at if it is actually a variable
+        public Variable get_symbol(String symbol, List<String> args) throws IllegalArgumentException{
+            if (symbol==null){
+                throw new IllegalArgumentException("ERROR : Fuzzer.Context.get_var :: the symbol accessed is null, check your grammar");
+            }
+            if (symbol.equals("query")){
+                return this.query(args);
+            }
+            if (this.symbols.get(symbol)==null){
+                throw new IllegalArgumentException("ERROR : Fuzzer.Context.get_var :: the symbol " + symbol + " accessed does not exists or has not yet been initialized\n"+
+                                                    "If you are using customized expansion order, please check your order specification\n"+
+                                                    "If not, please make sure the symbol is there and consider specify the expansion ordering since the auto-scheduler is only bast-effort");
+            }
+            return this.symbols.get(symbol);
         }
     }
 
@@ -101,7 +160,7 @@ public class <graph_name/>Fuzzer {
         private List<Integer> unique_usage_count;
         private HashMap<String, Variable> attributes;
         private int cursor; //non-decreasing, modulus entries.size() will be used for extracting index 
-        public static final List<String> RESERVED_ATTR = Collections.unmodifiableList(Arrays.asList("new", "any", "next", "len", "unique_any", "query", "filter", "cur", "getColumn", "withColumnAsAttr"));
+        public static final List<String> RESERVED_ATTR = Collections.unmodifiableList(Arrays.asList("new", "any", "next", "len", "unique_any", "query", "filter", "cur"));
 
         public Variable(){
             this.is_single_valued = false;
