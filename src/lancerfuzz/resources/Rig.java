@@ -5,14 +5,14 @@ import java.util.HashMap;
 import sqlancer.SQLConnection;
 public class Rig{
     public static class UnavailableException extends Exception {
-        public boolean is_undefined; //the variable/attr requested does not exist
-        public boolean is_uninitialized; //the variable/attr requests exists but has no value associated
-        public boolean is_out; //the variable/attr requested exists but is insufficient in numbers (no more unique ones exists)
-        public UnavailableException(String message, boolean is_undefined, boolean is_uninitialized, boolean is_out){
+        public boolean isUndefined; //the variable/attr requested does not exist
+        public boolean isUninitialized; //the variable/attr requests exists but has no value associated
+        public boolean isOut; //the variable/attr requested exists but is insufficient in numbers (no more unique ones exists)
+        public UnavailableException(String message, boolean isUndefined, boolean isUninitialized, boolean isOut){
             super(message);
-            this.is_undefined = is_undefined;
-            this.is_uninitialized = is_uninitialized;
-            this.is_out = is_out;
+            this.isUndefined = isUndefined;
+            this.isUninitialized = isUninitialized;
+            this.isOut = isOut;
         }
     }
 
@@ -20,34 +20,50 @@ public class Rig{
         private String content; //only for terminals
         //only for non-terminals, or temporary leaf-nodes whose children are not yet built
         private List<Buffer> children; 
-        private int size;
 
-        public Buffer(int size){
+        public Buffer(){
+            this.content = null;
             this.children = new ArrayList<>();
-            this.size = size;
-
         }
+
         public Buffer(String content){
+            if (content==null){
+                throw new IllegalArgumentException("ERROR : Buffer::Buffer : Terminal buffer nodes should not have null content. For a placeholder, use empty string \"\" instead");
+            }
             this.content = content;
         }
 
-        public void add(int index, Buffer child){
-            this.children.add(index, child);
+        public void add(Buffer child){
+            this.children.add(child);
         }
 
+        public void set(int index, Buffer child){
+            this.children.set(index, child);
+        }
+
+        public String toString(){
+            if (this.content!=null){
+                return this.content;
+            }
+            String res = "";
+            for (Buffer child : this.children){
+                res = res + child.toString();
+            }
+            return res;
+        }
 
     }
 
     public static class Context {
-        private HashMap<String, Variable> global_symbols;
+        private HashMap<String, Variable> globalSymbols;
         private HashMap<String, Variable> symbols;
-        private List<HashMap<String, Variable>> symbol_stack;
+        private List<HashMap<String, Variable>> symbolStack;
         private Variable result;
         private SQLConnection conn;
         
         public Context(SQLConnection conn){
             this.symbols = new HashMap<>();
-            this.symbol_stack = new ArrayList<>();
+            this.symbolStack = new ArrayList<>();
             this.conn = conn;
         }
 
@@ -62,7 +78,7 @@ public class Rig{
             }
 
             //preserve current symbols
-            this.symbol_stack.add(this.symbols);
+            this.symbolStack.add(this.symbols);
             this.symbols = newFrame;
 
             //set the return value to null to avoid confusion
@@ -76,26 +92,26 @@ public class Rig{
             }
 
             //restore context for caller
-            this.symbols = this.symbol_stack.get(this.symbol_stack.size()-1);
-            this.symbol_stack.remove(this.symbol_stack.size()-1);
+            this.symbols = this.symbolStack.get(this.symbolStack.size()-1);
+            this.symbolStack.remove(this.symbolStack.size()-1);
         }
 
 
         // the symbol here might be either a variable or a function
         // that is why the args arg this there, it won't even be looked at if it is actually a variable
-        public Variable get_symbol(String symbol, List<String> args) throws IllegalArgumentException{
+        public Variable getSymbol(String symbol, List<String> args) throws IllegalArgumentException{
             if (symbol==null){
                 throw new IllegalArgumentException("ERROR : Fuzzer.Context.get_var :: the symbol accessed is null, check your grammar");
             }
             if (symbol.equals("query")){
                 return this.query(args);
             }
-            if (this.symbols.get(symbol)==null){
+            if (this.symbols.get(symbol)==null && this.globalSymbols.get(symbol)==null){
                 throw new IllegalArgumentException("ERROR : Fuzzer.Context.get_var :: the symbol " + symbol + " accessed does not exists or has not yet been initialized\n"+
                                                     "If you are using customized expansion order, please check your order specification\n"+
                                                     "If not, please make sure the symbol is there and consider specify the expansion ordering since the auto-scheduler is only best-effort");
             }
-            return this.symbols.get(symbol);
+            return this.symbols.get(symbol)==null ? this.globalSymbols.get(symbol) : this.symbols.get(symbol);
         }
 
         public Variable query(List<String> args){
@@ -105,30 +121,30 @@ public class Rig{
     }
 
     public static class Variable {
-        public boolean is_single_valued;
+        public boolean isSingleValued;
         private String value;
         private List<String> entries;
-        private List<Integer> unique_usage_count;
+        private List<Integer> uniqueUsageCount;
         private HashMap<String, Variable> attributes;
         private int cursor; //non-decreasing, modulus entries.size() will be used for extracting index 
         public static final List<String> RESERVED_ATTR = Collections.unmodifiableList(Arrays.asList("new", "any", "next", "len", "unique_any", "query", "filter", "cur"));
 
         public Variable(){
-            this.is_single_valued = false;
+            this.isSingleValued = false;
             this.entries = new ArrayList<>();
-            this.unique_usage_count = new ArrayList<>();
+            this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
             this.cursor = 0;
         }
         public Variable(String value){
             this.values = value;
-            this.is_single_valued = true;
+            this.isSingleValued = true;
             this.entries = new ArrayList<>();
-            this.unique_usage_count = new ArrayList<>();
+            this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
             this.cursor = 0;
         }
-        public void set_attribute(String attr_name, Variable value){
+        public void setAttr(String attr_name, Variable value){
             if (RESERVED_ATTR.contains(attr_name)){
                 System.out.println("ERROR: "+attr_name+" is a reserved attribute name, please use another name instead");
                 System.exit(1);
@@ -138,10 +154,10 @@ public class Rig{
 
         // new, query, getColumn, withColumnAsAttr will not be handled as those are not attributes but functions
         // those will be implemented in the Context class
-        public Variable get_attr(String name, List<String> args) throws Exception{
+        public Variable getAttr(String name, List<String> args) throws Exception{
             if (name.equals("any")){
-                if (this.is_single_valued){
-                    throw new IllegalArgumentException("Fuzzer.Variable.get_attr :: attribute any is not applicable to single-valued variables");
+                if (this.isSingleValued){
+                    throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: attribute any is not applicable to single-valued variables");
                 }
                 if (this.entries.size()==0){
                     throw new UnavailableException("", false, true, false);
@@ -149,15 +165,15 @@ public class Rig{
                 return random_from_list(entries);
             }
             else if (name.equals("unique_any")){
-                if (this.is_single_valued){
-                    throw new IllegalArgumentException("Fuzzer.Variable.get_attr :: attribute unique_any is not applicable to single-valued variables");
+                if (this.isSingleValued){
+                    throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: attribute unique_any is not applicable to single-valued variables");
                 }
                 if (this.entries.size()==0){
                     throw new UnavailableException("", false, true, false);
                 }
                 List<Integer> avail_idx = new ArrayList<>();
-                for (int i=0; i<this.unique_usage_count.size(); i++){
-                    if (this.unique_usage_count.get(i)==0){
+                for (int i=0; i<this.uniqueUsageCount.size(); i++){
+                    if (this.uniqueUsageCount.get(i)==0){
                         avail_idx.add(i);
                     }
                 }
@@ -165,18 +181,18 @@ public class Rig{
                     throw new UnavailableException("", false, false, true);
                 }
                 int idx = random_from_list(avail_idx);
-                this.unique_usage_count.set(idx, 1);
+                this.uniqueUsageCount.set(idx, 1);
                 return this.entries.get(idx);
             }
             else if (name.equals("len")){
-                if (this.is_single_valued){
+                if (this.isSingleValued){
                     return new Variable(String.valueOf(1));
                 }
                 return new Variable(String.valueOf(this.entries.size()));
             }
             else if (name.equals("next")){
-                if (this.is_single_valued){
-                    throw new IllegalArgumentException("Fuzzer.Variable.get_attr :: attribute next is not applicable to single-valued variables");
+                if (this.isSingleValued){
+                    throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: attribute next is not applicable to single-valued variables");
                 }
                 if (this.entries.size()==0){
                     throw new UnavailableException("", false, true, false);
@@ -185,8 +201,8 @@ public class Rig{
                 return this.entries.get((this.cursor-1)%this.entries.size());
             }
             else if (name.equals("cur")){
-                if (this.is_single_valued){
-                    throw new IllegalArgumentException("Fuzzer.Variable.get_attr :: attribute cur is not applicable to single-valued variables");
+                if (this.isSingleValued){
+                    throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: attribute cur is not applicable to single-valued variables");
                 }
                 if (this.entries.size()==0){
                     throw new UnavailableException("", false, true, false);
@@ -195,20 +211,20 @@ public class Rig{
             }
             else if (name.equals("filter")){
                 if (args.size()!=3){
-                    throw new IllegalArgumentException("Fuzzer.Variable.get_attr :: filter function expects 3 arguments: attribute to be filtered, comparator, and a pivot value. "+args.size()+" are given");
+                    throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: filter function expects 3 arguments: attribute to be filtered, comparator, and a pivot value. "+args.size()+" are given");
                 }
                 return this.filter(args.get(0), args.get(1), args.get(2));
             }
 
         }
         private Variable filter(String attr, String comparator, Variable target) throws Exception{
-            if (this.is_single_valued){
+            if (this.isSingleValued){
                 throw new IllegalArgumentException("Fuzzer.Variable.filter :: filter operation is not allowed on single-valued variables");
             }
             Variable result = new Variable();
             for (Variable v : this.entries){
-                if (v.get_attr(attr).compare(comparator, target)){
-                    result.add_entry(v);
+                if (v.getAttr(attr).compare(comparator, target)){
+                    result.addEntry(v);
                 }
             }
             return result;
@@ -275,18 +291,18 @@ public class Rig{
             }
             throw new IllegalArgumentException("Fuzzer.Variable.compare :: comparator "+comparator+" is not recognizable");
         }
-        public String get_value(){
-            if (!this.is_single_valued){
-                throw new IllegalArgumentException("Fuzzer.Variable.get_value :: get_value is not applicable to multi-valued variable");
+        public String getValue(){
+            if (!this.isSingleValued){
+                throw new IllegalArgumentException("Fuzzer.Variable.getValue :: getValue is not applicable to multi-valued variable");
             }
             return this.value;
         }
-        public void add_entry(Variable v){
-            if (this.is_single_valued){
-                throw new IllegalArgumentException("Fuzzer.Variable.add_entry :: add_entry is not applicable to single-valued variable");
+        public void addEntry(Variable v){
+            if (this.isSingleValued){
+                throw new IllegalArgumentException("Fuzzer.Variable.addEntry :: addEntry is not applicable to single-valued variable");
             }
             this.entries.add(v);
-            this.unique_usage_count.add(0);
+            this.uniqueUsageCount.add(0);
         }
         // making sure this.value and this.entries are the same
         // does not check for reference counters and cursor (differences in those will be considered as same variable in different state)
