@@ -50,6 +50,7 @@ channels { OFF_CHANNEL , COMMENT }
 
 GRAMMAR_OPERATOR
    : Equal Equal
+   | '!' Equal
    | PLUS Equal
    | GT Equal
    | LT Equal

@@ -133,7 +133,7 @@ argActionBlock
    ;
 
 arg
-   : compIdentifier (GRAMMAR_OPERATOR ( compIdentifier | STRING_LITERAL))?
+   : ( compIdentifier | STRING_LITERAL) (GRAMMAR_OPERATOR ( compIdentifier | STRING_LITERAL))*
    ;
 rules
    : ruleSpec*
