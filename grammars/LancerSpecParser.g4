@@ -207,7 +207,7 @@ expression
    ;
 
 variableAssignment
-   : compIdentifier (ASSIGN | PLUS_ASSIGN) DOLLAR? (atom | block)
+   : compIdentifier (ASSIGN | PLUS_ASSIGN) DOLLAR? compIdentifier
    ;
    // --------------------
    // EBNF and blocks

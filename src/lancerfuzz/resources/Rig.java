@@ -115,6 +115,9 @@ public class Rig{
         }
 
 
+        public void setSymbol(String symbol, Variable v){
+            this.symbols.put(symbol, v);
+        }
         //requires 2 or more arguments
         //the 
         public Variable query(List<Variable> args){
@@ -127,6 +130,8 @@ public class Rig{
     public static class Variable {
         public boolean isSingleValued;
         private String value;
+        private double numerical;
+        private boolean containsNumerical ;
         private List<String> entries;
         private List<Integer> uniqueUsageCount;
         private HashMap<String, Variable> attributes;
@@ -136,6 +141,7 @@ public class Rig{
         public static final List<String> OPERATORS = Collections.unmodifiableList(Arrays.asList("=", "+=", "+", "==", "!=", ">", "<", ">=", "<="));
         public Variable(){
             this.isSingleValued = false;
+            this.containsNumerical = false;
             this.entries = new ArrayList<>();
             this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
@@ -144,6 +150,17 @@ public class Rig{
         public Variable(String value){
             this.values = value;
             this.isSingleValued = true;
+            this.containsNumerical = false;
+            this.entries = new ArrayList<>();
+            this.uniqueUsageCount = new ArrayList<>();
+            this.attributes = new HashMap<>();
+            this.cursor = 0;
+        }
+        public Variable(double numerical){
+            this.value = ""+numerical;
+            this.numerical = numerical;
+            this.isSingleValued = true;
+            this.containsNumerical = true;
             this.entries = new ArrayList<>();
             this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
@@ -165,6 +182,9 @@ public class Rig{
         public static Variable factory(String value){
             return new Variable(value);
         }
+        public static Variable factory(double numerical){
+            return new Variable(numerical);
+        }
 
         //
         public static Variable eval(Variable a, String operator, Variable b) throws IllegalArgumentException{
@@ -181,6 +201,9 @@ public class Rig{
                 throw new IllegalArgumentException("ERROR : Variable.eval :: "+operator+" is an assignment operator, and is not supposed to be evaluated here");
             }
             if (operator.equals("+")){
+                if (a.isNumerical() && b.isNumerical()){
+                    return Variable.factory(a.getNumerical() + b.getNumerical());
+                }
                 return Variable.factory(a.getValue()+b.getValue());
             }
             return Variable.factory(""+a.compare(operator, b));
@@ -219,9 +242,9 @@ public class Rig{
             }
             else if (name.equals("len")){
                 if (this.isSingleValued){
-                    return new Variable(String.valueOf(1));
+                    return new Variable(1);
                 }
-                return new Variable(String.valueOf(this.entries.size()));
+                return new Variable(this.entries.size());
             }
             else if (name.equals("next")){
                 if (this.isSingleValued){
@@ -329,6 +352,13 @@ public class Rig{
                 throw new IllegalArgumentException("Fuzzer.Variable.getValue :: getValue is not applicable to multi-valued variable");
             }
             return this.value;
+        }
+        public boolean isNumerical(){
+            return this.containsNumerical;
+        }
+
+        public double getNumerical(){
+            return thus.numerical;
         }
 
         //by returning this at the end of the setter, we can use this class in an FP way
