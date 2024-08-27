@@ -20,50 +20,20 @@ public class <graph_name/>Fuzzer {
     private int fuzzing_depth;
     private int loop_threshold;
 
-    //Rule-wise identifier cache, must be resetted at the beginning of each rule call
-    private List<HashMap<String, List<List<String>>>> identifier_cache_stack;
-    private int identifier_cache_stack_pointer;
-    private HashMap<String, List<List<String>>> identifier_cache;
-    private HashMap<String, List<List<String>>> identifier_cache_snapshot;
-    
-    private HashMap<String, Integer> identifier_cache_cursor;
-    private List<HashMap<String, Integer>> identifier_cache_cursor_stack;
-    private int identifier_cache_cursor_stack_pointer;
-    private HashMap<String, Integer> identifier_cache_cursor_snapshot;
-
-    private List<HashMap<String, Integer>> rpid_stack;
-    private int rpid_stack_pointer;
-    private HashMap<String, Integer> rpid_cache;
-    private HashMap<String, Integer> rpid_cache_snapshot;
-
-    private List<HashMap<String, List<String>>> used_identifier_stack;
-    private int used_identifier_stack_pointer;
-    private HashMap<String, List<String>> used_identifier; 
-    private HashMap<String, List<String>> used_identifier_snapshot;
-
-    private static HashMap<String, String> static_var_ref;
-    private HashMap<String, String> member_var_ref;
-    private HashMap<String, String> var_ref;
-    private List<HashMap<String, String>> var_ref_stack;
-
-    //A flag that can be inserted into the output to indicate an error has occured
-    //Usually due to an identifier has yet to be initialized
-    //This pattern is extremely unlikely to appear in a normal output
-    public static final String ERROR_FLAG = "PbEMuNhfsedBcVpUrBb2ZkWzpQkCkM5jTOCnUCTrYE9LgUpR2nZU45UgGHb3OS9NOrAUnWgrfvwUfGGmE0wdagXkOjv6psM4U9QnMWu75iFkgR5icHxm6xHtlpvQTy1OscMVNISBbaFLsNmYqzcHlpovwFtLJOlx0t7paPhOyTXQWuFjoGBgiQhWENvt116uaXQK9P0YO8ZkIVYOUcb1GzDh9G5Arns5guX8cqdTbDJdzWfvCalMevPYVXB7bAtwH8ZcyCNfabjt1ot8Wpj6xuCsn6u9WFuYao9enmV2tevt2DCqGlKfzA4ZZGuFev9M"; 
-
+   
     private static HashMap<String, String> dbms_options = new HashMap<>();
 
     private String crash_log;
 
-    public static class UnavailableException extends Exception {
-        public boolean is_undefined; //the variable/attr requested does not exist
-        public boolean is_uninitialized; //the variable/attr requests exists but has no value associated
-        public boolean is_out; //the variable/attr requested exists but is insufficient in numbers (no more unique ones exists)
-        public UnavailableException(String message, boolean is_undefined, boolean is_uninitialized, boolean is_out){
+   public static class UnavailableException extends Exception {
+        public boolean isUndefined; //the variable/attr requested does not exist
+        public boolean isUninitialized; //the variable/attr requests exists but has no value associated
+        public boolean isOut; //the variable/attr requested exists but is insufficient in numbers (no more unique ones exists)
+        public UnavailableException(String message, boolean isUndefined, boolean isUninitialized, boolean isOut){
             super(message);
-            this.is_undefined = is_undefined;
-            this.is_uninitialized = is_uninitialized;
-            this.is_out = is_out;
+            this.isUndefined = isUndefined;
+            this.isUninitialized = isUninitialized;
+            this.isOut = isOut;
         }
     }
 
@@ -71,126 +41,223 @@ public class <graph_name/>Fuzzer {
         private String content; //only for terminals
         //only for non-terminals, or temporary leaf-nodes whose children are not yet built
         private List<Buffer> children; 
-        private int size;
 
-        public Buffer(int size){
+        public Buffer(){
+            this.content = null;
             this.children = new ArrayList<>();
-            this.size = size;
-
         }
+
         public Buffer(String content){
+            if (content==null){
+                throw new IllegalArgumentException("ERROR : Buffer::Buffer : Terminal buffer nodes should not have null content. For a placeholder, use empty string \"\" instead");
+            }
             this.content = content;
         }
 
-        public void add(int index, Buffer child){
-            this.children.add(index, child);
+        public void add(Buffer child){
+            this.children.add(child);
         }
 
+        public void set(int index, Buffer child){
+            this.children.set(index, child);
+        }
+
+        public String toString(){
+            if (this.content!=null){
+                return this.content;
+            }
+            String res = "";
+            for (Buffer child : this.children){
+                res = res + child.toString();
+            }
+            return res;
+        }
 
     }
 
     public static class Context {
-        private HashMap<String, Variable> 
+        private HashMap<String, Variable> globalSymbols;
         private HashMap<String, Variable> symbols;
-        private List<HashMap<String, Variable>> symbol_stack;
+        private List<HashMap<String, Variable>> symbolStack;
         private Variable result;
         private SQLConnection conn;
         
         public Context(SQLConnection conn){
             this.symbols = new HashMap<>();
-            this.symbol_stack = new ArrayList<>();
+            this.symbolStack = new ArrayList<>();
             this.conn = conn;
         }
 
-        public void call(List<String> arg_symbols){
+        public void call(List<String> arg_symbols) throws UnavailableException{
             HashMap<String, Variable> newFrame = new HashMap<>();
             for (String symbol: arg_symbols){
                 if (this.get_var(symbol)==null){
-                    System.out.println("ERROR: Fuzzer.Context.call :: cannot find symbol "+symbol);
-                    System.exit(1);
+                    throw new UnavailableException("ERROR: Fuzzer.Context.call :: cannot find symbol "+symbol, true, false, false);
                 }
                 newFrame.add(this.get_var(symbol));
             }
 
             //preserve current symbols
-            this.symbol_stack.add(this.symbols);
+            this.symbolStack.add(this.symbols);
             this.symbols = newFrame;
 
             //set the return value to null to avoid confusion
-            //wait actually we can not override it to allow for more performant operation chaining 
-            //not sure ..... emmm
-            //update: doesn't matter, that performance hit does not matter
             this.result = null;
         }
 
         public void ret(String returnSymbol){
             //move the return value into the cache slot
             if (returnSymbol!=null){
-                this.result = this.get_var(returnSymbol);
+                this.result = this.getSymbol(returnSymbol);
             }
 
             //restore context for caller
-            this.symbols = this.symbol_stack.get(this.symbol_stack.size()-1);
-            this.symbol_stack.remove(this.symbol_stack.size()-1);
+            this.symbols = this.symbolStack.get(this.symbolStack.size()-1);
+            this.symbolStack.remove(this.symbolStack.size()-1);
         }
 
 
         // the symbol here might be either a variable or a function
         // that is why the args arg this there, it won't even be looked at if it is actually a variable
-        public Variable get_symbol(String symbol, List<String> args) throws IllegalArgumentException{
+        public Variable getSymbol(String symbol, List<String> args) throws IllegalArgumentException{
             if (symbol==null){
-                throw new IllegalArgumentException("ERROR : Fuzzer.Context.get_var :: the symbol accessed is null, check your grammar");
+                throw new IllegalArgumentException("ERROR : Fuzzer.Context.getSymbol :: the symbol accessed is null, check your grammar");
             }
             if (symbol.equals("query")){
                 return this.query(args);
             }
-            if (this.symbols.get(symbol)==null){
-                throw new IllegalArgumentException("ERROR : Fuzzer.Context.get_var :: the symbol " + symbol + " accessed does not exists or has not yet been initialized\n"+
+            if (this.symbols.get(symbol)==null && this.globalSymbols.get(symbol)==null){
+                throw new IllegalArgumentException("ERROR : Fuzzer.Context.getSymbol :: the symbol \"" + symbol + "\" accessed does not exist or has not yet been initialized\n"+
                                                     "If you are using customized expansion order, please check your order specification\n"+
-                                                    "If not, please make sure the symbol is there and consider specify the expansion ordering since the auto-scheduler is only bast-effort");
+                                                    "If not, please make sure the symbol is there and consider specify the expansion ordering since the auto-scheduler is only best-effort");
             }
-            return this.symbols.get(symbol);
+            return this.symbols.get(symbol)==null ? this.globalSymbols.get(symbol) : this.symbols.get(symbol);
+        }
+
+
+        public void setSymbol(String symbol, Variable v){
+            if (symbol==null || symbol.size()==0 || !((symbol.charAt(0)>=65 && symbol.charAt(0)<=90) || (symbol.charAt(0)>=97 && symbol.charAt(0)<=122))){
+                throw new IllegalArgumentException("ERROR : Fuzzer.Context.seySymbol :: symbol must be non-empty and start with an ASCII letter");
+            }
+            // starts with a capital letter
+            if (symbol.charAt(0)<92){
+                this.globalSymbols.put(symbol, v);
+            }
+            else {
+                this.symbols.put(symbol, v);
+            }
+        }
+        //requires 2 or more arguments
+        //the 
+        public Variable query(List<Variable> args){
+            if (args.size()<2){
+                throw new IllegalArgumentException("ERROR : Fuzzer.Context.query :: a call to the query function must contain at least 2 arguments: query and column name");
+            }
+            String query = args.get(0).getValue();
+            String col = args.get(1).getValue();
+            Variable v = Variable.of();
+            ResultSet rs = this.con.createStatement().executeQuery(query);
+            while (rs.next()){
+                Variable r = Variable.of(rs.getString(col));
+                for (int i=2; i<args.size(); i++){
+                    Variable pair = args.get(i);
+                    String attrCol = pair.getEntry(0);
+                    String attr = pair.getEntry(1);
+                    r.setAttr(attr, Variable.of(rs.getString(attrCol)));
+                }
+                v.addEntry(r);
+            }
+            return v;
         }
     }
 
     public static class Variable {
-        public boolean is_single_valued;
+        public boolean isSingleValued;
         private String value;
+        private double numerical;
+        private boolean containsNumerical ;
         private List<String> entries;
-        private List<Integer> unique_usage_count;
+        private List<Integer> uniqueUsageCount;
         private HashMap<String, Variable> attributes;
         private int cursor; //non-decreasing, modulus entries.size() will be used for extracting index 
-        public static final List<String> RESERVED_ATTR = Collections.unmodifiableList(Arrays.asList("new", "any", "next", "len", "unique_any", "query", "filter", "cur"));
 
+        public static final List<String> RESERVED_ATTR = Collections.unmodifiableList(Arrays.asList("new", "any", "next", "len", "unique_any", "query", "filter", "cur"));
+        public static final List<String> OPERATORS = Collections.unmodifiableList(Arrays.asList("=", "+=", "+", "==", "!=", ">", "<", ">=", "<="));
         public Variable(){
-            this.is_single_valued = false;
+            this.isSingleValued = false;
+            this.containsNumerical = false;
             this.entries = new ArrayList<>();
-            this.unique_usage_count = new ArrayList<>();
+            this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
             this.cursor = 0;
         }
         public Variable(String value){
             this.values = value;
-            this.is_single_valued = true;
+            this.isSingleValued = true;
+            this.containsNumerical = false;
             this.entries = new ArrayList<>();
-            this.unique_usage_count = new ArrayList<>();
+            this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
             this.cursor = 0;
         }
-        public void set_attribute(String attr_name, Variable value){
+        public Variable(double numerical){
+            this.value = ""+numerical;
+            this.numerical = numerical;
+            this.isSingleValued = true;
+            this.containsNumerical = true;
+            this.entries = new ArrayList<>();
+            this.uniqueUsageCount = new ArrayList<>();
+            this.attributes = new HashMap<>();
+            this.cursor = 0;
+        }
+        //by returning this at the end of the setter, we can use this class in an FP way
+        public Variable setAttr(String attr_name, Variable value) throws IllegalArgumentException{
             if (RESERVED_ATTR.contains(attr_name)){
-                System.out.println("ERROR: "+attr_name+" is a reserved attribute name, please use another name instead");
-                System.exit(1);
+                throw new IllegalArgumentException("ERROR: "+attr_name+" is a reserved attribute name, please use another name instead");
             }
             this.attributes.put(attr_name, value);
+            return this;
         }
 
+        public static Variable factory(){
+            return new Variable();
+        }
+
+        public static Variable factory(String value){
+            return new Variable(value);
+        }
+        public static Variable factory(double numerical){
+            return new Variable(numerical);
+        }
+
+        //
+        public static Variable eval(Variable a, String operator, Variable b) throws IllegalArgumentException{
+            if (operator==null){
+                throw new IllegalArgumentException("ERROR : Variable.eval :: operator cannot be null");
+            }
+            //this is for the author's own use
+            //if an operator is illegal, it shouldn't be recognized by the parser in the first place
+            //this almost for sure means there is some kinda implementation error
+            if (!OPERATORS.contains(operator)){
+                throw new IllegalArgumentException("ERROR : Variable.eval :: "+operator+" is not a recognized operator. Internal error, you shouldn't have reached here.");
+            }
+            if (operator.equals("=") || operator.equals("+=")){
+                throw new IllegalArgumentException("ERROR : Variable.eval :: "+operator+" is an assignment operator, and is not supposed to be evaluated here");
+            }
+            if (operator.equals("+")){
+                if (a.isNumerical() && b.isNumerical()){
+                    return Variable.factory(a.getNumerical() + b.getNumerical());
+                }
+                return Variable.factory(a.getValue()+b.getValue());
+            }
+            return Variable.factory(""+a.compare(operator, b));
+        }
         // new, query, getColumn, withColumnAsAttr will not be handled as those are not attributes but functions
         // those will be implemented in the Context class
-        public Variable get_attr(String name, List<String> args) throws Exception{
+        public Variable getAttr(String name, List<Variable> args) throws Exception{
             if (name.equals("any")){
-                if (this.is_single_valued){
-                    throw new IllegalArgumentException("Fuzzer.Variable.get_attr :: attribute any is not applicable to single-valued variables");
+                if (this.isSingleValued){
+                    throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: attribute any is not applicable to single-valued variables");
                 }
                 if (this.entries.size()==0){
                     throw new UnavailableException("", false, true, false);
@@ -198,15 +265,15 @@ public class <graph_name/>Fuzzer {
                 return random_from_list(entries);
             }
             else if (name.equals("unique_any")){
-                if (this.is_single_valued){
-                    throw new IllegalArgumentException("Fuzzer.Variable.get_attr :: attribute unique_any is not applicable to single-valued variables");
+                if (this.isSingleValued){
+                    throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: attribute unique_any is not applicable to single-valued variables");
                 }
                 if (this.entries.size()==0){
                     throw new UnavailableException("", false, true, false);
                 }
                 List<Integer> avail_idx = new ArrayList<>();
-                for (int i=0; i<this.unique_usage_count.size(); i++){
-                    if (this.unique_usage_count.get(i)==0){
+                for (int i=0; i<this.uniqueUsageCount.size(); i++){
+                    if (this.uniqueUsageCount.get(i)==0){
                         avail_idx.add(i);
                     }
                 }
@@ -214,18 +281,18 @@ public class <graph_name/>Fuzzer {
                     throw new UnavailableException("", false, false, true);
                 }
                 int idx = random_from_list(avail_idx);
-                this.unique_usage_count.set(idx, 1);
+                this.uniqueUsageCount.set(idx, 1);
                 return this.entries.get(idx);
             }
             else if (name.equals("len")){
-                if (this.is_single_valued){
-                    return new Variable(String.valueOf(1));
+                if (this.isSingleValued){
+                    return new Variable(1);
                 }
-                return new Variable(String.valueOf(this.entries.size()));
+                return new Variable(this.entries.size());
             }
             else if (name.equals("next")){
-                if (this.is_single_valued){
-                    throw new IllegalArgumentException("Fuzzer.Variable.get_attr :: attribute next is not applicable to single-valued variables");
+                if (this.isSingleValued){
+                    throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: attribute next is not applicable to single-valued variables");
                 }
                 if (this.entries.size()==0){
                     throw new UnavailableException("", false, true, false);
@@ -234,8 +301,8 @@ public class <graph_name/>Fuzzer {
                 return this.entries.get((this.cursor-1)%this.entries.size());
             }
             else if (name.equals("cur")){
-                if (this.is_single_valued){
-                    throw new IllegalArgumentException("Fuzzer.Variable.get_attr :: attribute cur is not applicable to single-valued variables");
+                if (this.isSingleValued){
+                    throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: attribute cur is not applicable to single-valued variables");
                 }
                 if (this.entries.size()==0){
                     throw new UnavailableException("", false, true, false);
@@ -244,25 +311,25 @@ public class <graph_name/>Fuzzer {
             }
             else if (name.equals("filter")){
                 if (args.size()!=3){
-                    throw new IllegalArgumentException("Fuzzer.Variable.get_attr :: filter function expects 3 arguments: attribute to be filtered, comparator, and a pivot value. "+args.size()+" are given");
+                    throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: filter function expects 3 arguments: attribute to be filtered, comparator, and a pivot value. "+args.size()+" are given");
                 }
-                return this.filter(args.get(0), args.get(1), args.get(2));
+                return this.filter(args.get(0).getValue(), args.get(1).getValue(), args.get(2));
             }
 
         }
         private Variable filter(String attr, String comparator, Variable target) throws Exception{
-            if (this.is_single_valued){
+            if (this.isSingleValued){
                 throw new IllegalArgumentException("Fuzzer.Variable.filter :: filter operation is not allowed on single-valued variables");
             }
             Variable result = new Variable();
             for (Variable v : this.entries){
-                if (v.get_attr(attr).compare(comparator, target)){
-                    result.add_entry(v);
+                if (v.getAttr(attr).compare(comparator, target)){
+                    result.addEntry(v);
                 }
             }
             return result;
         }
-        public boolean compare(String comparator, Variable other) throws IllegalArgumentException{
+        public boolean compare(String comparator, Variable other) throws Exception{
             if (comparator.equals("==")){
                 return this.equals(other);
             }
@@ -324,18 +391,34 @@ public class <graph_name/>Fuzzer {
             }
             throw new IllegalArgumentException("Fuzzer.Variable.compare :: comparator "+comparator+" is not recognizable");
         }
-        public String get_value(){
-            if (!this.is_single_valued){
-                throw new IllegalArgumentException("Fuzzer.Variable.get_value :: get_value is not applicable to multi-valued variable");
+        public String getValue(){
+            if (!this.isSingleValued){
+                throw new IllegalArgumentException("Fuzzer.Variable.getValue :: getValue is not applicable to multi-valued variable");
             }
             return this.value;
         }
-        public void add_entry(Variable v){
-            if (this.is_single_valued){
-                throw new IllegalArgumentException("Fuzzer.Variable.add_entry :: add_entry is not applicable to single-valued variable");
+        public boolean isNumerical(){
+            return this.containsNumerical;
+        }
+
+        public double getNumerical(){
+            return thus.numerical;
+        }
+
+        //by returning this at the end of the setter, we can use this class in an FP way
+        public Variable addEntry(Variable v) throws IllegalArgumentException{
+            if (this.isSingleValued){
+                throw new IllegalArgumentException("Fuzzer.Variable.addEntry :: addEntry is not applicable to single-valued variable");
             }
             this.entries.add(v);
-            this.unique_usage_count.add(0);
+            this.uniqueUsageCount.add(0);
+            return this;
+        }
+        public Variable getEntry(int idx)throws IllegalArgumentException{
+            if (this.isSingleValued){
+                throw new IllegalArgumentException("Fuzzer.Variable.addEntry :: addEntry is not applicable to single-valued variable");
+            }
+            return this.entries.get(idx);
         }
         // making sure this.value and this.entries are the same
         // does not check for reference counters and cursor (differences in those will be considered as same variable in different state)
@@ -434,301 +517,7 @@ public class <graph_name/>Fuzzer {
         return res;
     }
 
-    public static String get_dbms_option(String key){
-        return dbms_options.get(key);
-    }
-
-    private ResultSet query_dbms(String query) throws Exception{
-        try {
-            this.log("Queried DBMS with: "+query);
-            ResultSet ans = this.con.createStatement().executeQuery(query);
-            //this.log("Got ans: "+ans.toString());
-            return ans;
-        }
-        catch (Exception e){
-            this.log("Error encountered when executing query: "+query);
-            throw e;
-        }
-    }
-
-    public void generate(){
-        int count = -1;
-<STAGE/>
-    }
-
-    public List<String> get_expected_errors(){
-        return this.expected_error_buffer;
-    }
-
-
-    private String get_parent_name(String sup){
-        List<List<String>> id_val = this.identifier_cache.get(sup);
-        if (id_val==null || id_val.size()==0){
-            return null;
-        }
-        List<String> parent_hier = random_from_list(id_val);
-        return parent_hier.get(parent_hier.size()-1);
-    }
-
-    private List<String> get_parent_hierarchy(String sup){
-        List<List<String>> id_val = this.identifier_cache.get(sup);
-        if (id_val==null || id_val.size()==0){
-            return null;
-        }
-        return copy_list(random_from_list(id_val));
-    }
-
-    private int get_parent_hierarchy_cursor(String sup){
-        return this.identifier_cache_cursor.get(sup);
-    }
     
-    private void set_parent_hierarchy_cursor(String sup, int new_val){
-        this.identifier_cache_cursor.put(sup, new_val);
-    }
-
-    private List<String> get_next_parent_hierarchy(String sup){
-        List<List<String>> id_val = this.identifier_cache.get(sup);
-        if (id_val==null || id_val.size()==0){
-            return null;
-        }
-        
-        List<String> ans = copy_list(id_val.get(this.identifier_cache_cursor.get(sup)%id_val.size()));
-        this.log("get_next_parent_hierarchy: sup="+sup+"  index="+this.identifier_cache_cursor.get(sup)+"  ans="+ans.toString());
-        this.identifier_cache_cursor.put(sup, this.identifier_cache_cursor.get(sup)+1);
-        this.log("Identifier index updated to: "+this.identifier_cache_cursor.get(sup));
-        return ans;
-    }
-
-    private void set_parent(String sub, List<String> hierarchy){
-        List<List<String>> id_val = this.identifier_cache.get(sub);
-        if (id_val==null){
-            List<List<String>> id_val_n = new ArrayList<>();
-            id_val_n.add(hierarchy);
-            this.identifier_cache.put(sub, id_val_n);
-            this.identifier_cache_cursor.put(sub, 0);
-        }
-        else {
-            id_val.add(hierarchy);
-        }
-    }
-
-    private void push_identifier_cache(){
-        this.identifier_cache = new HashMap<>();
-        this.identifier_cache_stack.add(this.identifier_cache_stack_pointer, this.identifier_cache);
-        this.identifier_cache_stack_pointer++;
-        
-        this.identifier_cache_cursor = new HashMap<>();
-        this.identifier_cache_cursor_stack.add(this.identifier_cache_cursor_stack_pointer, this.identifier_cache_cursor);
-        this.identifier_cache_cursor_stack_pointer++;
-    }
-
-    private void restore_identifier_cache(){
-        this.identifier_cache = this.identifier_cache_stack.get(this.identifier_cache_stack_pointer);
-        this.identifier_cache_stack_pointer++;
-
-        this.identifier_cache_cursor = this.identifier_cache_cursor_stack.get(this.identifier_cache_cursor_stack_pointer);
-        this.identifier_cache_cursor_stack_pointer++;
-    }
-
-    private void pop_identifier_cache() throws Exception{
-        if (this.identifier_cache_stack.size()==0){
-            this.log("ERROR: identifier stack underflow");
-            throw new Exception("ERROR: identifier stack underflow");
-        }
-        this.identifier_cache_stack_pointer--;
-        if (this.identifier_cache_stack_pointer==0){
-            this.identifier_cache = new HashMap<>();
-        }
-        else {
-            this.identifier_cache = this.identifier_cache_stack.get(this.identifier_cache_stack_pointer-1);
-        }
-
-        if (this.identifier_cache_cursor_stack.size()==0){
-            this.log("ERROR: identifier cursor stack underflow");
-        }
-        this.identifier_cache_cursor_stack_pointer--;
-        if (this.identifier_cache_cursor_stack_pointer==0){
-            this.identifier_cache_cursor = new HashMap<>();
-        }
-        else {
-            this.identifier_cache_cursor = this.identifier_cache_cursor_stack.get(this.identifier_cache_cursor_stack_pointer-1);
-        }
-    }
-
-    private void push_rpid(){
-        //once we try to push something, all the potentially restorable stack frames should be deemed invalid
-        while(this.rpid_stack.size()>this.rpid_stack_pointer){
-            this.rpid_stack.remove(this.rpid_stack.size()-1);
-        }
-        this.rpid_cache = new HashMap<>();
-        this.rpid_stack.add(this.rpid_stack_pointer, this.rpid_cache);
-        this.rpid_stack_pointer++;
-    }
-
-    //this is like push, but without invalidating all further stack frames
-    //also the cache will be given a on-stack frame instead of a new frame
-    private void restore_rpid(){
-        this.rpid_cache = this.rpid_stack.get(this.rpid_stack_pointer);
-        this.rpid_stack_pointer++;
-    }
-
-    private void pop_rpid() throws Exception{
-        if (this.rpid_stack_pointer==0){
-            this.log("ERROR: rpid stack underflow");
-            throw new Exception();
-        }
-        this.rpid_stack_pointer--;
-        if (this.rpid_stack_pointer==0){
-            this.rpid_cache = new HashMap<>();
-        }
-        else {
-            this.rpid_cache = this.rpid_stack.get(this.rpid_stack_pointer-1);
-        }
-    }
-
-    private void push_used_identifier(){
-        //once we try to push something, all the potentially restorable stack frames should be deemed invalid
-        while(this.used_identifier_stack.size()>this.used_identifier_stack_pointer){
-            this.used_identifier_stack.remove(this.used_identifier_stack.size()-1);
-        }
-        this.used_identifier = new HashMap<>();
-        this.used_identifier_stack.add(this.used_identifier_stack_pointer, this.used_identifier);
-        this.used_identifier_stack_pointer++;
-    }
-
-    //this is like push, but without invalidating all further stack frames
-    //also the cache will be given a on-stack frame instead of a new frame
-    private void restore_used_identifier(){
-        this.used_identifier = this.used_identifier_stack.get(this.used_identifier_stack_pointer);
-        this.used_identifier_stack_pointer++;
-    }
-    private void pop_used_identifier() throws Exception{
-        if (this.used_identifier_stack_pointer==0){
-            this.log("ERROR: used identifier stack underflow");
-            throw new Exception();
-        }
-        this.used_identifier_stack_pointer--;
-        if (this.used_identifier_stack_pointer==0){
-            this.used_identifier = new HashMap<>();
-        }
-        else{
-            this.used_identifier = this.used_identifier_stack.get(this.used_identifier_stack_pointer-1);
-        }
-    }
-
-    //it is the callee's responsibility to create new context for itself at entry
-    //and restore context for caller when exiting
-    private void push_context(){
-        this.push_identifier_cache();
-        this.push_rpid();
-        this.push_used_identifier();
-    }
-    private void restore_context(){
-        //check if all stacks have something to restore
-        //these stacks SHOULD have the same size, but just to be safe we will check every one
-        if (this.identifier_cache_stack.size()>this.identifier_cache_stack_pointer &&
-                this.identifier_cache_cursor_stack.size()>this.identifier_cache_cursor_stack_pointer &&
-                this.rpid_stack.size()>this.rpid_stack_pointer &&
-                this.used_identifier_stack.size()>this.used_identifier_stack_pointer){
-            this.log("Restoring stack frame");
-            this.restore_identifier_cache();
-            this.restore_rpid();
-            this.restore_used_identifier();
-        }
-    }
-    private void pop_context() throws Exception{
-        this.pop_used_identifier();
-        this.pop_rpid();
-        this.pop_identifier_cache();
-    }
-
-
-
-
-
-    private boolean is_identifier_available(String iid, String identifier){
-        if (this.used_identifier.get(iid)==null || !this.used_identifier.get(iid).contains(identifier)){
-            return true;
-        }
-        return false;
-    }
-
-    private void mark_identifier_used(String iid, String identifier){
-        if (this.used_identifier.get(iid)==null){
-            this.used_identifier.put(iid, new ArrayList<>());
-        }
-        this.used_identifier.get(iid).add(identifier);
-    }
-
-    private void snapshot_context(){
-        // snapshot relationship identifiers
-        this.identifier_cache_snapshot = new HashMap<>();
-        for (HashMap.Entry<String, List<List<String>>> entry: this.identifier_cache.entrySet()){
-            this.identifier_cache_snapshot.put(entry.getKey(), copy_list(entry.getValue()));
-        }
-
-        //snapshot the cursor for the identifiers above
-        this.identifier_cache_cursor_snapshot = new HashMap<>();
-        for (HashMap.Entry<String, Integer> entry: this.identifier_cache_cursor.entrySet()){
-            this.identifier_cache_cursor_snapshot.put(entry.getKey(), entry.getValue());
-        }
-
-        // snapshot used identifiers
-        this.used_identifier_snapshot = new HashMap<>();
-        for (HashMap.Entry<String, List<String>> entry: this.used_identifier.entrySet()){
-            this.used_identifier_snapshot.put(entry.getKey(), copy_list(entry.getValue()));
-        }
-
-        // snapshot rpid cache
-        this.rpid_cache_snapshot = new HashMap<>();
-        for (HashMap.Entry<String, Integer> entry: this.rpid_cache.entrySet()){
-            this.rpid_cache_snapshot.put(entry.getKey(), entry.getValue());
-        }
-
-        // snapshot expected errors
-        this.expected_error_buffer_snapshot = copy_list(this.expected_error_buffer);
-    }
-
-    private void rollback_context(){
-        //this.log("Rolling back");
-        this.identifier_cache = this.identifier_cache_snapshot;
-        this.identifier_cache_cursor = this.identifier_cache_cursor_snapshot;
-        this.used_identifier = this.used_identifier_snapshot;
-        this.rpid_cache = this.rpid_cache_snapshot;
-        this.expected_error_buffer = this.expected_error_buffer_snapshot;
-
-        //for the contexts that resides on the context stacks
-        //update the pointers on the context stacks as well
-        this.identifier_cache_stack.set(this.identifier_cache_stack_pointer-1, this.identifier_cache_snapshot);
-        this.identifier_cache_cursor_stack.set(this.identifier_cache_cursor_stack_pointer-1, this.identifier_cache_cursor_snapshot);
-        this.rpid_stack.set(this.rpid_stack_pointer-1, this.rpid_cache_snapshot);
-        this.used_identifier_stack.set(this.used_identifier_stack_pointer-1, this.used_identifier_snapshot);
-        //this.log("Rolled back");
-    }
-
-    private String get_variable(String key){
-        return this.var_ref.get(key);
-    }
-
-    private String get_member_variable(String key){
-        return this.member_var_ref.get(key);
-    }
-
-    public static String get_static_variable(String key){
-        return static_var_ref.get(key);
-    }
-
-    private void set_variable(String key, String value){
-        this.var_ref.put(key, value);
-    }
-
-    private void set_member_variable(String key, String value){
-        member_var_ref.put(key, value);
-    }
-
-    public static void set_static_variable(String key, String value){
-        static_var_ref.put(key, value);
-    }
 
     
 

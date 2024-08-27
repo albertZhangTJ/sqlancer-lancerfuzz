@@ -116,14 +116,38 @@ public class Rig{
 
 
         public void setSymbol(String symbol, Variable v){
-            this.symbols.put(symbol, v);
+            if (symbol==null || symbol.size()==0 || !((symbol.charAt(0)>=65 && symbol.charAt(0)<=90) || (symbol.charAt(0)>=97 && symbol.charAt(0)<=122))){
+                throw new IllegalArgumentException("ERROR : Fuzzer.Context.seySymbol :: symbol must be non-empty and start with an ASCII letter");
+            }
+            // starts with a capital letter
+            if (symbol.charAt(0)<92){
+                this.globalSymbols.put(symbol, v);
+            }
+            else {
+                this.symbols.put(symbol, v);
+            }
         }
         //requires 2 or more arguments
         //the 
         public Variable query(List<Variable> args){
-            Variable res = new Variable();
-            ResultSet ans = this.con.createStatement().executeQuery(query);
-            //TODO: 
+            if (args.size()<2){
+                throw new IllegalArgumentException("ERROR : Fuzzer.Context.query :: a call to the query function must contain at least 2 arguments: query and column name");
+            }
+            String query = args.get(0).getValue();
+            String col = args.get(1).getValue();
+            Variable v = Variable.of();
+            ResultSet rs = this.con.createStatement().executeQuery(query);
+            while (rs.next()){
+                Variable r = Variable.of(rs.getString(col));
+                for (int i=2; i<args.size(); i++){
+                    Variable pair = args.get(i);
+                    String attrCol = pair.getEntry(0);
+                    String attr = pair.getEntry(1);
+                    r.setAttr(attr, Variable.of(rs.getString(attrCol)));
+                }
+                v.addEntry(r);
+            }
+            return v;
         }
     }
 
@@ -369,6 +393,12 @@ public class Rig{
             this.entries.add(v);
             this.uniqueUsageCount.add(0);
             return this;
+        }
+        public Variable getEntry(int idx)throws IllegalArgumentException{
+            if (this.isSingleValued){
+                throw new IllegalArgumentException("Fuzzer.Variable.addEntry :: addEntry is not applicable to single-valued variable");
+            }
+            return this.entries.get(idx);
         }
         // making sure this.value and this.entries are the same
         // does not check for reference counters and cursor (differences in those will be considered as same variable in different state)
