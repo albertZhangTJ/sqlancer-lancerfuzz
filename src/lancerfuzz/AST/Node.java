@@ -14,6 +14,7 @@ public class Node {
     private String identifier;
     private List<Edge> outward_edges;
     private List<String> expected_errors = new ArrayList<>();
+    private List<Integer> 
     public boolean walked; //for debugging purpose only
     public boolean is_rendered=false; //eaiser for the fuzzer renderer to follow
 

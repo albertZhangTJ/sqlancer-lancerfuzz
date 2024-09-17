@@ -12,8 +12,6 @@ public class RuleNode extends Node{
     public static enum RuleNodeType {UNLEXER, UNPARSER};
     private String name;
     private RuleNodeType type;
-
-
     
     private HashMap<String, String> labels;
     private HashMap<String, String> args;

@@ -59,6 +59,7 @@ public class Rig{
         private HashMap<String, Variable> globalSymbols;
         private HashMap<String, Variable> symbols;
         private List<HashMap<String, Variable>> symbolStack;
+        private List<Variable> args;
         private Variable result;
         private SQLConnection conn;
         
@@ -68,12 +69,21 @@ public class Rig{
             this.conn = conn;
         }
 
-        public void call(List<String> arg_symbols) throws UnavailableException{
+        public void push_args(List<Variable> args){
+            this.args = args;
+        }
+
+        public void enter(List<String> arg_symbols, List<Variable> defaults) throws Exception{
             HashMap<String, Variable> newFrame = new HashMap<>();
-            for (String symbol: arg_symbols){
+            if (arg_symbols.size()!=defaults.size()){
+                throw new IllegalArgumentException("ERROR: Fuzzer.Context.call :: internal error, argument list size does not match that of default list");
+            }
+            for (int i=0; i<arg_symbols.size(); i++){
+                String symbol = arg_symbols.get(i);
                 if (this.get_var(symbol)==null){
                     throw new UnavailableException("ERROR: Fuzzer.Context.call :: cannot find symbol "+symbol, true, false, false);
                 }
+                //TODO: complete the logic of selecting between pushed args and default, throw error if both unavailable
                 newFrame.add(this.get_var(symbol));
             }
 
@@ -117,7 +127,7 @@ public class Rig{
 
         public void setSymbol(String symbol, Variable v){
             if (symbol==null || symbol.size()==0 || !((symbol.charAt(0)>=65 && symbol.charAt(0)<=90) || (symbol.charAt(0)>=97 && symbol.charAt(0)<=122))){
-                throw new IllegalArgumentException("ERROR : Fuzzer.Context.seySymbol :: symbol must be non-empty and start with an ASCII letter");
+                throw new IllegalArgumentException("ERROR : Fuzzer.Context.setSymbol :: symbol must be non-empty and start with an ASCII letter");
             }
             // starts with a capital letter
             if (symbol.charAt(0)<92){
@@ -154,8 +164,10 @@ public class Rig{
     public static class Variable {
         public boolean isSingleValued;
         private String value;
-        private double numerical;
-        private boolean containsNumerical ;
+        private int numerical;
+        private boolean bool;
+        private boolean containsNumerical;
+        private boolean containsBoolean;
         private List<String> entries;
         private List<Integer> uniqueUsageCount;
         private HashMap<String, Variable> attributes;
@@ -166,6 +178,7 @@ public class Rig{
         public Variable(){
             this.isSingleValued = false;
             this.containsNumerical = false;
+            this.containsBoolean = false;
             this.entries = new ArrayList<>();
             this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
@@ -175,16 +188,29 @@ public class Rig{
             this.values = value;
             this.isSingleValued = true;
             this.containsNumerical = false;
+            this.containsBoolean = false;
             this.entries = new ArrayList<>();
             this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
             this.cursor = 0;
         }
-        public Variable(double numerical){
+        public Variable(int numerical){
             this.value = ""+numerical;
             this.numerical = numerical;
             this.isSingleValued = true;
             this.containsNumerical = true;
+            this.containsBoolean = false;
+            this.entries = new ArrayList<>();
+            this.uniqueUsageCount = new ArrayList<>();
+            this.attributes = new HashMap<>();
+            this.cursor = 0;
+        }
+        public Variable(boolean bool){
+            this.value = ""+bool;
+            this.bool = bool;
+            this.isSingleValued = true;
+            this.containsNumerical = false;
+            this.containsBoolean = true;
             this.entries = new ArrayList<>();
             this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
@@ -206,9 +232,13 @@ public class Rig{
         public static Variable factory(String value){
             return new Variable(value);
         }
-        public static Variable factory(double numerical){
+        public static Variable factory(int numerical){
             return new Variable(numerical);
         }
+        public static Variable factory(boolean bool){
+            return new Variable(bool);
+        }
+        
 
         //
         public static Variable eval(Variable a, String operator, Variable b) throws IllegalArgumentException{
@@ -230,7 +260,7 @@ public class Rig{
                 }
                 return Variable.factory(a.getValue()+b.getValue());
             }
-            return Variable.factory(""+a.compare(operator, b));
+            return Variable.factory(a.compare(operator, b));
         }
         // new, query, getColumn, withColumnAsAttr will not be handled as those are not attributes but functions
         // those will be implemented in the Context class
@@ -319,9 +349,9 @@ public class Rig{
 
             if (comparator.equals(">=")){
                 try {
-                    Double operand_a = Double.valueOf(this.value);
-                    Double operand_b = Double.valueOf(other.value);
-                    return operand_a.doubleValue()>=operand_b.doubleValue();
+                    Integer operand_a = Integer.valueOf(this.value);
+                    Integer operand_b = Integer.valueOf(other.value);
+                    return operand_a.intValue()>=operand_b.intValue();
                 }
                 catch (NumberFormatException e){
                     throw new NumberFormatException(
@@ -332,9 +362,9 @@ public class Rig{
             }
             if (comparator.equals("<=")){
                 try {
-                    Double operand_a = Double.valueOf(this.value);
-                    Double operand_b = Double.valueOf(other.value);
-                    return operand_a.doubleValue()<=operand_b.doubleValue();
+                    Integer operand_a = Integer.valueOf(this.value);
+                    Integer operand_b = Integer.valueOf(other.value);
+                    return operand_a.intValue()<=operand_b.intValue();
                 }
                 catch (NumberFormatException e){
                     throw new NumberFormatException(
@@ -345,9 +375,9 @@ public class Rig{
             }
             if (comparator.equals(">")){
                 try {
-                    Double operand_a = Double.valueOf(this.value);
-                    Double operand_b = Double.valueOf(other.value);
-                    return operand_a.doubleValue()>operand_b.doubleValue();
+                    Integer operand_a = Integer.valueOf(this.value);
+                    Integer operand_b = Integer.valueOf(other.value);
+                    return operand_a.intValue()>operand_b.intValue();
                 }
                 catch (NumberFormatException e){
                     throw new NumberFormatException(
@@ -358,9 +388,9 @@ public class Rig{
             }
             if (comparator.equals("<")){
                 try {
-                    Double operand_a = Double.valueOf(this.value);
-                    Double operand_b = Double.valueOf(other.value);
-                    return operand_a.doubleValue()<operand_b.doubleValue();
+                    Integer operand_a = Integer.valueOf(this.value);
+                    Integer operand_b = Integer.valueOf(other.value);
+                    return operand_a.intValue()<operand_b.intValue();
                 }
                 catch (NumberFormatException e){
                     throw new NumberFormatException(
@@ -381,8 +411,17 @@ public class Rig{
             return this.containsNumerical;
         }
 
-        public double getNumerical(){
+        public int getNumerical(){
             return thus.numerical;
+        }
+        public boolean isBoolean(){
+            return this.containsBoolean;
+        }
+        public boolean getBoolean(){
+            if (!this.containsBoolean){
+                throw new IllegalArgumentException("Fuzzer.Variable.getBoolean :: the current variable is not a boolean one");
+            }
+            return this.bool;
         }
 
         //by returning this at the end of the setter, we can use this class in an FP way

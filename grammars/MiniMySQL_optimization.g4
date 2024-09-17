@@ -26,7 +26,7 @@ grammar MiniMySQL;
 
 alterTable
     : _e("exist") ALTER TABLE t=table.any
-    ( alterSpecification )_r(1, 5) SC
+    ( alterSpecification )**_r(1, 5) SC
     ;
 
 fragment alterSpecification
@@ -61,31 +61,32 @@ useDatabase
     ;
 
 createTable
-    : CREATE _e("A BLOB field is not allowed in par tition function", "is of a not allowed type for this type of partitioning") (' '  | TEMPORARY _e("Cannot create temporary table with partitions") )_w(9,1) TABLE 
+    : CREATE _e("A BLOB field is not allowed in partition function", "is of a not allowed type for this type of partitioning") 
+      ( 90% ' '  | TEMPORARY _e("Cannot create temporary table with partitions") ) TABLE 
         ifNotExists? table.new
         (
-            LB (cn+=column.new columnDefinition) _r(1, 5, 0.1, ",") RB 
-            (' '  |
+            90% LB (cn+=column.new columnDefinition)**_r(1, 5, 0.1, ",") RB 
+            ( 80% ' '  |
                     ' ENGINE ' EQ (' MyISAM ' | ' InnoDB ' ) |
                     PARTITION BY (LINEAR)? _e("allowed type")
                     ( 
                         'HASH(' cn.any ')' |
                         ' KEY ' ( 'ALGORITHM=' ('1'|'2'))? '(' cn.any ')'
                     )
-            )_w(8)
+            )
             | LIKE table.any
-        )_w(9,1)  SC
+        )  SC
     ;
 
 createIndex
     : _e("used in key specification without a key length") CREATE  
     ((
-        UNIQUE _e("Duplicate", "A UNIQUE INDEX must include all columns in the table's partitioning function") | 
-        FULLTEXT _e("cannot be part of","The used table type doesn't support FULLTEXT indexes") | 
+       49% UNIQUE _e("Duplicate", "A UNIQUE INDEX must include all columns in the ") | 
+        FULLTEXT _e("cannot be part of"," support FULLTEXT indexes") | 
         _e("A SPATIAL index may only contain a geometrical type column")  SPATIAL
-    )_w(100,100,1) )_r(0, 1, 0.9)
+    )_w(100,100,1) )**_r(0, 1, 0.9)
     INDEX index.new
-    ON t=table.any c=$column[t] '(' ( c.unique_any )_r(1, 4) ')'
+    ON t=table.any c=$column[t] '(' ( c.unique_any )**_r(1, 4) ')'
     (
         ALGORITHM EQ (DEFAULT | INPLACE | COPY)
         | LOCK EQ (DEFAULT | NONE | SHARED | EXCLUSIVE)
@@ -97,32 +98,39 @@ truncateTable : TRUNCATE TABLE table.any SC ;
     
 insertStatement
     : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? _e("Duplicate") t=table.any
-    '('  ( c+=column[t] )_r(1, 6) ')' 
-    VALUES '(' ( expression[c.next] )_r(c.len) ')'
+    '('  ( c+=column[t] )**_r(1, 6) ')' 
+    VALUES '(' ( expression[c.next] )**_r(c.len) ')'
     SC
     ;
 
 updateStatement
     : UPDATE _e("Duplicate") LOW_PRIORITY? IGNORE? t=tableName 
-    SET (cc=columnName[t].any '=' expression[cc])_r(1,6) (WHERE (NOT)? cc=columnName[t].any '=' expression[cc])? SC
+    SET (cc=columnName[t].any '=' expression[cc])**_r(1,6) (WHERE (NOT)? cc=columnName[t].any '=' expression[cc])? SC
     ;
 
-expression [column_name] locals [type=column_name.type] : ( int_expr {type=="INT"}? | text_expr {type=="TEXT"}?  | float_expr {type=="FLOAT"}? | least | greatest | if_func);
+expression [column_name] locals [type=column_name.type] 
+    : int_expr {type=="INT"}? 
+    | text_expr {type=="TEXT"}?  
+    | float_expr {type=="FLOAT"}? 
+    | least 
+    | greatest 
+    | if_func;
 
 query_core [rep=_r(1,5)] flags [is_statement] returns [c] :
     @2
 	SELECT (
-        (   (tt=t.any DOT | tt=$t.any) c+=tt.c.unique_any
+        90% (   (tt=t.any DOT | tt=$t.any) c+=tt.c.unique_any
             | column_expression
-        )  rep
+        )**rep
         | ASTERISK
-    ) _w(10)
+    ) 
     @1
 	FROM ( tt=table_name.any tt.c=$column_name[tt] t+=$tt | '(' cc=query_core ')' AS tt=table_name.new tt.c=$cc t+=$tt)
 	//no separate needed since it is directly positioned after the FROM clause
     (
 		JOIN ( tt=table_name tt.c=$column_name[tt] t+=$tt | '(' cc=query_core ')' AS tt=table_name.new tt.c=$cc t+=$tt)
 	)?
+    @3
     where_predicate?
 	( 
 		( UNION | INTERSECT ) query_core[rep=_r(c.len)]
@@ -135,11 +143,11 @@ where_predicate:
 	| WHERE NOT? EXISTS '(' query_core ')'
 	;
 
-predicate : ('(' pivot=$t.any.c.any ( expression[pivot] | (tt=t DOT | tt=$t )  cc=tt.c.filter[type==pivot.type].any ) 
+predicate : ( 50%'(' pivot=$t.any.c.any ( expression[pivot] | (tt=t DOT | tt=$t )  cc=tt.c.filter[type==pivot.type].any ) 
                     comparison 
                     ( expression[cc] | (tt=t DOT | tt=$t )  cc=tt.c.filter[type=pivot.type].any ) ')' 
-            | ifnull 
-            | if_func)_w(5,3,1,1,1)
+            | 30% ifnull 
+            | if_func)
         ;
 
 comparison : ( LT | GT | EQ | LT EQ | GT EQ );
@@ -167,10 +175,10 @@ last_insert_id : ' LAST_INSERT_ID() ';
 
 float_expr : ( float_val | abs  | NULL )_w(2,1,1) ;
 float_val : int_val ('.' int_val )? ;
-int_expr : ( (DS)_r(0, 1) int_val | bit_count | strcmp | last_insert_id | NULL )_w(5);
-int_val :  (DIGIT)_r(1, 5, uniform=true) ;
-text_expr : ( text_val | substr | substring | lcase | ucase | space | trim | NULL )_w(7);
-text_val :  DQ ( (CH | DIGIT) )_r(1, 100) DQ ;
+int_expr : ( 50% (DS)**_r(0, 1) int_val | bit_count | strcmp | last_insert_id | NULL );
+int_val :  (DIGIT)**_r(1, 5, uniform=true) ;
+text_expr : ( 70% text_val | substr | substring | lcase | ucase | space | trim | NULL );
+text_val :  DQ ( (CH | DIGIT) )**_r(1, 100) DQ ;
 
 db returns [d] : d=$query["SHOW DATABASES;", "Database"] ;
 table returns [t] : t=$query["SHOW TABLES;", "Tables_in_"+DB];
