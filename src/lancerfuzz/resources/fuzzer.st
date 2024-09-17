@@ -174,8 +174,10 @@ public class <graph_name/>Fuzzer {
     public static class Variable {
         public boolean isSingleValued;
         private String value;
-        private double numerical;
-        private boolean containsNumerical ;
+        private int numerical;
+        private boolean bool;
+        private boolean containsNumerical;
+        private boolean containsBoolean;
         private List<String> entries;
         private List<Integer> uniqueUsageCount;
         private HashMap<String, Variable> attributes;
@@ -186,6 +188,7 @@ public class <graph_name/>Fuzzer {
         public Variable(){
             this.isSingleValued = false;
             this.containsNumerical = false;
+            this.containsBoolean = false;
             this.entries = new ArrayList<>();
             this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
@@ -195,16 +198,29 @@ public class <graph_name/>Fuzzer {
             this.values = value;
             this.isSingleValued = true;
             this.containsNumerical = false;
+            this.containsBoolean = false;
             this.entries = new ArrayList<>();
             this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
             this.cursor = 0;
         }
-        public Variable(double numerical){
+        public Variable(int numerical){
             this.value = ""+numerical;
             this.numerical = numerical;
             this.isSingleValued = true;
             this.containsNumerical = true;
+            this.containsBoolean = false;
+            this.entries = new ArrayList<>();
+            this.uniqueUsageCount = new ArrayList<>();
+            this.attributes = new HashMap<>();
+            this.cursor = 0;
+        }
+        public Variable(boolean bool){
+            this.value = ""+bool;
+            this.bool = bool;
+            this.isSingleValued = true;
+            this.containsNumerical = false;
+            this.containsBoolean = true;
             this.entries = new ArrayList<>();
             this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
@@ -226,9 +242,13 @@ public class <graph_name/>Fuzzer {
         public static Variable factory(String value){
             return new Variable(value);
         }
-        public static Variable factory(double numerical){
+        public static Variable factory(int numerical){
             return new Variable(numerical);
         }
+        public static Variable factory(boolean bool){
+            return new Variable(bool);
+        }
+        
 
         //
         public static Variable eval(Variable a, String operator, Variable b) throws IllegalArgumentException{
@@ -250,7 +270,7 @@ public class <graph_name/>Fuzzer {
                 }
                 return Variable.factory(a.getValue()+b.getValue());
             }
-            return Variable.factory(""+a.compare(operator, b));
+            return Variable.factory(a.compare(operator, b));
         }
         // new, query, getColumn, withColumnAsAttr will not be handled as those are not attributes but functions
         // those will be implemented in the Context class
@@ -339,9 +359,9 @@ public class <graph_name/>Fuzzer {
 
             if (comparator.equals(">=")){
                 try {
-                    Double operand_a = Double.valueOf(this.value);
-                    Double operand_b = Double.valueOf(other.value);
-                    return operand_a.doubleValue()>=operand_b.doubleValue();
+                    Integer operand_a = Integer.valueOf(this.value);
+                    Integer operand_b = Integer.valueOf(other.value);
+                    return operand_a.intValue()>=operand_b.intValue();
                 }
                 catch (NumberFormatException e){
                     throw new NumberFormatException(
@@ -352,9 +372,9 @@ public class <graph_name/>Fuzzer {
             }
             if (comparator.equals("<=")){
                 try {
-                    Double operand_a = Double.valueOf(this.value);
-                    Double operand_b = Double.valueOf(other.value);
-                    return operand_a.doubleValue()<=operand_b.doubleValue();
+                    Integer operand_a = Integer.valueOf(this.value);
+                    Integer operand_b = Integer.valueOf(other.value);
+                    return operand_a.intValue()<=operand_b.intValue();
                 }
                 catch (NumberFormatException e){
                     throw new NumberFormatException(
@@ -365,9 +385,9 @@ public class <graph_name/>Fuzzer {
             }
             if (comparator.equals(">")){
                 try {
-                    Double operand_a = Double.valueOf(this.value);
-                    Double operand_b = Double.valueOf(other.value);
-                    return operand_a.doubleValue()>operand_b.doubleValue();
+                    Integer operand_a = Integer.valueOf(this.value);
+                    Integer operand_b = Integer.valueOf(other.value);
+                    return operand_a.intValue()>operand_b.intValue();
                 }
                 catch (NumberFormatException e){
                     throw new NumberFormatException(
@@ -378,9 +398,9 @@ public class <graph_name/>Fuzzer {
             }
             if (comparator.equals("<")){
                 try {
-                    Double operand_a = Double.valueOf(this.value);
-                    Double operand_b = Double.valueOf(other.value);
-                    return operand_a.doubleValue()<operand_b.doubleValue();
+                    Integer operand_a = Integer.valueOf(this.value);
+                    Integer operand_b = Integer.valueOf(other.value);
+                    return operand_a.intValue()<operand_b.intValue();
                 }
                 catch (NumberFormatException e){
                     throw new NumberFormatException(
