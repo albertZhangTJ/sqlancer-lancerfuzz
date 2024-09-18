@@ -3,14 +3,11 @@ package sqlancer.duckdb.gen;
 import java.util.List;
 
 import sqlancer.Randomly;
-import sqlancer.common.ast.newast.Node;
 import sqlancer.common.query.ExpectedErrors;
 import sqlancer.common.query.SQLQueryAdapter;
 import sqlancer.duckdb.DuckDBProvider.DuckDBGlobalState;
 import sqlancer.duckdb.DuckDBSchema.DuckDBColumn;
 import sqlancer.duckdb.DuckDBSchema.DuckDBTable;
-import sqlancer.duckdb.DuckDBToStringVisitor;
-import sqlancer.duckdb.ast.DuckDBExpression;
 
 public final class DuckDBIndexGenerator {
 
@@ -22,7 +19,7 @@ public final class DuckDBIndexGenerator {
         StringBuilder sb = new StringBuilder();
         sb.append("CREATE ");
         if (Randomly.getBoolean()) {
-            errors.add("Cant create unique index, table contains duplicate data on indexed column(s)");
+            errors.add("Data contains duplicates on indexed column(s)");
             sb.append("UNIQUE ");
         }
         sb.append("INDEX ");
@@ -43,12 +40,6 @@ public final class DuckDBIndexGenerator {
             }
         }
         sb.append(")");
-        if (Randomly.getBoolean()) {
-            sb.append(" WHERE ");
-            Node<DuckDBExpression> expr = new DuckDBExpressionGenerator(globalState).setColumns(table.getColumns())
-                    .generateExpression();
-            sb.append(DuckDBToStringVisitor.asString(expr));
-        }
         errors.add("already exists!");
         if (globalState.getDbmsSpecificOptions().testRowid) {
             errors.add("Cannot create an index on the rowid!");
