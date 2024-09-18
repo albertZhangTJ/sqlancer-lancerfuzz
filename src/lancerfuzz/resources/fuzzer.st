@@ -49,7 +49,8 @@ public class <graph_name/>Fuzzer {
 
         public Buffer(String content){
             if (content==null){
-                throw new IllegalArgumentException("ERROR : Buffer::Buffer : Terminal buffer nodes should not have null content. For a placeholder, use empty string \"\" instead");
+                throw new IllegalArgumentException("ERROR : Buffer::Buffer : Terminal buffer nodes should not have null content." +
+                                                    "For a placeholder, use empty string \"\" instead");
             }
             this.content = content;
         }
