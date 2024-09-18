@@ -3,7 +3,6 @@ package sqlancer.duckdb.gen;
 import java.util.List;
 
 import sqlancer.Randomly;
-import sqlancer.common.ast.newast.Node;
 import sqlancer.common.gen.AbstractUpdateGenerator;
 import sqlancer.common.query.SQLQueryAdapter;
 import sqlancer.duckdb.DuckDBErrors;
@@ -28,7 +27,7 @@ public final class DuckDBUpdateGenerator extends AbstractUpdateGenerator<DuckDBC
 
     private SQLQueryAdapter generate() {
         DuckDBTable table = globalState.getSchema().getRandomTable(t -> !t.isView());
-        List<DuckDBColumn> columns = table.getRandomNonEmptyColumnSubset();
+        List<DuckDBColumn> columns = table.getRandomNonEmptyColumnSubsetFilter(p -> !p.getName().equals("rowid"));
         gen = new DuckDBExpressionGenerator(globalState).setColumns(table.getColumns());
         sb.append("UPDATE ");
         sb.append(table.getName());
@@ -40,7 +39,7 @@ public final class DuckDBUpdateGenerator extends AbstractUpdateGenerator<DuckDBC
 
     @Override
     protected void updateValue(DuckDBColumn column) {
-        Node<DuckDBExpression> expr;
+        DuckDBExpression expr;
         if (Randomly.getBooleanWithSmallProbability()) {
             expr = gen.generateExpression();
             DuckDBErrors.addExpressionErrors(errors);

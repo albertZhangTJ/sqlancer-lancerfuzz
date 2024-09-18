@@ -9,12 +9,9 @@ import sqlancer.Main;
 
 public class TestMaterializePQS {
 
-    String materializeAvailable = System.getenv("MATERIALIZE_AVAILABLE");
-    boolean materializeIsAvailable = materializeAvailable != null && materializeAvailable.equalsIgnoreCase("true");
-
     @Test
     public void test() {
-        assumeTrue(materializeIsAvailable);
+        assumeTrue(TestConfig.isEnvironmentTrue(TestConfig.MATERIALIZE_ENV));
         assertEquals(0,
                 Main.executeMain(new String[] { "--random-seed", "0", "--timeout-seconds", TestConfig.SECONDS,
                         "--num-threads", "4", "--num-queries", TestConfig.NUM_QUERIES, "--random-string-generation",
