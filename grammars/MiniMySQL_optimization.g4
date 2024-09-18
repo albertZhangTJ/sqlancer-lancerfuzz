@@ -25,7 +25,7 @@ THE SOFTWARE.
 grammar MiniMySQL;
 
 alterTable
-    : _e("exist") ALTER TABLE t=table.any
+    : _e("exist") ALTER TABLE t = table.any
     ( alterSpecification )**_r(1, 5) SC
     ;
 
@@ -65,7 +65,7 @@ createTable
       ( 90% ' '  | TEMPORARY _e("Cannot create temporary table with partitions") ) TABLE 
         ifNotExists? table.new
         (
-            90% LB (cn+=column.new columnDefinition)**_r(1, 5, 0.1, ",") RB 
+            90% LB (cn+=column.new columnDefinition)**_r(1, 5, 0.1) RB 
             ( 80% ' '  |
                     ' ENGINE ' EQ (' MyISAM ' | ' InnoDB ' ) |
                     PARTITION BY (LINEAR)? _e("allowed type")

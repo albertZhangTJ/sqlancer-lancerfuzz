@@ -48,16 +48,6 @@ import LexBasic;
 tokens { TOKEN_REF , RULE_REF , LEXER_CHAR_SET }
 channels { OFF_CHANNEL , COMMENT }
 
-GRAMMAR_OPERATOR
-   : Equal Equal
-   | '!' Equal
-   | PLUS Equal
-   | GT Equal
-   | LT Equal
-   | GT
-   | LT
-   | Equal
-   ;
 
 // -------------------------
 // Comments
@@ -101,10 +91,10 @@ UNTERMINATED_STRING_LITERAL
 // Certain argument lists, such as those specifying call parameters
 // to a rule invocation, or input parameters to a rule specification
 // are contained within square brackets.
-BEGIN_ARGUMENT
-   : LBrack
-   { this.handleBeginArgument(); }
-   ;
+// BEGIN_ARGUMENT
+//    : LBrack
+//    { this.handleBeginArgument(); }
+//    ;
 
 // -------------------------
 // Target Language Actions
@@ -124,6 +114,14 @@ TOKENS       : 'tokens'   WSNLCHARS* '{'  ;
 CHANNELS     : 'channels' WSNLCHARS* '{'  ;
 
 fragment WSNLCHARS : ' ' | '\t' | '\f' | '\n' | '\r' ;
+
+PERCENTAGE
+   : '%'
+   ;
+
+NEGATE
+   : '!'
+   ;
 
 IMPORT
    : 'import'
@@ -200,7 +198,7 @@ BEGIN_ERR
    ;
 
 BEGIN_REP
-   : '_r(' -> pushMode (RepetitionDeclaration)
+   : '_r(' 
    ;
 
 BEGIN_WHT
@@ -238,6 +236,13 @@ LBRACE
 
 RBRACE
    : RBrace
+   ;
+LBRACK
+   : LBrack
+   ;
+
+RBRACK
+   : RBrack
    ;
 
 RARROW
@@ -332,37 +337,37 @@ ERRCHAR
 // Lexer modes
 // -------------------------
 // Arguments
-mode Argument;
-// E.g., [int x, List<String> a[]]
-NESTED_ARGUMENT
-   : LBrack -> type (ARGUMENT_CONTENT) , pushMode (Argument)
-   ;
+// mode Argument;
+// // E.g., [int x, List<String> a[]]
+// NESTED_ARGUMENT
+//    : LBrack -> type (ARGUMENT_CONTENT) , pushMode (Argument)
+//    ;
 
-ARGUMENT_ESCAPE
-   : EscAny -> type (ARGUMENT_CONTENT)
-   ;
+// ARGUMENT_ESCAPE
+//    : EscAny -> type (ARGUMENT_CONTENT)
+//    ;
 
-ARGUMENT_STRING_LITERAL
-   : DQuoteLiteral -> type (ARGUMENT_CONTENT)
-   ;
+// ARGUMENT_STRING_LITERAL
+//    : DQuoteLiteral -> type (ARGUMENT_CONTENT)
+//    ;
 
-ARGUMENT_CHAR_LITERAL
-   : SQuoteLiteral -> type (ARGUMENT_CONTENT)
-   ;
+// ARGUMENT_CHAR_LITERAL
+//    : SQuoteLiteral -> type (ARGUMENT_CONTENT)
+//    ;
 
-END_ARGUMENT
-   : RBrack
-   { this.handleEndArgument(); }
-   ;
+// END_ARGUMENT
+//    : RBrack
+//    { this.handleEndArgument(); }
+//    ;
 
-// added this to return non-EOF token type here. EOF does something weird
-UNTERMINATED_ARGUMENT
-   : EOF -> popMode
-   ;
+// // added this to return non-EOF token type here. EOF does something weird
+// UNTERMINATED_ARGUMENT
+//    : EOF -> popMode
+//    ;
 
-ARGUMENT_CONTENT
-   : .
-   ;
+// ARGUMENT_CONTENT
+//    : .
+//    ;
 
 // -------------------------
 // Target Language Actions
@@ -455,20 +460,20 @@ WGHT_CONTENT
    : .
    ;
 
-mode RepetitionDeclaration;
+// mode RepetitionDeclaration;
 
-END_REP_DECL
-   : RParen
-   { this.handleEndRepetitionDecl(); }
-   ;
+// END_REP_DECL
+//    : RParen
+//    { this.handleEndRepetitionDecl(); }
+//    ;
 
-UNTERMINATED_REP_DECL
-   : EOF -> popMode
-   ;
+// UNTERMINATED_REP_DECL
+//    : EOF -> popMode
+//    ;
 
-REP_CONTENT
-   : .
-   ;
+// REP_CONTENT
+//    : .
+//    ;
 
 
 // -------------------------

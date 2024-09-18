@@ -121,7 +121,7 @@ weightBlock
 
 
 repetitionBlock
-   : BEGIN_REP REP_CONTENT* END_REP_DECL
+   : BEGIN_REP arg (COMMA arg)* RPAREN
    ;
 
 errorBlock
@@ -129,12 +129,13 @@ errorBlock
    ;
 
 argActionBlock
-   : BEGIN_ARGUMENT arg (COMMA arg)* END_ARGUMENT
+   : LBRACK arg (COMMA arg)* RBRACK
    ;
 
 arg
-   : ( compIdentifier | STRING_LITERAL) (GRAMMAR_OPERATOR ( compIdentifier | STRING_LITERAL))*
+   : ( compIdentifier | STRING_LITERAL | INT | repetitionBlock) (grammarOperator arg )*
    ;
+
 rules
    : ruleSpec*
    ;
@@ -145,7 +146,7 @@ ruleSpec
    ;
 
 parserRuleSpec
-   : ruleModifier? RULE_REF argActionBlock?  (ruleReturns localsSpec | localsSpec? ruleReturns?) COLON ruleBlock SEMI
+   : ruleModifier? ID argActionBlock?  (ruleReturns localsSpec | localsSpec? ruleReturns?) COLON ruleBlock SEMI
    ;
 
 
@@ -192,13 +193,18 @@ alternative
    ;
 
 element
-   : actionBlock QUESTION?  //handles both ANTLR action and ANTLR predicates
+   : actionBlock
+   | predicate
    | weightBlock //handles weight declaration
    | errorBlock //handles error declaration
    | repetitionBlock //handles repetition declaration
-   | expression
+   | expression ebnfSuffix?
    | atom ebnfSuffix? //string literals, variable access, rule reference
    | ebnf //non-root alternation nodes, parenthesized repetitions, and basically just any blocks
+   ;
+
+predicate
+   : LBRACE arg RBRACE QUESTION
    ;
 
 expression
@@ -221,6 +227,7 @@ ebnfSuffix
    : QUESTION
    | STAR
    | PLUS
+   | STAR STAR // for customized listing support
    ;
 
 lexerAtom
@@ -234,6 +241,11 @@ atom
    : terminal
    | notSet
    | precedence
+   | weightage
+   ;
+
+weightage
+   : INT PERCENTAGE
    ;
 
 precedence
@@ -253,7 +265,7 @@ blockSet
    ;
 
 setElement
-   : TOKEN_REF
+   : ID
    | STRING_LITERAL 
    | characterRange
    | LEXER_CHAR_SET
@@ -283,12 +295,13 @@ compIdentifier
 identifier
    : RULE_REF
    | TOKEN_REF
+   | ID
    ;
    
 
 
 lexerRuleSpec
-   : TOKEN_REF optionsSpec? COLON lexerRuleBlock SEMI
+   : ID optionsSpec? COLON lexerRuleBlock SEMI
    ;
 
 lexerRuleBlock
@@ -324,4 +337,15 @@ lexerElement
 
 lexerBlock
    : LPAREN lexerAltList RPAREN
+   ;
+
+grammarOperator
+   : ASSIGN ASSIGN
+   | NEGATE ASSIGN
+   | PLUS ASSIGN
+   | GT ASSIGN
+   | LT ASSIGN
+   | GT
+   | LT
+   | ASSIGN
    ;
