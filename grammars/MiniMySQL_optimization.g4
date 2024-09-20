@@ -65,7 +65,7 @@ createTable
       ( 90% ' '  | TEMPORARY _e("Cannot create temporary table with partitions") ) TABLE 
         ifNotExists? table.new
         (
-            90% LB (cn+=column.new columnDefinition)**_r(1, 5, 0.1) RB 
+            90% LB (cn+=column.new columnDefinition)**_r(1, 5, 10) RB 
             ( 80% ' '  |
                     ' ENGINE ' EQ (' MyISAM ' | ' InnoDB ' ) |
                     PARTITION BY (LINEAR)? _e("allowed type")
@@ -82,9 +82,9 @@ createIndex
     : _e("used in key specification without a key length") CREATE  
     ((
        49% UNIQUE _e("Duplicate", "A UNIQUE INDEX must include all columns in the ") | 
-        FULLTEXT _e("cannot be part of"," support FULLTEXT indexes") | 
+        49% FULLTEXT _e("cannot be part of"," support FULLTEXT indexes") | 
         _e("A SPATIAL index may only contain a geometrical type column")  SPATIAL
-    )_w(100,100,1) )**_r(0, 1, 0.9)
+    ) )**_r(0, 1, 90)
     INDEX index.new
     ON t=table.any c=$column[t] '(' ( c.unique_any )**_r(1, 4) ')'
     (
@@ -109,14 +109,14 @@ updateStatement
     ;
 
 expression [column_name] locals [type=column_name.type] 
-    : int_expr {type=="INT"}? 
-    | text_expr {type=="TEXT"}?  
-    | float_expr {type=="FLOAT"}? 
+    : int_expr <type=="INT">
+    | text_expr <type=="TEXT"> 
+    | float_expr <type=="FLOAT">
     | least 
     | greatest 
     | if_func;
 
-query_core [rep=_r(1,5)] flags [is_statement] returns [c] :
+query_core [rep=_r(1,5)] locals [is_statement] returns [c] :
     @2
 	SELECT (
         90% (   (tt=t.any DOT | tt=$t.any) c+=tt.c.unique_any
@@ -173,7 +173,7 @@ ucase : ' UCASE(' text_expr ') ';
 space : ' SPACE(' int_expr ') ';
 last_insert_id : ' LAST_INSERT_ID() ';
 
-float_expr : ( float_val | abs  | NULL )_w(2,1,1) ;
+float_expr : ( 50% float_val | abs  | NULL ) ;
 float_val : int_val ('.' int_val )? ;
 int_expr : ( 50% (DS)**_r(0, 1) int_val | bit_count | strcmp | last_insert_id | NULL );
 int_val :  (DIGIT)**_r(1, 5, uniform=true) ;
@@ -265,7 +265,7 @@ SC : ';';
 US : '_';
 DS : '-';
 ASTERISK : '*';
-
+DQ : '\"';
 
 fragment DIGIT : [0-9];
 fragment SPACE : [\u0020];
@@ -297,5 +297,4 @@ fragment X : [X];
 fragment Y : [Y];
 fragment Z : [Z];
 fragment CH : [A-Z];
-fragment DQ : ["];
 

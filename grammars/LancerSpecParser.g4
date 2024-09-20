@@ -115,10 +115,6 @@ idList
    : identifier (COMMA identifier)* COMMA?
    ;
 
-weightBlock
-   : BEGIN_WHT WGHT_CONTENT* END_WGHT_DECL
-   ;
-
 
 repetitionBlock
    : BEGIN_REP arg (COMMA arg)* RPAREN
@@ -133,7 +129,7 @@ argActionBlock
    ;
 
 arg
-   : ( compIdentifier | STRING_LITERAL | INT | repetitionBlock) (grammarOperator arg )*
+   : ( compIdentifier | ARG_STRING_LITERAL | INT | repetitionBlock) (grammarOperator arg )*
    ;
 
 rules
@@ -146,7 +142,7 @@ ruleSpec
    ;
 
 parserRuleSpec
-   : ruleModifier? ID argActionBlock?  (ruleReturns localsSpec | localsSpec? ruleReturns?) COLON ruleBlock SEMI
+   : ruleModifier? RULE_REF argActionBlock?  (ruleReturns localsSpec | localsSpec? ruleReturns?) COLON ruleBlock SEMI
    ;
 
 
@@ -195,7 +191,6 @@ alternative
 element
    : actionBlock
    | predicate
-   | weightBlock //handles weight declaration
    | errorBlock //handles error declaration
    | repetitionBlock //handles repetition declaration
    | expression ebnfSuffix?
@@ -204,7 +199,7 @@ element
    ;
 
 predicate
-   : LBRACE arg RBRACE QUESTION
+   : LT arg GT
    ;
 
 expression
@@ -301,7 +296,7 @@ identifier
 
 
 lexerRuleSpec
-   : ID optionsSpec? COLON lexerRuleBlock SEMI
+   : ruleModifier? TOKEN_REF optionsSpec? COLON lexerRuleBlock SEMI
    ;
 
 lexerRuleBlock
@@ -325,13 +320,12 @@ lexerElements
 
 lexerElement
    : actionBlock QUESTION?
-   | weightBlock
    | errorBlock
    | repetitionBlock
    | expression
    | lexerAtom ebnfSuffix?
    | lexerBlock ebnfSuffix?
-   
+   | charSet
    ;
    // but preds can be anywhere
 
@@ -339,10 +333,19 @@ lexerBlock
    : LPAREN lexerAltList RPAREN
    ;
 
+charSet
+   : LBRACK charSetContent RBRACK
+   ;
+
+charSetContent
+   : (~(RBRACK) | ESC)+
+   ;
+
 grammarOperator
    : ASSIGN ASSIGN
    | NEGATE ASSIGN
    | PLUS ASSIGN
+   | PLUS
    | GT ASSIGN
    | LT ASSIGN
    | GT

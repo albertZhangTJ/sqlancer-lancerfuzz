@@ -81,6 +81,10 @@ STRING_LITERAL
    : SQuoteLiteral
    ;
 
+ARG_STRING_LITERAL
+   : DQuoteLiteral
+   ;
+
 UNTERMINATED_STRING_LITERAL
    : USQuoteLiteral
    ;
@@ -101,7 +105,8 @@ UNTERMINATED_STRING_LITERAL
 BEGIN_ACTION
    : LBrace -> pushMode (TargetLanguageAction)
    ;
-
+DASH : '-';
+ESC : '\\' . ; // Match any escaped character (e.g., \] \[)
 // -------------------------
 // Keywords
 //
@@ -201,9 +206,6 @@ BEGIN_REP
    : '_r(' 
    ;
 
-BEGIN_WHT
-   : '_w(' -> pushMode (WeightDeclaration)
-   ;
 
 
 COLON
@@ -445,20 +447,20 @@ ERR_CONTENT
    ;
 
 
-mode WeightDeclaration;
+// mode WeightDeclaration;
 
-END_WGHT_DECL
-   : RParen
-   { this.handleEndWeightDecl(); }
-   ;
+// END_WGHT_DECL
+//    : RParen
+//    { this.handleEndWeightDecl(); }
+//    ;
 
-WGHT_DECL
-   : EOF -> popMode
-   ;
+// WGHT_DECL
+//    : EOF -> popMode
+//    ;
 
-WGHT_CONTENT
-   : .
-   ;
+// WGHT_CONTENT
+//    : .
+//    ;
 
 // mode RepetitionDeclaration;
 
