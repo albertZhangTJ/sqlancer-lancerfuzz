@@ -72,22 +72,6 @@ public abstract class LexerAdaptor extends Lexer {
         this._currentRuleType = ruleType;
     }
 
-    protected void handleBeginArgument() {
-        if (inLexerRule()) {
-            pushMode(LancerSpecLexer.LexerCharSet);
-            more();
-        } else {
-            pushMode(LancerSpecLexer.Argument);
-        }
-    }
-
-    protected void handleEndArgument() {
-        popMode();
-        if (_modeStack.size() > 0) {
-            setType(LancerSpecLexer.ARGUMENT_CONTENT);
-        }
-    }
-
     protected void handleEndAction() {
         int oldMode = _mode;
         int newMode = popMode();
@@ -101,14 +85,6 @@ public abstract class LexerAdaptor extends Lexer {
     }
 
     protected void handleEndErrDecl() {
-        popMode();
-    }
-
-    protected void handleEndWeightDecl() {
-        popMode();
-    }
-
-    protected void handleEndRepetitionDecl() {
         popMode();
     }
 

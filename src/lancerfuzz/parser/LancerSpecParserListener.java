@@ -1,5 +1,5 @@
 package lancerfuzz.parser;
-// Generated from grammars/LancerSpecParser.g4 by ANTLR 4.13.0
+// Generated from LancerSpecParser.g4 by ANTLR 4.13.0
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
 /**
@@ -127,16 +127,6 @@ public interface LancerSpecParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitIdList(LancerSpecParser.IdListContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link LancerSpecParser#weightBlock}.
-	 * @param ctx the parse tree
-	 */
-	void enterWeightBlock(LancerSpecParser.WeightBlockContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link LancerSpecParser#weightBlock}.
-	 * @param ctx the parse tree
-	 */
-	void exitWeightBlock(LancerSpecParser.WeightBlockContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link LancerSpecParser#repetitionBlock}.
 	 * @param ctx the parse tree
@@ -298,6 +288,16 @@ public interface LancerSpecParserListener extends ParseTreeListener {
 	 */
 	void exitElement(LancerSpecParser.ElementContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link LancerSpecParser#predicate}.
+	 * @param ctx the parse tree
+	 */
+	void enterPredicate(LancerSpecParser.PredicateContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link LancerSpecParser#predicate}.
+	 * @param ctx the parse tree
+	 */
+	void exitPredicate(LancerSpecParser.PredicateContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link LancerSpecParser#expression}.
 	 * @param ctx the parse tree
 	 */
@@ -357,6 +357,16 @@ public interface LancerSpecParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitAtom(LancerSpecParser.AtomContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link LancerSpecParser#weightage}.
+	 * @param ctx the parse tree
+	 */
+	void enterWeightage(LancerSpecParser.WeightageContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link LancerSpecParser#weightage}.
+	 * @param ctx the parse tree
+	 */
+	void exitWeightage(LancerSpecParser.WeightageContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link LancerSpecParser#precedence}.
 	 * @param ctx the parse tree
@@ -517,4 +527,34 @@ public interface LancerSpecParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitLexerBlock(LancerSpecParser.LexerBlockContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link LancerSpecParser#charSet}.
+	 * @param ctx the parse tree
+	 */
+	void enterCharSet(LancerSpecParser.CharSetContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link LancerSpecParser#charSet}.
+	 * @param ctx the parse tree
+	 */
+	void exitCharSet(LancerSpecParser.CharSetContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link LancerSpecParser#charSetContent}.
+	 * @param ctx the parse tree
+	 */
+	void enterCharSetContent(LancerSpecParser.CharSetContentContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link LancerSpecParser#charSetContent}.
+	 * @param ctx the parse tree
+	 */
+	void exitCharSetContent(LancerSpecParser.CharSetContentContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link LancerSpecParser#grammarOperator}.
+	 * @param ctx the parse tree
+	 */
+	void enterGrammarOperator(LancerSpecParser.GrammarOperatorContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link LancerSpecParser#grammarOperator}.
+	 * @param ctx the parse tree
+	 */
+	void exitGrammarOperator(LancerSpecParser.GrammarOperatorContext ctx);
 }

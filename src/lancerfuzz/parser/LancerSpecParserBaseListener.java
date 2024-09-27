@@ -1,5 +1,5 @@
 package lancerfuzz.parser;
-// Generated from grammars/LancerSpecParser.g4 by ANTLR 4.13.0
+// Generated from LancerSpecParser.g4 by ANTLR 4.13.0
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
@@ -156,18 +156,6 @@ public class LancerSpecParserBaseListener implements LancerSpecParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitIdList(LancerSpecParser.IdListContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterWeightBlock(LancerSpecParser.WeightBlockContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitWeightBlock(LancerSpecParser.WeightBlockContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -365,6 +353,18 @@ public class LancerSpecParserBaseListener implements LancerSpecParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterPredicate(LancerSpecParser.PredicateContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitPredicate(LancerSpecParser.PredicateContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterExpression(LancerSpecParser.ExpressionContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -432,6 +432,18 @@ public class LancerSpecParserBaseListener implements LancerSpecParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitAtom(LancerSpecParser.AtomContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterWeightage(LancerSpecParser.WeightageContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitWeightage(LancerSpecParser.WeightageContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -624,6 +636,42 @@ public class LancerSpecParserBaseListener implements LancerSpecParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitLexerBlock(LancerSpecParser.LexerBlockContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterCharSet(LancerSpecParser.CharSetContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitCharSet(LancerSpecParser.CharSetContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterCharSetContent(LancerSpecParser.CharSetContentContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitCharSetContent(LancerSpecParser.CharSetContentContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterGrammarOperator(LancerSpecParser.GrammarOperatorContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitGrammarOperator(LancerSpecParser.GrammarOperatorContext ctx) { }
 
 	/**
 	 * {@inheritDoc}

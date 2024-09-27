@@ -5,8 +5,6 @@ public class RepetitionDeclNode extends Node {
     private int max;
     private double decay;
     private boolean uniform;
-    private String rp_id;
-    private String delimiter;
 
     public RepetitionDeclNode(String decl){
         this.process_decl(decl);
@@ -41,14 +39,6 @@ public class RepetitionDeclNode extends Node {
 
     public boolean is_uniform(){
         return this.uniform;
-    }
-
-    public String get_rpid(){
-        return this.rp_id;
-    }
-
-    public String get_delimiter(){
-        return this.delimiter;
     }
 
 }

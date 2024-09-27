@@ -1,5 +1,7 @@
 package lancerfuzz.AST;
 
+import lancerfuzz.Utils;
+
 public class AlternativeNode extends Node{
     private String rule_id;
     private int alternative_index;
@@ -8,6 +10,8 @@ public class AlternativeNode extends Node{
     private boolean is_static; //refers to a STATIC_VAR declaration if set to true, VAR declaration otherwise
     private boolean is_member;
     private String var_id;
+
+    private PredicateNode predicate;
 
     private String type; //type (in SQL), should only be applicable if the parent is an expression node
 
@@ -62,6 +66,13 @@ public class AlternativeNode extends Node{
 
     public String get_type(){
         return this.type;
+    }
+
+    public void set_predicate(PredicateNode predicate){
+        if (this.predicate!=null){
+            Utils.panic("AlternativeNode::set_predicate : Duplicate predicate for a branch");
+        }
+        this.predicate = predicate;
     }
 
     // @Override
