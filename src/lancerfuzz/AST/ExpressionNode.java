@@ -1,5 +1,7 @@
 package lancerfuzz.AST;
 
+import lancerfuzz.Utils;
+
 public class ExpressionNode extends Node {
     private VariableNode lhs;
     private String operator;

@@ -121,7 +121,7 @@ repetitionBlock
    ;
 
 errorBlock
-   : BEGIN_ERR ERR_CONTENT* END_ERR_DECL
+   : BEGIN_ERR ARG_STRING_LITERAL (COMMA ARG_STRING_LITERAL)* RPAREN
    ;
 
 argActionBlock

@@ -89,16 +89,6 @@ UNTERMINATED_STRING_LITERAL
    : USQuoteLiteral
    ;
 
-// -------------------------
-// Arguments
-//
-// Certain argument lists, such as those specifying call parameters
-// to a rule invocation, or input parameters to a rule specification
-// are contained within square brackets.
-// BEGIN_ARGUMENT
-//    : LBrack
-//    { this.handleBeginArgument(); }
-//    ;
 
 // -------------------------
 // Target Language Actions
@@ -199,7 +189,7 @@ MODE
    // Punctuation
 
 BEGIN_ERR
-   : '_e(' -> pushMode (ExpectedErrorDeclaration)
+   : '_e(' 
    ;
 
 BEGIN_REP
@@ -335,41 +325,6 @@ ERRCHAR
    : . -> channel (HIDDEN)
    ;
 
-// ======================================================
-// Lexer modes
-// -------------------------
-// Arguments
-// mode Argument;
-// // E.g., [int x, List<String> a[]]
-// NESTED_ARGUMENT
-//    : LBrack -> type (ARGUMENT_CONTENT) , pushMode (Argument)
-//    ;
-
-// ARGUMENT_ESCAPE
-//    : EscAny -> type (ARGUMENT_CONTENT)
-//    ;
-
-// ARGUMENT_STRING_LITERAL
-//    : DQuoteLiteral -> type (ARGUMENT_CONTENT)
-//    ;
-
-// ARGUMENT_CHAR_LITERAL
-//    : SQuoteLiteral -> type (ARGUMENT_CONTENT)
-//    ;
-
-// END_ARGUMENT
-//    : RBrack
-//    { this.handleEndArgument(); }
-//    ;
-
-// // added this to return non-EOF token type here. EOF does something weird
-// UNTERMINATED_ARGUMENT
-//    : EOF -> popMode
-//    ;
-
-// ARGUMENT_CONTENT
-//    : .
-//    ;
 
 // -------------------------
 // Target Language Actions
@@ -421,62 +376,6 @@ UNTERMINATED_ACTION
 ACTION_CONTENT
    : .
    ;
-
-mode ExpectedErrorDeclaration;
-
-
-ERROR_STRING_LITERAL
-   : DQuoteLiteral -> type (ERR_CONTENT)
-   ;
-
-ERROR_CHAR_LITERAL
-   : SQuoteLiteral -> type (ERR_CONTENT)
-   ;
-
-END_ERR_DECL
-   : RParen
-   { this.handleEndErrDecl(); }
-   ;
-
-UNTERMINATED_ERR_DECL
-   : EOF -> popMode
-   ;
-
-ERR_CONTENT
-   : .
-   ;
-
-
-// mode WeightDeclaration;
-
-// END_WGHT_DECL
-//    : RParen
-//    { this.handleEndWeightDecl(); }
-//    ;
-
-// WGHT_DECL
-//    : EOF -> popMode
-//    ;
-
-// WGHT_CONTENT
-//    : .
-//    ;
-
-// mode RepetitionDeclaration;
-
-// END_REP_DECL
-//    : RParen
-//    { this.handleEndRepetitionDecl(); }
-//    ;
-
-// UNTERMINATED_REP_DECL
-//    : EOF -> popMode
-//    ;
-
-// REP_CONTENT
-//    : .
-//    ;
-
 
 // -------------------------
 mode LexerCharSet;
