@@ -121,7 +121,7 @@ repetitionBlock
    ;
 
 errorBlock
-   : BEGIN_ERR ARG_STRING_LITERAL (COMMA ARG_STRING_LITERAL)* RPAREN
+   : BEGIN_ERR STRING_LITERAL (COMMA STRING_LITERAL)* RPAREN
    ;
 
 argActionBlock
@@ -129,7 +129,7 @@ argActionBlock
    ;
 
 arg
-   : ( compIdentifier | ARG_STRING_LITERAL | INT | repetitionBlock) (grammarOperator arg )*
+   : ( compIdentifier | STRING_LITERAL | INT | repetitionBlock) (grammarOperator arg )*
    ;
 
 rules

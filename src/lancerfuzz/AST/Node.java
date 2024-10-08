@@ -14,7 +14,6 @@ public class Node {
     private String identifier;
     private List<Edge> outward_edges;
     private List<String> expected_errors = new ArrayList<>();
-    private List<Integer> 
     public boolean walked; //for debugging purpose only
     public boolean is_rendered=false; //eaiser for the fuzzer renderer to follow
 
@@ -72,6 +71,10 @@ public class Node {
         return this.identifier;
     }
 
+    public void change_parent_to(Node new_parent){
+
+    }
+
     public String toString(){
         return "\n[NODE]\n"+
                 "    id: "+this.id+"\n"+
@@ -95,5 +98,13 @@ public class Node {
 
     public int get_min_depth(){
         return this.min_depth;
+    }
+
+    //This is just a placeholder for render function
+    //Should not be executed in real life
+    //Did not set to abstract to save some work for temporary IR nodes
+    public String render(){
+        Utils.panic("Node::render : Internal error, you should never have got here");
+        return null;
     }
 }

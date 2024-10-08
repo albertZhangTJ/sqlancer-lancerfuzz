@@ -60,13 +60,27 @@ public class Rig{
         private HashMap<String, Variable> symbols;
         private List<HashMap<String, Variable>> symbolStack;
         private List<Variable> args;
+        private List<String> errors;
         private Variable result;
         private SQLConnection conn;
-        
+        public static final List<String> OPERATORS = Collections.unmodifiableList(Arrays.asList("=", "+=", "+", "-", "==", "!=", ">", "<", ">=", "<="));
+
+        private Buffer out;
+
         public Context(SQLConnection conn){
             this.symbols = new HashMap<>();
             this.symbolStack = new ArrayList<>();
+            this.errors = new ArrayList<>();
             this.conn = conn;
+        }
+
+        public void addError(Variable v) throws IllegalArgumentException{
+            try {
+                this.errors.add(v.getValue());
+            }
+            catch (IllegalArgumentException e){
+                throw new java.lang.IllegalArgumentException("ERROR: Fuzzer.Context.addError :: variable passed to expected error declaration is not single-valued, check your expected error declarations", e)
+            }
         }
 
         public void push_args(List<Variable> args){
@@ -95,6 +109,7 @@ public class Rig{
             this.result = null;
         }
 
+
         public void ret(String returnSymbol){
             //move the return value into the cache slot
             if (returnSymbol!=null){
@@ -122,6 +137,40 @@ public class Rig{
                                                     "If not, please make sure the symbol is there and consider specify the expansion ordering since the auto-scheduler is only best-effort");
             }
             return this.symbols.get(symbol)==null ? this.globalSymbols.get(symbol) : this.symbols.get(symbol);
+        }
+
+        //
+        public Variable eval(Variable a, String operator, Variable b) throws IllegalArgumentException{
+            if (operator==null){
+                throw new IllegalArgumentException("ERROR : Variable.eval :: operator cannot be null");
+            }
+            //this is for the author's own use
+            //if an operator is illegal, it shouldn't be recognized by the parser in the first place
+            //this almost for sure means there is some kinda implementation error
+            if (!OPERATORS.contains(operator)){
+                throw new IllegalArgumentException("ERROR : Context.eval :: "+operator+" is not a recognized operator. Internal error, you shouldn't have reached here.");
+            }
+            if (operator.equals("=")){
+                a.clone(b);
+                return a;
+            }
+            if (operator.equals("+=")){
+                a.addEntry(b);
+                return a;
+            }
+            if (operator.equals("+")){
+                if (a.isNumerical() && b.isNumerical()){
+                    return Variable.factory(a.getNumerical() + b.getNumerical());
+                }
+                return Variable.factory(a.getValue()+b.getValue());
+            }
+            if (operator.equals("-")){
+                if (a.isNumerical() && b.isNumerical()){
+                    return Variable.factory(a.getNumerical() - b.getNumerical());
+                }
+                throw new IllegalArgumentException("ERROR : Context.eval :: the operator \"-\" is not applicable when either side of the operation is not numerical");
+            }
+            return Variable.factory(a.compare(operator, b));
         }
 
 
@@ -168,13 +217,13 @@ public class Rig{
         private boolean bool;
         private boolean containsNumerical;
         private boolean containsBoolean;
-        private List<String> entries;
+        private List<Variable> entries;
         private List<Integer> uniqueUsageCount;
         private HashMap<String, Variable> attributes;
         private int cursor; //non-decreasing, modulus entries.size() will be used for extracting index 
 
         public static final List<String> RESERVED_ATTR = Collections.unmodifiableList(Arrays.asList("new", "any", "next", "len", "unique_any", "query", "filter", "cur"));
-        public static final List<String> OPERATORS = Collections.unmodifiableList(Arrays.asList("=", "+=", "+", "==", "!=", ">", "<", ">=", "<="));
+        
         public Variable(){
             this.isSingleValued = false;
             this.containsNumerical = false;
@@ -239,29 +288,25 @@ public class Rig{
             return new Variable(bool);
         }
         
-
-        //
-        public static Variable eval(Variable a, String operator, Variable b) throws IllegalArgumentException{
-            if (operator==null){
-                throw new IllegalArgumentException("ERROR : Variable.eval :: operator cannot be null");
+        //make the current variable a shallow-copy of other
+        //the cursor will be set to 0
+        //mainly used for assignment (i.e. a=b will be context.getSymbol("a").clone(context.getSymbol("b")))
+        public void clone(Variable other){
+            this.isSingleValued = other.isSingleValued;
+            this.value = other.value;
+            this.numerical = other.numerical;
+            this.bool = other.bool;
+            this.containsNumerical = other.containsNumerical;
+            this.containsBoolean = other.containsBoolean;
+            this.entries = copy_list(other.entries);
+            this.uniqueUsageCount = ArrayList<>();
+            for (Variable v: this.entries){
+                this.uniqueUsageCount.add(0);
             }
-            //this is for the author's own use
-            //if an operator is illegal, it shouldn't be recognized by the parser in the first place
-            //this almost for sure means there is some kinda implementation error
-            if (!OPERATORS.contains(operator)){
-                throw new IllegalArgumentException("ERROR : Variable.eval :: "+operator+" is not a recognized operator. Internal error, you shouldn't have reached here.");
-            }
-            if (operator.equals("=") || operator.equals("+=")){
-                throw new IllegalArgumentException("ERROR : Variable.eval :: "+operator+" is an assignment operator, and is not supposed to be evaluated here");
-            }
-            if (operator.equals("+")){
-                if (a.isNumerical() && b.isNumerical()){
-                    return Variable.factory(a.getNumerical() + b.getNumerical());
-                }
-                return Variable.factory(a.getValue()+b.getValue());
-            }
-            return Variable.factory(a.compare(operator, b));
+            this.attributes = copy_map(other.attributes);
+            this.cursor = 0;
         }
+        
         // new, query, getColumn, withColumnAsAttr will not be handled as those are not attributes but functions
         // those will be implemented in the Context class
         public Variable getAttr(String name, List<Variable> args) throws Exception{
@@ -401,7 +446,7 @@ public class Rig{
             }
             throw new IllegalArgumentException("Fuzzer.Variable.compare :: comparator "+comparator+" is not recognizable");
         }
-        public String getValue(){
+        public String getValue() throws IllegalArgumentException{
             if (!this.isSingleValued){
                 throw new IllegalArgumentException("Fuzzer.Variable.getValue :: getValue is not applicable to multi-valued variable");
             }
@@ -457,6 +502,28 @@ public class Rig{
                 }
             }
             return false;
+        }
+
+        public static <T> List<T> copy_list(List<T> ori){
+            if (ori==null){
+                return null;
+            }
+            List<T> res = new ArrayList<>();
+            for (T item: ori){
+                res.add(item);
+            }
+            return res;
+        }
+    
+        public static <T, U> HashMap<T, U> copy_map(HashMap<T, U> ori){
+            if (ori==null){
+                return null;
+            }
+            HashMap<T, U> res = new HashMap<>();
+            for (HashMap.Entry<T, U> entry: ori.entrySet()){
+                res.put(entry.getKey(), entry.getValue());
+            }
+            return res;
         }
     }
 }

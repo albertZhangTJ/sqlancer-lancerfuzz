@@ -24,4 +24,9 @@ public class ExpressionNode extends Node {
     public VariableNode get_rhs(){
         return this.rhs;
     }
+
+    public String render(){
+        return "context.eval("+lhs.render()+", \""+operator+"\", "+rhs.render()+")";
+    }
+
 }

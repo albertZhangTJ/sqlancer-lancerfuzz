@@ -25,18 +25,18 @@ THE SOFTWARE.
 grammar MiniMySQL;
 
 alterTable
-    : _e("exist") ALTER TABLE t = table.any
-    ( alterSpecification )**_r(1, 5) SC
+    : _e('exist') ALTER TABLE t = table.any
+     ( alterSpecification )**_r(1, 6, ',') SC
     ;
 
 fragment alterSpecification
     : 
     ADD COLUMN? column.new columnDefinition FIRST?    
-    | ADD COLUMN? '(' (column.new columnDefinition){delimiter=","} ')' 
-    | DROP COLUMN? column[t].unique_any _e("delete all", "has a partitioning function dependency")
-    | DROP PRIMARY KEY _e("primary")
+    | ADD COLUMN? '(' (column.new columnDefinition)_r(1, 3, ',') ')' 
+    | DROP COLUMN? column[t].unique_any _e('delete all', 'has a partitioning function dependency')
+    | DROP PRIMARY KEY _e('primary')
     | RENAME ( TO | AS ) table.new
-    | RENAME COLUMN column[t].unique_any TO column.unique_any _e("has a partitioning function dependency and cannot be dropped or renamed")
+    | RENAME COLUMN column[t].unique_any TO column.unique_any _e('has a partitioning function dependency and cannot be dropped or renamed')
     ;
 
 fragment columnDefinition
@@ -61,14 +61,14 @@ useDatabase
     ;
 
 createTable
-    : CREATE _e("A BLOB field is not allowed in partition function", "is of a not allowed type for this type of partitioning") 
-      ( 90% ' '  | TEMPORARY _e("Cannot create temporary table with partitions") ) TABLE 
+    : CREATE _e('A BLOB field is not allowed in partition function', 'is of a not allowed type for this type of partitioning') 
+      ( 90% ' '  | TEMPORARY _e('Cannot create temporary table with partitions') ) TABLE 
         ifNotExists? table.new
         (
-            90% LB (cn+=column.new columnDefinition)**_r(1, 5, 10) RB 
+            90% LB ( cn+=column.new columnDefinition)**_r(1, 5, 10, ',') RB 
             ( 80% ' '  |
                     ' ENGINE ' EQ (' MyISAM ' | ' InnoDB ' ) |
-                    PARTITION BY (LINEAR)? _e("allowed type")
+                    PARTITION BY (LINEAR)? _e('allowed type')
                     ( 
                         'HASH(' cn.any ')' |
                         ' KEY ' ( 'ALGORITHM=' ('1'|'2'))? '(' cn.any ')'
@@ -79,39 +79,39 @@ createTable
     ;
 
 createIndex
-    : _e("used in key specification without a key length") CREATE  
+    : _e('used in key specification without a key length') CREATE  
     ((
-       49% UNIQUE _e("Duplicate", "A UNIQUE INDEX must include all columns in the ") | 
-        49% FULLTEXT _e("cannot be part of"," support FULLTEXT indexes") | 
-        _e("A SPATIAL index may only contain a geometrical type column")  SPATIAL
+       49% UNIQUE _e('Duplicate', 'A UNIQUE INDEX must include all columns in the ') | 
+        49% FULLTEXT _e('cannot be part of',' support FULLTEXT indexes') | 
+        _e('A SPATIAL index may only contain a geometrical type column')  SPATIAL
     ) )**_r(0, 1, 90)
     INDEX index.new
-    ON t=table.any c=$column[t] '(' ( c.unique_any )**_r(1, 4) ')'
+    ON t=table.any c=$column[t] '(' ( c.unique_any )**_r(1, 6) ')'
     (
         ALGORITHM EQ (DEFAULT | INPLACE | COPY)
         | LOCK EQ (DEFAULT | NONE | SHARED | EXCLUSIVE)
-    ) _e("is not supported")
+    ) _e('is not supported')
     SC
     ;
 
 truncateTable : TRUNCATE TABLE table.any SC ;
     
 insertStatement
-    : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? _e("Duplicate") t=table.any
+    : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? _e('Duplicate') t=table.any
     '('  ( c+=column[t] )**_r(1, 6) ')' 
-    VALUES '(' ( expression[c.next] )**_r(c.len) ')'
+    VALUES '(' ( expression[c.next] )**c.len) ')'
     SC
     ;
 
 updateStatement
-    : UPDATE _e("Duplicate") LOW_PRIORITY? IGNORE? t=tableName 
+    : UPDATE _e('Duplicate') LOW_PRIORITY? IGNORE? t=tableName 
     SET (cc=columnName[t].any '=' expression[cc])**_r(1,6) (WHERE (NOT)? cc=columnName[t].any '=' expression[cc])? SC
     ;
 
 expression [column_name] locals [type=column_name.type] 
-    : int_expr <type=="INT">
-    | text_expr <type=="TEXT"> 
-    | float_expr <type=="FLOAT">
+    : int_expr <type=='INT'>
+    | text_expr <type=='TEXT'> 
+    | float_expr <type=='FLOAT'>
     | least 
     | greatest 
     | if_func;
@@ -180,10 +180,10 @@ int_val :  (DIGIT)**_r(1, 5, uniform=true) ;
 text_expr : ( 70% text_val | substr | substring | lcase | ucase | space | trim | NULL );
 text_val :  DQ ( (CH | DIGIT) )**_r(1, 100) DQ ;
 
-db returns [d] : d=$query["SHOW DATABASES;", "Database"] ;
-table returns [t] : t=$query["SHOW TABLES;", "Tables_in_"+DB];
-column [table] returns [c] : c=$query["SHOW COLUMNS FROM "+table, "Field"];
-index [table] returns [i] : i=$query["SHOW INDEX FROM "+table, "Key_name"];
+db returns [d] : d=$query['SHOW DATABASES;', 'Database'] ;
+table returns [t] : t=$query['SHOW TABLES;', 'Tables_in_'+DB];
+column [table] returns [c] : c=$query['SHOW COLUMNS FROM '+table, 'Field'];
+index [table] returns [i] : i=$query['SHOW INDEX FROM '+table, 'Key_name'];
 
 
     
@@ -266,6 +266,7 @@ US : '_';
 DS : '-';
 ASTERISK : '*';
 DQ : '\"';
+COMMA : ',';
 
 fragment DIGIT : [0-9];
 fragment SPACE : [\u0020];

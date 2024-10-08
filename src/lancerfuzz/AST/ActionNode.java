@@ -19,6 +19,10 @@ public class ActionNode extends Node{
         }
         this.src=source;
     }
+
+    public String render(){
+        return this.src;
+    }
     
     public String toString(){
         return super.toString()+"\n    type: ActionNode\n    src:\n"+this.src;

@@ -81,10 +81,6 @@ STRING_LITERAL
    : SQuoteLiteral
    ;
 
-ARG_STRING_LITERAL
-   : DQuoteLiteral
-   ;
-
 UNTERMINATED_STRING_LITERAL
    : USQuoteLiteral
    ;
