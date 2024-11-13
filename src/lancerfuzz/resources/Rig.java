@@ -3,6 +3,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import java.lang.IllegalArgumentException;
+import Math.random;
 import sqlancer.SQLConnection;
 public class Rig{
     public static class UnavailableException extends Exception {
@@ -64,14 +66,14 @@ public class Rig{
         private Variable result;
         private SQLConnection conn;
         public static final List<String> OPERATORS = Collections.unmodifiableList(Arrays.asList("=", "+=", "+", "-", "==", "!=", ">", "<", ">=", "<="));
-
-        private Buffer out;
+        private HashMap<String, Integer> idCount;
 
         public Context(SQLConnection conn){
             this.symbols = new HashMap<>();
             this.symbolStack = new ArrayList<>();
             this.errors = new ArrayList<>();
             this.conn = conn;
+            this.idCount = new HashMap<>();
         }
 
         public void addError(Variable v) throws IllegalArgumentException{
@@ -124,19 +126,117 @@ public class Rig{
 
         // the symbol here might be either a variable or a function
         // that is why the args arg this there, it won't even be looked at if it is actually a variable
-        public Variable getSymbol(String symbol, List<String> args) throws IllegalArgumentException{
+        public Variable getSymbol(String symbol, List<Variable> args) throws IllegalArgumentException{
             if (symbol==null){
                 throw new IllegalArgumentException("ERROR : Fuzzer.Context.getSymbol :: the symbol accessed is null, check your grammar");
             }
             if (symbol.equals("query")){
                 return this.query(args);
             }
+            if (symbol.equals("_r")){
+                return this.random(args);
+            }
+            if (symbol.equals("_e")){
+                return this.addExpectedError(args);
+            }
+            if (symbol.equals)
             if (this.symbols.get(symbol)==null && this.globalSymbols.get(symbol)==null){
                 throw new IllegalArgumentException("ERROR : Fuzzer.Context.getSymbol :: the symbol \"" + symbol + "\" accessed does not exist or has not yet been initialized\n"+
                                                     "If you are using customized expansion order, please check your order specification\n"+
                                                     "If not, please make sure the symbol is there and consider specify the expansion ordering since the auto-scheduler is only best-effort");
             }
             return this.symbols.get(symbol)==null ? this.globalSymbols.get(symbol) : this.symbols.get(symbol);
+        }
+
+        //random generator 
+        // handles the following cases
+        //_r[fix_number, delimiter]
+        //_r[min, delimiter, decay_spec]
+        //_r[min, max, delimiter, decay_spec]
+        // decay_spec should be an interger ranging 0 to 4, default 2
+        // 0 for uniform distribution, uniform distribution without a max is not allowed
+        // 1 for 0.25^x, 2 for 0.5^x, 3 for 0.75^x, 4 for 0.99^x
+        public Variable random(List<Variable> args) throws IllegalArgumentException{
+            try{
+                if (args.size()==2){
+                    int val = args.get(0).getNumerical();
+                    String delimiter = args.get(1).getValue();
+                    Variable res = Variable.factory(val);
+                    res.setAttr("delimiter", Variable.factory(delimiter));
+                    return res;
+                }
+                if (args.size()==3){
+                    int min = args.get(0).getNumerical();
+                    String delimiter = args.get(1).getValue();
+                    int ds = args.get(2).getNumerical();
+                    if (ds==0){
+                        throw new IllegalArgumentException("ERROR : Fuzzer.Context.random :: random function cannot be called with no max AND uniform distribution");
+                    }
+                    if (ds>4 || ds<0){
+                        throw new IllegalArgumentException("ERROR : Fuzzer.Context.random :: unrecognizable decay_spec, accepted value are integers in range [0,4]");
+                    }
+                    int val = min;
+                    double dr = ds==1 ? 0.25 : ds==2 ? 0.5 : ds==3 ? 0.75 : 0.99;
+                    while (true){
+                        if (Math.random()<dr){
+                            break;
+                        }
+                        val++;
+                    }
+                    Variable res = Variable.factory(val);
+                    res.setAttr("delimiter", Variable.factory(delimiter));
+                    return res;
+                }
+                if (args.size()==4){
+                    int min = args.get(0).getNumerical();
+                    int max = args.get(1).getNumerical();
+                    String delimiter = args.get(2).getValue();
+                    int ds = args.get(3).getNumerical();
+                    if (ds>4 || ds<0){
+                        throw new IllegalArgumentException("ERROR : Fuzzer.Context.random :: unrecognizable decay_spec, accepted value are integers in range [0,4]");
+                    }
+                    int val = min;
+                    if (ds==0){
+                        val += (int)((max-min+1)*Math.random());
+                    }
+                    else {
+                        double dr = ds==1 ? 0.25 : ds==2 ? 0.5 : ds==3 ? 0.75 : 0.99;
+                        while (true){
+                            if (Math.random()<dr){
+                                break;
+                            }
+                            val++;
+                            //wrap around when overflow
+                            if (val>max){
+                                val = min;
+                            }
+                        }
+                    }
+                    Variable res = Variable.factory(val);
+                    res.setAttr("delimiter", Variable.factory(delimiter));
+                    return res;
+                }
+                throw new IllegalArgumentException("ERROR : Fuzzer.Context.random :: Expecting 2, 3, or 4 arguments, got "+args.size());
+                return null;
+            }
+            catch (IllegalArgumentException e){
+                throw new IllegalArgumentException("ERROR : Fuzzer.Context.random :: arguments passed are not recognizable, the recognized formats are\n"+
+                                                    "_r[fix_number, delimiter]\n" + 
+                                                    "_r[min, delimiter, decay_spec]\n" + 
+                                                    "_r[min, max, delimiter, decay_spec]\n" + 
+                                                    "decay_spec should be an interger ranging 0 to 4, default 2\n" + 
+                                                    "0 for uniform distribution, uniform distribution without a max is not allowed\n" + 
+                                                    "1 for 0.25^x, 2 for 0.5^x, 3 for 0.75^x, 4 for 0.99^x", e);
+            }
+        }
+
+        //returning a variable object containing an empty string since
+        //all calls to a function is expected to return something
+        //so we are using this as a placeholder
+        public Variable addExpectedError(List<Variable> args){
+            for (Variable arg : args){
+                this.errors.add(arg.getValue());
+            }
         }
 
         //
@@ -207,6 +307,20 @@ public class Rig{
                 v.addEntry(r);
             }
             return v;
+        }
+        //for the "new" built-in function 
+        public Variable new_id(List<Variable> args){
+            if (args.size()!=1){
+                throw new IllegalArgumentException("ERROR : Fuzzer.Context.new_id :: a call to the new function expects exactly 1 argument: the prefix of the id to be generated");
+            }
+            String prefix = args.get(0).getValue();
+            if (this.idCount.containsKey(prefix)){
+                this.idCount.put(prefix, this.idCount.get(prefix)+1);
+            }
+            else {
+                this.idCount.put(prefix, 1);
+            }
+            return new Variable(prefix+this.idCount.get(prefix));
         }
     }
 
@@ -457,7 +571,7 @@ public class Rig{
         }
 
         public int getNumerical(){
-            return thus.numerical;
+            return this.numerical;
         }
         public boolean isBoolean(){
             return this.containsBoolean;
@@ -525,5 +639,10 @@ public class Rig{
             }
             return res;
         }
+    }
+
+    public String fuzz(SQLConnection conn, String rule){
+        Context ctx = new Context(conn);
+
     }
 }

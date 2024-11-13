@@ -16,6 +16,8 @@ public class Node {
     private List<String> expected_errors = new ArrayList<>();
     public boolean walked; //for debugging purpose only
     public boolean is_rendered=false; //eaiser for the fuzzer renderer to follow
+    public static List<String> rules;
+
 
     protected int min_depth=-1;
 
@@ -50,6 +52,27 @@ public class Node {
 
     public int get_id(){
         return this.id;
+    }
+
+    public static void init(){
+        rules = new ArrayList<>();
+
+        //built-in functions 
+        //built-in attributes of variables are not handled here as they are not standalone
+        register_rule("_e"); //built-in function for expected error
+        register_rule("_r"); //built-in function for random 
+        register_rule("query"); //built-in function for querying target DBMS
+    }
+
+    public static void register_rule(String name){
+        if (rules.contains(name)){
+            Utils.panic("Node::register_rule : redefinition of rule "+name);
+        }
+        rules.add(name);
+    }
+
+    public static boolean is_rule(String id){
+        return rules.contains(id);
     }
 
     public void add_outward_edge(Edge edge){

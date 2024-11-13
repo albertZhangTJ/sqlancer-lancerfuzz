@@ -3,7 +3,7 @@
 // to be a child of this node
 // the priority of the a default Node is 65536
 // if any node has a ScheduleNode as child
-// all its children must be ScheduleNodes
+// all its children must be ScheduleNodes before rendering
 public class ScheduleNode extends Node{
     private int priority;
     public ScheduleNode(int priority){
@@ -14,7 +14,10 @@ public class ScheduleNode extends Node{
     }
 
     @Override
-    public String render(){
-        
+    public String render(List<String> function_list, String padding){
+        String handle = "node"+this.get_id()+"(ctx);\n"
+        String code = padding + "public ";
+        code = code + "Buffer "+buf_name+" = new Buffer();\n";
+        //TODO
     }
 }

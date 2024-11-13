@@ -7,7 +7,8 @@ public class CompIdentifierNode extends Node {
     //a[b].c.d
     //anything in the tail (c.d) will be stored in the child nodes which is linked using outward edges
     private String id; // a
-    private List<String> param; // the ones passed in using [...], b
+    private List<ArgNode> param; // the ones passed in using [...], b
+    private CompIdentifierNode attr;
 
     // if head, then this.id is either a rule/token ref or a variable name
     // otherwise it will either be an attribute (if param is null) or a function (if param is not)
@@ -17,6 +18,7 @@ public class CompIdentifierNode extends Node {
         this.id = ID;
         this.param = Utils.copy_list(param);
         this.head = is_head;
+        this.attr = null;
     }
 
     public String get_id(){
@@ -29,6 +31,13 @@ public class CompIdentifierNode extends Node {
 
     public boolean is_head(){
         return this.head;
+    }
+
+    public String render(){
+        if (this.is_head()){
+            String res = "context.getSymbol(\""+this.id +"\"";
+            
+        }
     }
 
 }

@@ -1,6 +1,7 @@
 package lancerfuzz.AST;
 // Expect a child variable node with type of boolean
 public class PredicateNode extends Node {
+    private String src;
     private 
     public PredicateNode(String src){
         this.src = src;

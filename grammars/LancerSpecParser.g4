@@ -129,7 +129,7 @@ argActionBlock
    ;
 
 arg
-   : ( compIdentifier | STRING_LITERAL | INT | repetitionBlock) (grammarOperator arg )*
+   : expression
    ;
 
 rules
@@ -193,7 +193,7 @@ element
    | predicate
    | errorBlock //handles error declaration
    | repetitionBlock //handles repetition declaration
-   | expression ebnfSuffix?
+   | arg ebnfSuffix?
    | atom ebnfSuffix? //string literals, variable access, rule reference
    | ebnf //non-root alternation nodes, parenthesized repetitions, and basically just any blocks
    ;
@@ -202,16 +202,27 @@ predicate
    : LT arg GT
    ;
 
+
 expression
-   : variableAssignment
-   | compIdentifier
+   : mexpr ((ASSIGN | PLUS_ASSIGN) DOLLAR? mexpr)*
    ;
 
-variableAssignment
-   : compIdentifier (ASSIGN | PLUS_ASSIGN) DOLLAR? compIdentifier
+mexpr
+   : lexpr ((ASSIGN ASSIGN | NEGATE ASSIGN | GT ASSIGN | LT ASSIGN | GT | LT) lexpr)*
+   ;
+
+lexpr
+   : variable ((PLUS | DASH) variable)*
    ;
    // --------------------
    // EBNF and blocks
+
+variable
+   : compIdentifier
+   | STRING_LITERAL
+   | INT
+   | BOOL
+   ;
 
 ebnf
    : block ebnfSuffix?

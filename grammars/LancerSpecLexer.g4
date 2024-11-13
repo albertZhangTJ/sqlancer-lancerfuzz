@@ -70,6 +70,10 @@ INT
    : DecimalNumeral
    ;
 
+BOOL
+   : 'true' | 'false'
+   ;
+
 // -------------------------
 // Literal string
 //
