@@ -3,10 +3,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import com.facebook.presto.jdbc.internal.okio.Buffer;
+
 import java.lang.IllegalArgumentException;
 import Math.random;
+import lancerfuzz.resources.Rig.Context;
 import sqlancer.SQLConnection;
-public class Rig{
+public class demo{
     public static class UnavailableException extends Exception {
         public boolean isUndefined; //the variable/attr requested does not exist
         public boolean isUninitialized; //the variable/attr requests exists but has no value associated
@@ -16,6 +19,12 @@ public class Rig{
             this.isUndefined = isUndefined;
             this.isUninitialized = isUninitialized;
             this.isOut = isOut;
+        }
+    }
+
+    public static class DeadEndException extends Exception {
+        public DeadEndException(String message){
+            super(message);
         }
     }
 
@@ -38,6 +47,10 @@ public class Rig{
 
         public void add(Buffer child){
             this.children.add(child);
+        }
+
+        public void add(Variable terminal){
+            this.children.add(new Buffer(terminal.getValue()));
         }
 
         public void set(int index, Buffer child){
@@ -641,12 +654,210 @@ public class Rig{
         }
     }
 
+    // this is the entry point
+    // at compile time, each standalone rule (without the fragment modifier)
+    // will register itself here
     public String fuzz(SQLConnection conn, String rule){
         Context ctx = new Context(conn);
         Buffer buf = null;
-        //<register/>
+        if (rule.equals("createTable")){
+            buf = createTable(ctx);
+        }
         return buf.toString();
     }
 
-    //<functions/>
+    // createTable :
+    //     temp=$0
+    //     rep=$_r(1, 6, ', ', 0) CREATE 
+    //     _e('A BLOB field is not allowed in partition function') 
+    //     ( TEMPORARY temp=$1 )?
+    //     TABLE 
+    //     LB (new['column'] columnDefinition )**rep RB
+    //     (
+    //         '' |
+    //         <temp==0> 'PARTITION BY' ...
+    //     ) SC
+
+
+    // context stack frame is callee established
+    public static Buffer createTable(Context ctx){
+        Buffer buf = new Buffer();
+        ctx.enter(null, null); // create new stack frame, load arguments into callee frame
+        ctx.eval(ctx.getSymbol("temp", null), "=", Variable.factory(0));
+        ctx.eval(ctx.getSymbol("rep", null), "=", ctx.getSymbol("_r", List.of(Variable.factory(1), Variable.factory(6), Variable.factory(", "), Variable.factory(0))));
+        buf.add(CREATE(ctx));
+        ctx.addError(Variable.factory("A BLOB field is not allowed in partition function"));
+        buf.add(node6(ctx));
+        buf.add(TABLE(ctx));
+        buf.add(ctx.eval("new", List.of(Variable.factory("table")))); //built-in function for generating new name
+        buf.add(LB(ctx));
+        buf.add(node30(ctx));
+        buf.add(RB);
+        buf.add(node56(ctx));
+        buf.add(SC(ctx));
+        ctx.ret(null);
+    }
+
+    public static Buffer node30(Context ctx){
+        Buffer buf = new Buffer();
+        Variable arg = ctx.getSymbol("rep", null);
+        int r = arg.getNumerical();
+        String delimiter = "";
+        if (arg.getAttr("delimiter", null)!=null){
+            delimiter = arg.getAttr("delimiter", null).getValue();
+        }
+        for (int i=0; i<r; i++){
+            buf.add(ctx.eval("new", List.of(Variable.factory("column"))));
+            buf.add(columnDefinition(ctx));
+            buf.add(Variable.factory(delimiter));
+        }
+        buf.remove(buf.size()-1); //remove the last delimiter
+        return buf;
+    }
+
+    public static Buffer node56(Context ctx){
+        Buffer buf = new Buffer();
+        List<Integer> options = new ArrayList<>();
+        List<Double> weights = new ArrayList<>();
+        
+        if (ctx.eval(ctx.getSymbol("temp", null), "==", Variable.factory(0)).getBoolean()){
+            options.add(0);
+            weights.add(0.5);
+        }
+        options.add(1);
+        weights.add(0.5);
+        if (options.size()==0){
+            throw new DeadEndException("ERROR : No candidate available");
+        }
+        int index = randomlyFrom(options, weights);
+        //first branch with 90% weightage
+        if (index == 0){
+            buf.add(node66(ctx));
+        }
+        if (index == 1){
+            buf.add(node76(ctx));
+        }
+        return buf;
+    }
+
+    public static Buffer node66(Context ctx){
+        Buffer buf = new Buffer();
+        buf.add(Variable.factory(""));
+        return buf;
+    }
+
+    public static Buffer node76(Context ctx){
+        Buffer buf = new Buffer();
+        buf.add(Variable.factory("PARTITION BY"));
+        return buf;
+    }
+
+    // this is a rule declared with the "fragment" keyword
+    // conceptually, it is simply a fragment of rule than can be replaced into the caller
+    // therefore it shares namespace with the caller
+    // think macros in C
+    // assume 90% weight for first branch
+    public static Buffer columnDefinition(Context ctx) throws DeadEndException {
+        Buffer buf = new Buffer();
+        buf.add(node12(ctx));
+        return buf;
+    }
+
+    // this is how an alternation node is rendered
+    public static Buffer node12(Context ctx){
+        Buffer buf = new Buffer();
+        List<Integer> options = new ArrayList<>();
+        List<Double> weights = new ArrayList<>();
+        // all branches here doesn't have a predicate
+        // otherwise, the corresponding lines needs to be wrapped in an if
+        options.add(0);
+        weights.add(0.9)
+        options.add(1);
+        weights.add(0.05);
+        options.add(2);
+        weights.add(0.05);
+        if (options.size()==0){
+            throw new DeadEndException("ERROR : No candidate available");
+        }
+        int index = randomlyFrom(options, weights);
+        //first branch with 90% weightage
+        if (index == 0){
+            buf.add(node16(ctx));
+        }
+        if (index == 1){
+            buf.add(node26(ctx));
+        }
+        if (index == 2){
+            buf.add(node36(ctx));
+        }
+        return buf;
+    }
+
+    // This is an alternative node (a specific branch of alternation node)
+    // in this specific case, since there is only one literal in the branch
+    // it looks similar to the keyword definitions
+    public static Buffer node16(Context ctx){
+        Buffer buf = new Buffer();
+        buf.add(Variable.factory("INT"));
+        return buf;
+    }
+    public static Buffer node26(Context ctx){
+        Buffer buf = new Buffer();
+        buf.add(Variable.factory("FLOAT"));
+        return buf;
+    }
+    public static Buffer node36(Context ctx){
+        Buffer buf = new Buffer();
+        buf.add(Variable.factory("TEXT"));
+        return buf;
+    }
+
+
+    // since we do not differentiate a terminal string literal in ANTLR
+    // and a string in the variable system
+    // we treat everything as a variable
+    // Instantiating a variable will have the natural side-effect of 
+    // printing to buffer, which is what we expect for a terminal string 
+    // literal in ANTLR
+    public static Buffer CREATE(Context ctx){
+        Buffer buf = new Buffer();
+        buf.add(Variable.factory("CREATE"));
+        return buf;
+    }
+
+    public static Buffer TABLE(Context ctx){
+        Buffer buf = new Buffer();
+        buf.add(Variable.factory("TABLE"));
+        return buf;
+    }
+
+    public static Buffer TEMPORARY(Context ctx){
+        Buffer buf = new Buffer();
+        buf.add(Variable.factory("TEMPORARY"));
+        return buf;
+    }
+
+    public static Buffer LB(Context ctx){
+        Buffer buf = new Buffer();
+        buf.add(Variable.factory("("));
+        return buf;
+    }
+
+    public static Buffer RB(Context ctx){
+        Buffer buf = new Buffer();
+        buf.add(Variable.factory(")"));
+        return buf;
+    }
+
+    // (temp=$1 TEMPORARY)?
+    // silencing is done at compile time
+    public static Buffer node6(Context ctx){
+        Buffer buf = new Buffer();
+        int r = random(0, 1); //short hand random number generator, avoid triggering the more complicated one from Context
+        for (int i=0; i<r; i++){
+            buf.add(TEMPORARY(ctx));
+            ctx.eval(ctx.getSymbol("temp", null), "=", Variable.factory(1));
+        }
+        return buf;
+    }
 }

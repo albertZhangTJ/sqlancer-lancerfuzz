@@ -1,5 +1,7 @@
 package lancerfuzz.AST;
 
+import java.util.List;
+
 import lancerfuzz.Utils;
 
 public class VariableNode extends Node{
@@ -31,7 +33,7 @@ public class VariableNode extends Node{
     }
 
     @Override
-    public String render(){
+    public String render(List<String> function_list, String padding){
         if (this.type == 1){
             return identifierNode.render();
         }
