@@ -1,5 +1,7 @@
 package lancerfuzz.AST;
 
+import java.util.ArrayList;
+
 import lancerfuzz.Utils;
 
 public class ActionNode extends Node{
@@ -20,8 +22,10 @@ public class ActionNode extends Node{
         this.src=source;
     }
 
-    public String render(){
-        return this.src;
+    public List<String> render(List<String> function_list, List<String> args, String padding){
+        List<String> ans = new ArrayList<>();
+        ans.add(padding + this.src + "\n");
+        return ans;
     }
     
     public String toString(){

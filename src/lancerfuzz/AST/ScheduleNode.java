@@ -14,10 +14,12 @@ public class ScheduleNode extends Node{
     }
 
     @Override
-    public String render(List<String> function_list, String padding){
+    public List<String> render(List<String> function_list, List<String> args, String padding){
         //this is the handle for the caller to embed in its own function
         //this will be returned as the string
         String handle = padding + "buf.set("+ this.get_priority()+", node"+this.get_id()+"(ctx));\n";
+        List<String> ans = new ArrayList<>();
+        ans.add(handle);
 
         //this our own function to be added to the function list
         String indentation = "    ";
@@ -30,6 +32,6 @@ public class ScheduleNode extends Node{
         code = code + indentation + indentation + "return buf;\n";
         code = code + indentation + "};";
         function_list.add(code);
-        return handle;
+        return ans;
     }
 }

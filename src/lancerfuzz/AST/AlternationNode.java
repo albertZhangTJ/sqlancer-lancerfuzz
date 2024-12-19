@@ -54,7 +54,7 @@ public class AlternationNode extends Node {
     }
 
     public void set_var_index(Node child){
-        if (this.var_index!=-1){
+        if (this.var_index!=-1){    
             Utils.panic("AlternationNode::set_var_index : One alternation node can only have one variable reference");
         }
         List<Edge> children = super.get_outward_edges();
@@ -90,6 +90,20 @@ public class AlternationNode extends Node {
 
     public String toString(){
         return super.toString() + "\n    type: AlternationNode\n    weights: "+this.weights.toString();
+    }
+
+    public List<String> render(List<String> function_list, List<String> args, String padding){
+        String handle = padding + "buf.add(node"+this.get_id()+"(ctx));\n";
+        List<String> ans = new ArrayList<>();
+        ans.add(handle);
+
+        //this our own function to be added to the function list
+        String indentation = "    ";
+        String code = indentation + "public Buffer node"+this.get_id()+"(Context ctx){\n}";
+        code = code + indentation + indentation + "Buffer buf = new Buffer();\n";
+        code = code + indentation + indentation + "Options opt = new Options();\n";
+        
+
     }
 
     // @Override

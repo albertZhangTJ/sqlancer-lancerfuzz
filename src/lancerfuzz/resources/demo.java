@@ -8,6 +8,7 @@ import com.facebook.presto.jdbc.internal.okio.Buffer;
 import java.lang.IllegalArgumentException;
 import Math.random;
 import lancerfuzz.resources.Rig.Context;
+import lancerfuzz.resources.demo.DeadEndException;
 import sqlancer.SQLConnection;
 public class demo{
     public static class UnavailableException extends Exception {
@@ -654,6 +655,38 @@ public class demo{
         }
     }
 
+    public static class Options {
+        private List<Integer> indices;
+        private List<Double> weights;
+        public Options(){
+            this.indices = new ArrayList<>();
+            this.weights = new ArrayList<>();
+        }
+        public void addOption(int index, double weight){
+            this.indices.add(index);
+            this.weights.add(weight);
+        }
+
+        public int randomly() throws DeadEndException{
+            double total = 0;
+            if (indices.size()==0){
+                throw new DeadEndException("Options::randomly : no available options");
+            }
+            for (double w: this.weights){
+                total = total + w;
+            }
+            for (int i=0; i<this.indices.size(); i++){
+                if (total<this.weights.get(i)){
+                    return this.indices.get(i);
+                }
+                total = total - this.weights.get(i);
+            }
+            return this.indices.get(this.indices.size()-1);
+        }
+
+
+    }
+
     // this is the entry point
     // at compile time, each standalone rule (without the fragment modifier)
     // will register itself here
@@ -671,14 +704,14 @@ public class demo{
     //     rep=$_r(1, 6, ', ', 0) CREATE 
     //     _e('A BLOB field is not allowed in partition function') 
     //     ( TEMPORARY temp=$1 )?
-    //     TABLE 
+    //     TABLE new[table]
     //     LB (new['column'] columnDefinition )**rep RB
     //     (
     //         '' |
     //         <temp==0> 'PARTITION BY' ...
     //     ) SC
 
-
+    // fragment -> inline
     // context stack frame is callee established
     public static Buffer createTable(Context ctx){
         Buffer buf = new Buffer();
@@ -692,7 +725,7 @@ public class demo{
         buf.add(ctx.eval("new", List.of(Variable.factory("table")))); //built-in function for generating new name
         buf.add(LB(ctx));
         buf.add(node30(ctx));
-        buf.add(RB);
+        buf.add(RB(ctx));
         buf.add(node56(ctx));
         buf.add(SC(ctx));
         ctx.ret(null);
@@ -715,16 +748,17 @@ public class demo{
         return buf;
     }
 
+    //option class: 
     public static Buffer node56(Context ctx){
         Buffer buf = new Buffer();
         List<Integer> options = new ArrayList<>();
         List<Double> weights = new ArrayList<>();
         
         if (ctx.eval(ctx.getSymbol("temp", null), "==", Variable.factory(0)).getBoolean()){
-            options.add(0);
+            options.add(1);
             weights.add(0.5);
         }
-        options.add(1);
+        options.add(0);
         weights.add(0.5);
         if (options.size()==0){
             throw new DeadEndException("ERROR : No candidate available");

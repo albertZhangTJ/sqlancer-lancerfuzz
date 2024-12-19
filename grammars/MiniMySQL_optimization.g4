@@ -31,11 +31,11 @@ alterTable
 
 fragment alterSpecification
     : 
-    ADD COLUMN? column.new columnDefinition FIRST?    
+    ADD COLUMN? new[column] columnDefinition FIRST?    
     | ADD COLUMN? '(' (column.new columnDefinition)_r(1, 3, ',') ')' 
     | DROP COLUMN? column[t].unique_any _e('delete all', 'has a partitioning function dependency')
     | DROP PRIMARY KEY _e('primary')
-    | RENAME ( TO | AS ) table.new
+    | RENAME ( TO | AS ) new[table]
     | RENAME COLUMN column[t].unique_any TO column.unique_any _e('has a partitioning function dependency and cannot be dropped or renamed')
     ;
 
@@ -44,7 +44,7 @@ fragment columnDefinition
     ;
 
 dropDatabase
-    : DROP DATABASE ifExists DB = db.new SC
+    : DROP DATABASE ifExists DB = new[db] SC
     ;
 
 dropSchema
@@ -116,7 +116,7 @@ expression [column_name] locals [type=column_name.type]
     | greatest 
     | if_func;
 
-query_core [rep=_r(1,5)] locals [is_statement] returns [c] :
+selectStatement [rep=_r(1,5)] locals [is_statement] returns [c] :
     @2
 	SELECT (
         90% (   (tt=t.any DOT | tt=$t.any) c+=tt.c.unique_any
