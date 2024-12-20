@@ -138,14 +138,74 @@ id : rep=_r[1, 4, ',', 3] A**rep ; // could possibly be A,A,A
 // For example, getting the list of tables in a database
 table returns [t] : t=$query['SHOW TABLES;', 'Tables_in_'+DB];
 ```
-
+Below is an example of how these features play together to produce meaningful test cases in SQL.
+```
+insertStatement
+    : ( REPLACE | INSERT ) INTO? t=table.any
+    '('  ( c+=column[t] )**_r[1, 6, ',', 3] ')' 
+    VALUES '(' ( expression[c.next] )**_r[c.len,','] ')'
+    SC
+    ;
+```
 
 ### Predicate
+To enable the enforcement of certain semantic constraints, SGL provides a predicate mechanism that is used alongside alternations.
+
+A predicate can be evaluated either in the grammar namespace `<expression in SGL>` or in the target language (e.g. Java) namespace `{expression in Java}?`.
+
+At expansion time, all branches of an alternation will be filtered based on its predicate.
+Those whose predicate evaluates to true will match have a chance to be selected.
+Branches with no associated predicate will always evaluate to true.
+
+This feature can be used to enforce type correctness
+```
+expression [type]
+    : int_expr <type=='INT'>
+    | text_expr <type=='TEXT'> 
+    | float_expr <type=='FLOAT'>
+    ;
+```
+and more
+```
+createTable locals [temp=0]
+    : CREATE 
+    ( ' '  | TEMPORARY temp=$1 ) TABLE 
+    new[tables]
+    LB ( cn+=new[columns] columnDefinition)**_r(1, 5, ',') RB 
+    (
+        ' '  |
+        <temp==0> PARTITION BY 'HASH(' cn.any ')'
+    ) SC
+    ;
+```
 
 ### Weight
 
 ### Expansion Order
+SQL is declarative in nature.
+Generating test cases in a left to right order might lead to some use-before-define issue, especially with `SELECT` statement, where the list of columns comes before the `FROM` clause in position.
+
+SGL mitigates this issue by allowing manual specification of expansion order.
+For example, the following grammar snippet for generating a SQL query shall be expanded in the order of `FROM` clause -> `SELECT` clause -> `WHERE` clause.
+```
+selectStatement [rep=_r(1,5)] returns [c] :
+    @2
+	SELECT 
+    ( tt=t.any DOT c+=tt.c.unique_any )**rep
+    @1
+	FROM tt=table_name.any tt.c=$column_name[tt] t+=$tt
+    @3
+    where_predicate
+	;
+```
 
 ### Expected Error
 
 ## Seagull
+Seagull is a work-in-progress tool that compiles SGL specifications into test case generator source code.
+
+Seagull has a set of pre-defined template code for each language constructs in SGL.
+At compile time, SGL will populate these templates with information from the input specification to generate fully executable source code.
+
+As of now, we only aim to generate test case generators in Java.
+More target languages might be supported in the future.

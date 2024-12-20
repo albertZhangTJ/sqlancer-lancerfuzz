@@ -98,8 +98,8 @@ truncateTable : TRUNCATE TABLE table.any SC ;
     
 insertStatement
     : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? _e('Duplicate') t=table.any
-    '('  ( c+=column[t] )**_r(1, 6) ')' 
-    VALUES '(' ( expression[c.next] )**c.len) ')'
+    '('  ( c+=column[t] )**_r[1, 6, ',', 3] ')' 
+    VALUES '(' ( expression[c.next] )**_r[c.len,','] ')'
     SC
     ;
 
@@ -108,7 +108,7 @@ updateStatement
     SET (cc=columnName[t].any '=' expression[cc])**_r(1,6) (WHERE (NOT)? cc=columnName[t].any '=' expression[cc])? SC
     ;
 
-expression [column_name] locals [type=column_name.type] 
+expression [type]
     : int_expr <type=='INT'>
     | text_expr <type=='TEXT'> 
     | float_expr <type=='FLOAT'>
