@@ -180,6 +180,18 @@ createTable locals [temp=0]
 ```
 
 ### Weight
+Some elements in the syntax tree might be more "interesting" than others in the sense that they trigger more complicated behavior.
+It is desirable to generate these elements more often to increase the fuzzing efficiency.
+
+To this end, SGL allows for attaching weights to alternation branches.
+In the following example, the first branch will be expanded $50\%$ of the times, while the rest of the branches split the rest of the weight evenly.
+```
+predicate 
+    : 50% comparison
+    | ifnull 
+    | if_func
+    ;
+```
 
 ### Expansion Order
 SQL is declarative in nature.
@@ -198,8 +210,21 @@ selectStatement [rep=_r(1,5)] returns [c] :
     where_predicate
 	;
 ```
-
 ### Expected Error
+Sometimes it might be reasonable to not capture certain semantic constraints in grammar files due to complexity (for example, foreign key constraint and unique constraint).
+Instead, it is easier to let these errors happen and filter them out afterwards.
+
+To this end, SGL provides the expected error mechanism `_e[]`.
+Expected errors are error messages that are likely caused by issue in the test cases themselves instead of the SUT.
+The fuzzer will silently ignore error messages that are expected, without reporting them to the tester.
+```
+insertStatement
+    : INSERT INTO _e['Duplicate'] t=table.any
+    '('  ( c+=column[t] )**_r[1, 6, ',', 3] ')' 
+    VALUES '(' ( expression[c.next] )**_r[c.len,','] ')'
+    SC
+    ;
+```
 
 ## Seagull
 Seagull is a work-in-progress tool that compiles SGL specifications into test case generator source code.
