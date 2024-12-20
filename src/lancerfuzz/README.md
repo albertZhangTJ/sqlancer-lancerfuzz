@@ -27,6 +27,7 @@ Start fuzzing by executing `./scripts/run.sh <path to grammar> <path to config>`
 - Run time: the time when a test case generator is executed
 - Turnaround time: the time from the test case generator is called to a test case is produced
 - Throughput: the amount of test case that can be generated in a given time limit (one minute unless otherwise specified)
+- Output buffer: A structured buffer containing the partially generated test case, which will be serialized to produce the test case
 
 ## SGL
 
@@ -41,7 +42,9 @@ To increase the likelihood of generating "interesting" test cases, SGL supports 
 The basic syntax of SGL is the same as that of ANTLR's.
 
 A grammar in SGL consists of a sequence of rules.
-Each rule has a left-hand side consisting of an identifier and optional modifiers (elaborated in the variable section), a separating `:`, a right-hand side (rhs) describing how the rule can be expanded, and an enclosing semicolon.
+Each rule has a left-hand side consisting of an identifier and optional modifiers (elaborated in the variable section),
+a separating `:`,
+a right-hand side (rhs) describing how the rule can be expanded, and an enclosing semicolon.
 ```
 identifier : rhs ;
 ```
@@ -70,7 +73,72 @@ id : A**var ; // A will be expanded var times, possibly delimited (elaborated in
 To pass context around different parts of the grammar, SGL supports a variable system.
 
 A variable in SGL supports these primitive types: `int`, `string`, `bool`, and `list`.
-A variable can have any number of attributes, each can hold another variable, allowing for representation of more complicated structures.
+Strings in SGL are single quoted, for example `'string content'`.
+A list in SGL is type-agnostic, it can hold all types of other variables together.
+A variable can have any number of attributes, each can hold another variable,
+allowing for representation of more complicated data structures.
+
+A variable can be written to using the following operators: `=`, `+=`.
+Variables can be operated on using the following operators: `+`, `-`, `==`, `!=`, `>`, `<`, `>=`, `<=`.
+The semantics of the `+=` operator is list appending instead of increment.
+Other than that, the operator semantics are similar to that in common programming languages.
+
+A variable can have any numbers of user defined attributes, accessible using `.`.
+
+The default semantics of accessing variable includes a side effect of printing the string representation of the variable to the output buffer.
+This printing behavior can be suppressed through an operator `$`. 
+```
+// create v, assigning int 3 to v, printing "3" to output buffer
+id : v = 3 ;
+
+// if v is a list, append 3 to the list
+// otherwise, create v as a list and append
+// Note the semantic here is different than in other languages
+id : v += 3 ; 
+
+id : v = 3+2 ; //assign 5 to v 
+
+id : v = 3==2 ; // assign false to v
+
+// assign int 3 to v, set the attribute "delimiter" to ,
+id : v = 3   v.delimiter = ',' ;
+
+// assign int 3 to v, WITHOUT printing anything to buffer
+id : v = $3 ;
+```
+
+The variable ~~scoop~~ scope comes in 2 flavors: local and global.
+Local variables are accessible from within the rule, while global variables are accessible anywhere within the grammar file.
+Local variables have identifiers start with a lower case letter, global variables should have identifiers start with an upper case letter.
+
+Rules can accept variables as arguments and return a variable, similar to functions in common programming languages.
+
+There is a special modifier `fragment`, representing that the rule does not have its own namespace.
+Instead, it should be expanded simply by text-substituting its id with its rhs.
+```
+id [arg1, arg2] returns [r] : r = arg1 + arg2 + arg3 ;
+```
+SGL also provides a few built-in rules (or better say "functions") to provide commonly used features.
+Specifically, there is random number generator `_r[]`, and a query function `query[]`.
+By default, these functions do not have the side effect of printing to output buffer.
+```
+// A random number generator, typically used alongside the ** operator for repetition
+// returns an int variable with an attribute "delimiter"
+// _r[min, max, delimiter, decay]
+// _r[min, delimiter, decay]
+// _r[fix, delimiter]
+// Considering the small scope hypothesis
+// the random number generator comes with a decay parameter
+// which can take the value of [0, 4]
+// 0 for uniform distribution
+// 1 to 4 for exponential decay with rate 0.25, 0.5, 0.75, 0.99 respectively
+id : rep=_r[1, 4, ',', 3] A**rep ; // could possibly be A,A,A
+
+// The query function is used for getting information from the SUT
+// For example, getting the list of tables in a database
+table returns [t] : t=$query['SHOW TABLES;', 'Tables_in_'+DB];
+```
+
 
 ### Predicate
 
@@ -79,3 +147,5 @@ A variable can have any number of attributes, each can hold another variable, al
 ### Expansion Order
 
 ### Expected Error
+
+## Seagull
