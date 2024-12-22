@@ -1,15 +1,16 @@
+package lancerfuzz.resources;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-
-import com.facebook.presto.jdbc.internal.okio.Buffer;
+import java.util.Arrays;
 
 import java.lang.IllegalArgumentException;
-import Math.random;
+import java.lang.NumberFormatException;
 import lancerfuzz.resources.Rig.Context;
 import lancerfuzz.resources.demo.DeadEndException;
 import sqlancer.SQLConnection;
+import java.sql.ResultSet;
 public class demo{
     public static class UnavailableException extends Exception {
         public boolean isUndefined; //the variable/attr requested does not exist
@@ -26,6 +27,16 @@ public class demo{
     public static class DeadEndException extends Exception {
         public DeadEndException(String message){
             super(message);
+        }
+    }
+
+    public static class Rand{
+        public static <T> T random_from_list(List<T> l){
+            int idx = (int)(Math.random()*l.size());
+            return l.get(idx);
+        }
+        public static int random(int min, int max){
+            return (int)(min + (max-min+1)*Math.random());
         }
     }
 
@@ -50,14 +61,28 @@ public class demo{
             this.children.add(child);
         }
 
-        public void add(Variable terminal){
+        public Variable add(Variable terminal){
             this.children.add(new Buffer(terminal.getValue()));
+            return terminal;
         }
 
         public void set(int index, Buffer child){
             this.children.set(index, child);
         }
 
+        public int size(){
+            return this.children==null ? 0 : this.children.size() ;
+        }
+
+        public Buffer remove(int idx) throws Exception{
+            if (this.children==null){
+                throw new Exception("Buffer::remove : remove cannot be called on a terminal node");
+            }
+            if (idx>=this.children.size()){
+                throw new Exception("Buffer::remove : invalid index "+idx+", children size "+this.children.size());
+            }
+            return this.children.remove(idx);
+        }
         public String toString(){
             if (this.content!=null){
                 return this.content;
@@ -95,26 +120,29 @@ public class demo{
                 this.errors.add(v.getValue());
             }
             catch (IllegalArgumentException e){
-                throw new java.lang.IllegalArgumentException("ERROR: Fuzzer.Context.addError :: variable passed to expected error declaration is not single-valued, check your expected error declarations", e)
+                throw new java.lang.IllegalArgumentException("ERROR: Fuzzer.Context.addError :: variable passed to expected error declaration is not single-valued, check your expected error declarations", e);
             }
         }
 
-        public void push_args(List<Variable> args){
-            this.args = args;
-        }
-
-        public void enter(List<String> arg_symbols, List<Variable> defaults) throws Exception{
+        // arg_symbols are the symbols in the new stack frame
+        // defaults are the supplied default values, a null place holder must be provided if not corresponding default value is specified
+        // args are the actual values passed in from outside
+        public void enter(List<String> arg_symbols, List<Variable> defaults, List<Variable> args) throws Exception{
             HashMap<String, Variable> newFrame = new HashMap<>();
             if (arg_symbols.size()!=defaults.size()){
                 throw new IllegalArgumentException("ERROR: Fuzzer.Context.call :: internal error, argument list size does not match that of default list");
             }
             for (int i=0; i<arg_symbols.size(); i++){
                 String symbol = arg_symbols.get(i);
-                if (this.get_var(symbol)==null){
-                    throw new UnavailableException("ERROR: Fuzzer.Context.call :: cannot find symbol "+symbol, true, false, false);
+                if (args.size()>i){
+                    newFrame.put(symbol, args.get(i));
                 }
-                //TODO: complete the logic of selecting between pushed args and default, throw error if both unavailable
-                newFrame.add(this.get_var(symbol));
+                else if (defaults.get(i)!=null){
+                    newFrame.put(symbol, defaults.get(i));
+                }
+                else {
+                    throw new DeadEndException("Context::enter : cannot resolve value for argument symbol "+symbol);
+                }
             }
 
             //preserve current symbols
@@ -126,10 +154,10 @@ public class demo{
         }
 
 
-        public void ret(String returnSymbol){
+        public void ret(String returnSymbol) throws Exception{
             //move the return value into the cache slot
             if (returnSymbol!=null){
-                this.result = this.getSymbol(returnSymbol);
+                this.result = this.getSymbol(returnSymbol, null);
             }
 
             //restore context for caller
@@ -140,7 +168,7 @@ public class demo{
 
         // the symbol here might be either a variable or a function
         // that is why the args arg this there, it won't even be looked at if it is actually a variable
-        public Variable getSymbol(String symbol, List<Variable> args) throws IllegalArgumentException{
+        public Variable getSymbol(String symbol, List<Variable> args) throws Exception{
             if (symbol==null){
                 throw new IllegalArgumentException("ERROR : Fuzzer.Context.getSymbol :: the symbol accessed is null, check your grammar");
             }
@@ -153,7 +181,9 @@ public class demo{
             if (symbol.equals("_e")){
                 return this.addExpectedError(args);
             }
-            if (symbol.equals)
+            if (symbol.equals("new")){
+                return this.new_id(args);
+            }
             if (this.symbols.get(symbol)==null && this.globalSymbols.get(symbol)==null){
                 throw new IllegalArgumentException("ERROR : Fuzzer.Context.getSymbol :: the symbol \"" + symbol + "\" accessed does not exist or has not yet been initialized\n"+
                                                     "If you are using customized expansion order, please check your order specification\n"+
@@ -231,7 +261,6 @@ public class demo{
                     return res;
                 }
                 throw new IllegalArgumentException("ERROR : Fuzzer.Context.random :: Expecting 2, 3, or 4 arguments, got "+args.size());
-                return null;
             }
             catch (IllegalArgumentException e){
                 throw new IllegalArgumentException("ERROR : Fuzzer.Context.random :: arguments passed are not recognizable, the recognized formats are\n"+
@@ -251,10 +280,11 @@ public class demo{
             for (Variable arg : args){
                 this.errors.add(arg.getValue());
             }
+            return Variable.factory("");
         }
 
         //
-        public Variable eval(Variable a, String operator, Variable b) throws IllegalArgumentException{
+        public Variable eval(Variable a, String operator, Variable b) throws Exception{
             if (operator==null){
                 throw new IllegalArgumentException("ERROR : Variable.eval :: operator cannot be null");
             }
@@ -288,9 +318,12 @@ public class demo{
         }
 
 
-        public void setSymbol(String symbol, Variable v){
-            if (symbol==null || symbol.size()==0 || !((symbol.charAt(0)>=65 && symbol.charAt(0)<=90) || (symbol.charAt(0)>=97 && symbol.charAt(0)<=122))){
+        public void setSymbol(String symbol, Variable v) throws Exception{
+            if (symbol==null || symbol.length()==0 || !((symbol.charAt(0)>=65 && symbol.charAt(0)<=90) || (symbol.charAt(0)>=97 && symbol.charAt(0)<=122))){
                 throw new IllegalArgumentException("ERROR : Fuzzer.Context.setSymbol :: symbol must be non-empty and start with an ASCII letter");
+            }
+            if (demo.rules.contains(symbol)){
+                throw new Exception("Context::setSymbol : symbol conflict with rule "+symbol);
             }
             // starts with a capital letter
             if (symbol.charAt(0)<92){
@@ -302,21 +335,21 @@ public class demo{
         }
         //requires 2 or more arguments
         //the 
-        public Variable query(List<Variable> args){
+        public Variable query(List<Variable> args) throws Exception{
             if (args.size()<2){
                 throw new IllegalArgumentException("ERROR : Fuzzer.Context.query :: a call to the query function must contain at least 2 arguments: query and column name");
             }
             String query = args.get(0).getValue();
             String col = args.get(1).getValue();
-            Variable v = Variable.of();
-            ResultSet rs = this.con.createStatement().executeQuery(query);
+            Variable v = Variable.factory();
+            ResultSet rs = this.conn.createStatement().executeQuery(query);
             while (rs.next()){
-                Variable r = Variable.of(rs.getString(col));
+                Variable r = Variable.factory(rs.getString(col));
                 for (int i=2; i<args.size(); i++){
                     Variable pair = args.get(i);
-                    String attrCol = pair.getEntry(0);
-                    String attr = pair.getEntry(1);
-                    r.setAttr(attr, Variable.of(rs.getString(attrCol)));
+                    String attrCol = pair.getEntry(0).getValue();
+                    String attr = pair.getEntry(1).getValue();
+                    r.setAttr(attr, Variable.factory(rs.getString(attrCol)));
                 }
                 v.addEntry(r);
             }
@@ -362,7 +395,7 @@ public class demo{
             this.cursor = 0;
         }
         public Variable(String value){
-            this.values = value;
+            this.value = value;
             this.isSingleValued = true;
             this.containsNumerical = false;
             this.containsBoolean = false;
@@ -427,7 +460,7 @@ public class demo{
             this.containsNumerical = other.containsNumerical;
             this.containsBoolean = other.containsBoolean;
             this.entries = copy_list(other.entries);
-            this.uniqueUsageCount = ArrayList<>();
+            this.uniqueUsageCount = new ArrayList<>();
             for (Variable v: this.entries){
                 this.uniqueUsageCount.add(0);
             }
@@ -445,7 +478,7 @@ public class demo{
                 if (this.entries.size()==0){
                     throw new UnavailableException("", false, true, false);
                 }
-                return random_from_list(entries);
+                return Rand.random_from_list(entries);
             }
             else if (name.equals("unique_any")){
                 if (this.isSingleValued){
@@ -463,7 +496,7 @@ public class demo{
                 if (avail_idx.size()==0){
                     throw new UnavailableException("", false, false, true);
                 }
-                int idx = random_from_list(avail_idx);
+                int idx = Rand.random_from_list(avail_idx);
                 this.uniqueUsageCount.set(idx, 1);
                 return this.entries.get(idx);
             }
@@ -496,17 +529,18 @@ public class demo{
                 if (args.size()!=3){
                     throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: filter function expects 3 arguments: attribute to be filtered, comparator, and a pivot value. "+args.size()+" are given");
                 }
-                return this.filter(args.get(0).getValue(), args.get(1).getValue(), args.get(2));
+                return this.filter(args.get(0), args.get(1).getValue(), args.get(2));
             }
+            return this.attributes.get(name);
 
         }
-        private Variable filter(String attr, String comparator, Variable target) throws Exception{
+        private Variable filter(Variable attr, String comparator, Variable target) throws Exception{
             if (this.isSingleValued){
                 throw new IllegalArgumentException("Fuzzer.Variable.filter :: filter operation is not allowed on single-valued variables");
             }
             Variable result = new Variable();
             for (Variable v : this.entries){
-                if (v.getAttr(attr).compare(comparator, target)){
+                if (v.getAttr(attr.getValue(), null).compare(comparator, target)){
                     result.addEntry(v);
                 }
             }
@@ -528,8 +562,7 @@ public class demo{
                 }
                 catch (NumberFormatException e){
                     throw new NumberFormatException(
-                        "Fuzzer.Variable.compare :: >= comparator expects both variables to contain numerical value\n"+e.getMessage(), 
-                        e
+                        "Fuzzer.Variable.compare :: >= comparator expects both variables to contain numerical value\n"+e.getMessage()
                     );
                 }
             }
@@ -541,8 +574,7 @@ public class demo{
                 }
                 catch (NumberFormatException e){
                     throw new NumberFormatException(
-                        "Fuzzer.Variable.compare :: <= comparator expects both variables to contain numerical value\n"+e.getMessage(), 
-                        e
+                        "Fuzzer.Variable.compare :: <= comparator expects both variables to contain numerical value\n"+e.getMessage()
                     );
                 }
             }
@@ -554,8 +586,7 @@ public class demo{
                 }
                 catch (NumberFormatException e){
                     throw new NumberFormatException(
-                        "Fuzzer.Variable.compare :: > comparator expects both variables to contain numerical value\n"+e.getMessage(), 
-                        e
+                        "Fuzzer.Variable.compare :: > comparator expects both variables to contain numerical value\n"+e.getMessage()
                     );
                 }
             }
@@ -567,8 +598,7 @@ public class demo{
                 }
                 catch (NumberFormatException e){
                     throw new NumberFormatException(
-                        "Fuzzer.Variable.compare :: < comparator expects both variables to contain numerical value\n"+e.getMessage(), 
-                        e
+                        "Fuzzer.Variable.compare :: < comparator expects both variables to contain numerical value\n"+e.getMessage()
                     );
                 }
             }
@@ -687,10 +717,17 @@ public class demo{
 
     }
 
+    public static List<String> rules;
+
+    public static void init(){
+        demo.rules = new ArrayList<>();
+        demo.rules.add("createTable");
+    }
+
     // this is the entry point
     // at compile time, each standalone rule (without the fragment modifier)
     // will register itself here
-    public String fuzz(SQLConnection conn, String rule){
+    public String fuzz(SQLConnection conn, String rule) throws Exception{
         Context ctx = new Context(conn);
         Buffer buf = null;
         if (rule.equals("createTable")){
@@ -713,25 +750,26 @@ public class demo{
 
     // fragment -> inline
     // context stack frame is callee established
-    public static Buffer createTable(Context ctx){
+    public static Buffer createTable(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        ctx.enter(null, null); // create new stack frame, load arguments into callee frame
+        ctx.enter(null, null, null); // create new stack frame, load arguments into callee frame
         ctx.eval(ctx.getSymbol("temp", null), "=", Variable.factory(0));
         ctx.eval(ctx.getSymbol("rep", null), "=", ctx.getSymbol("_r", List.of(Variable.factory(1), Variable.factory(6), Variable.factory(", "), Variable.factory(0))));
         buf.add(CREATE(ctx));
         ctx.addError(Variable.factory("A BLOB field is not allowed in partition function"));
         buf.add(node6(ctx));
         buf.add(TABLE(ctx));
-        buf.add(ctx.eval("new", List.of(Variable.factory("table")))); //built-in function for generating new name
+        buf.add(ctx.getSymbol("new", List.of(Variable.factory("table")))); //built-in function for generating new name
         buf.add(LB(ctx));
         buf.add(node30(ctx));
         buf.add(RB(ctx));
         buf.add(node56(ctx));
         buf.add(SC(ctx));
         ctx.ret(null);
+        return buf;
     }
 
-    public static Buffer node30(Context ctx){
+    public static Buffer node30(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Variable arg = ctx.getSymbol("rep", null);
         int r = arg.getNumerical();
@@ -740,7 +778,7 @@ public class demo{
             delimiter = arg.getAttr("delimiter", null).getValue();
         }
         for (int i=0; i<r; i++){
-            buf.add(ctx.eval("new", List.of(Variable.factory("column"))));
+            buf.add(ctx.getSymbol("new", List.of(Variable.factory("column"))));
             buf.add(columnDefinition(ctx));
             buf.add(Variable.factory(delimiter));
         }
@@ -748,22 +786,20 @@ public class demo{
         return buf;
     }
 
+    public static Buffer SC(Context ctx){
+        return new Buffer(";");
+    }
+
     //option class: 
-    public static Buffer node56(Context ctx){
+    public static Buffer node56(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        List<Integer> options = new ArrayList<>();
-        List<Double> weights = new ArrayList<>();
+        Options opt = new Options();
         
         if (ctx.eval(ctx.getSymbol("temp", null), "==", Variable.factory(0)).getBoolean()){
-            options.add(1);
-            weights.add(0.5);
+            opt.addOption(1, 0.5);
         }
-        options.add(0);
-        weights.add(0.5);
-        if (options.size()==0){
-            throw new DeadEndException("ERROR : No candidate available");
-        }
-        int index = randomlyFrom(options, weights);
+        opt.addOption(0, 0.5);
+        int index = opt.randomly();
         //first branch with 90% weightage
         if (index == 0){
             buf.add(node66(ctx));
@@ -791,29 +827,22 @@ public class demo{
     // therefore it shares namespace with the caller
     // think macros in C
     // assume 90% weight for first branch
-    public static Buffer columnDefinition(Context ctx) throws DeadEndException {
+    public static Buffer columnDefinition(Context ctx) throws Exception {
         Buffer buf = new Buffer();
         buf.add(node12(ctx));
         return buf;
     }
 
     // this is how an alternation node is rendered
-    public static Buffer node12(Context ctx){
+    public static Buffer node12(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        List<Integer> options = new ArrayList<>();
-        List<Double> weights = new ArrayList<>();
+        Options opt = new Options();
         // all branches here doesn't have a predicate
         // otherwise, the corresponding lines needs to be wrapped in an if
-        options.add(0);
-        weights.add(0.9)
-        options.add(1);
-        weights.add(0.05);
-        options.add(2);
-        weights.add(0.05);
-        if (options.size()==0){
-            throw new DeadEndException("ERROR : No candidate available");
-        }
-        int index = randomlyFrom(options, weights);
+        opt.addOption(0, 0.9);
+        opt.addOption(1, 0.05);
+        opt.addOption(2, 0.05);
+        int index = opt.randomly();
         //first branch with 90% weightage
         if (index == 0){
             buf.add(node16(ctx));
@@ -885,12 +914,12 @@ public class demo{
 
     // (temp=$1 TEMPORARY)?
     // silencing is done at compile time
-    public static Buffer node6(Context ctx){
+    public static Buffer node6(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        int r = random(0, 1); //short hand random number generator, avoid triggering the more complicated one from Context
+        int r = Rand.random(0, 1); //short hand random number generator, avoid triggering the more complicated one from Context
         for (int i=0; i<r; i++){
-            buf.add(TEMPORARY(ctx));
             ctx.eval(ctx.getSymbol("temp", null), "=", Variable.factory(1));
+            buf.add(TEMPORARY(ctx));
         }
         return buf;
     }

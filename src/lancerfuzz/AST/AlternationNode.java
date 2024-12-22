@@ -92,7 +92,7 @@ public class AlternationNode extends Node {
         return super.toString() + "\n    type: AlternationNode\n    weights: "+this.weights.toString();
     }
 
-    public List<String> render(List<String> function_list, List<String> args, String padding){
+    public List<String> render(List<String> function_list, List<String> args, String padding, boolean print){
         String handle = padding + "buf.add(node"+this.get_id()+"(ctx));\n";
         List<String> ans = new ArrayList<>();
         ans.add(handle);

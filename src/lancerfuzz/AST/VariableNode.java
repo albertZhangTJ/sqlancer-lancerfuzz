@@ -33,18 +33,30 @@ public class VariableNode extends Node{
     }
 
     @Override
-    public String render(List<String> function_list, String padding){
+    public String render(List<String> function_list, String padding, boolean print){
         if (this.type == 1){
-            return identifierNode.render();
+            return identifierNode.render(function_list, padding, print);
         }
         if (this.type == 2){
-            return "Variable.factory(\""+this.strLiteral+"\")";
+            String res = "Variable.factory(\""+this.strLiteral+"\")";
+            if (print){
+                res = "buf.add(" + res + ")";
+            }
+            return res;
         }
         if (this.type == 3){
-            return "Variable.factory("+this.intLiteral+")";
+            String res = "Variable.factory("+this.intLiteral+")";
+            if (print){
+                res = "buf.add(" + res + ")";
+            }
+            return res;
         }
         if (this.type == 4){
-            return "Variable.factory("+this.boolLiteral+")";
+            String res = "Variable.factory("+this.boolLiteral+ ")";
+            if (print){
+                res = "buf.add(" + res + ")";
+            }
+            return res;
         }
         Utils.panic("VariableNode::render : unrecognized type index "+this.type);
         return "";

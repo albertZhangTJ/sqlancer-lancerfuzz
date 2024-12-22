@@ -9,4 +9,8 @@ public class LiteralNode extends Node{
     public String get_src(){
         return this.src;
     }
+    @Override
+    public List<String> render(List<String> function_list, List<String> args, String padding){
+        
+    }
 }
