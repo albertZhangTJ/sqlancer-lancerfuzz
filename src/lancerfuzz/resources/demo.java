@@ -7,8 +7,6 @@ import java.util.Arrays;
 
 import java.lang.IllegalArgumentException;
 import java.lang.NumberFormatException;
-import lancerfuzz.resources.Rig.Context;
-import lancerfuzz.resources.demo.DeadEndException;
 import sqlancer.SQLConnection;
 import java.sql.ResultSet;
 public class demo{
@@ -124,18 +122,22 @@ public class demo{
             }
         }
 
+        public void push_args(List<Variable> args){
+            this.args = args;
+        }
+
         // arg_symbols are the symbols in the new stack frame
         // defaults are the supplied default values, a null place holder must be provided if not corresponding default value is specified
         // args are the actual values passed in from outside
-        public void enter(List<String> arg_symbols, List<Variable> defaults, List<Variable> args) throws Exception{
+        public void enter(List<String> arg_symbols, List<Variable> defaults) throws Exception{
             HashMap<String, Variable> newFrame = new HashMap<>();
             if (arg_symbols.size()!=defaults.size()){
                 throw new IllegalArgumentException("ERROR: Fuzzer.Context.call :: internal error, argument list size does not match that of default list");
             }
             for (int i=0; i<arg_symbols.size(); i++){
                 String symbol = arg_symbols.get(i);
-                if (args.size()>i){
-                    newFrame.put(symbol, args.get(i));
+                if (this.args.size()>i){
+                    newFrame.put(symbol, this.args.get(i));
                 }
                 else if (defaults.get(i)!=null){
                     newFrame.put(symbol, defaults.get(i));
@@ -185,9 +187,15 @@ public class demo{
                 return this.new_id(args);
             }
             if (this.symbols.get(symbol)==null && this.globalSymbols.get(symbol)==null){
-                throw new IllegalArgumentException("ERROR : Fuzzer.Context.getSymbol :: the symbol \"" + symbol + "\" accessed does not exist or has not yet been initialized\n"+
-                                                    "If you are using customized expansion order, please check your order specification\n"+
-                                                    "If not, please make sure the symbol is there and consider specify the expansion ordering since the auto-scheduler is only best-effort");
+                if (Character.isUpperCase(symbol.charAt(0))){
+                    this.globalSymbols.put(symbol, Variable.factory());
+                }
+                else if (Character.isLowerCase(symbol.charAt(0))){
+                    this.symbols.put(symbol, Variable.factory());
+                }
+                else {
+                    throw new Exception("Variable.getSymbol : a user-defined symbol must start with either lower case letter (local) or upper case letter (global)");
+                }
             }
             return this.symbols.get(symbol)==null ? this.globalSymbols.get(symbol) : this.symbols.get(symbol);
         }
@@ -752,12 +760,13 @@ public class demo{
     // context stack frame is callee established
     public static Buffer createTable(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        ctx.enter(null, null, null); // create new stack frame, load arguments into callee frame
+        ctx.enter(null, null); // create new stack frame, load arguments into callee frame
         ctx.eval(ctx.getSymbol("temp", null), "=", Variable.factory(0));
         ctx.eval(ctx.getSymbol("rep", null), "=", ctx.getSymbol("_r", List.of(Variable.factory(1), Variable.factory(6), Variable.factory(", "), Variable.factory(0))));
         buf.add(CREATE(ctx));
         ctx.addError(Variable.factory("A BLOB field is not allowed in partition function"));
         buf.add(node6(ctx));
+        
         buf.add(TABLE(ctx));
         buf.add(ctx.getSymbol("new", List.of(Variable.factory("table")))); //built-in function for generating new name
         buf.add(LB(ctx));
