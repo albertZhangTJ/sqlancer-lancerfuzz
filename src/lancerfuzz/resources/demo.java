@@ -122,9 +122,10 @@ public class demo{
             }
         }
 
-        public Variable call(Buffer buf, List<Variable> args, boolean print){
+        public Variable call(Buffer buf, String rule, List<Variable> args, boolean print) throws Exception{
             this.push_args(args);
-            //TODO: add dispatching logic for calling
+            buf.add(demo.dispatch(this, rule));
+            return this.result;
         }
 
         public void push_args(List<Variable> args){
@@ -737,15 +738,19 @@ public class demo{
         demo.rules.add("createTable");
     }
 
-    // this is the entry point
     // at compile time, each standalone rule (without the fragment modifier)
     // will register itself here
-    public String fuzz(SQLConnection conn, String rule) throws Exception{
-        Context ctx = new Context(conn);
-        Buffer buf = null;
+    public static Buffer dispatch(Context ctx, String rule) throws Exception {
         if (rule.equals("createTable")){
-            buf = createTable(ctx);
+            return createTable(ctx);
         }
+        throw new Exception("demo::dispatch : there is no rule registered with name "+rule);
+    }
+
+    // this is the entry point
+    public static String fuzz(SQLConnection conn, String rule) throws Exception{
+        Context ctx = new Context(conn);
+        Buffer buf = dispatch(ctx, rule);
         return buf.toString();
     }
 
