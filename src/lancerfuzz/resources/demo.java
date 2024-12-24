@@ -122,6 +122,11 @@ public class demo{
             }
         }
 
+        public Variable call(Buffer buf, List<Variable> args, boolean print){
+            this.push_args(args);
+            //TODO: add dispatching logic for calling
+        }
+
         public void push_args(List<Variable> args){
             this.args = args;
         }
