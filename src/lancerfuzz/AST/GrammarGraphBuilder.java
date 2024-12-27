@@ -430,7 +430,7 @@ public class GrammarGraphBuilder {
                         }
                     }
                 }
-                int charset_id = CharSet.register_custom_charset(not_ranges, true, graph.get_encoding());
+                int charset_id = CharSetNode.register_custom_charset(not_ranges, true, graph.get_encoding());
                 graph.add_edge(parent_id, graph.add_node(new CharsetNode(rule.get_id(), indices.get(2), charset_id)), null);
                 indices.set(2, indices.get(2)+1);
             }
@@ -439,7 +439,7 @@ public class GrammarGraphBuilder {
                 if (rule instanceof UnlexerRuleNode){
                     ((UnlexerRuleNode)rule).append_start_ranges(vals);
                 }
-                int charset_id = CharSet.register_custom_charset(vals, false, graph.get_encoding());
+                int charset_id = CharSetNode.register_custom_charset(vals, false, graph.get_encoding());
                 graph.add_edge(parent_id, graph.add_node(new CharsetNode(rule.get_id(), indices.get(2), charset_id)), null);
                 indices.set(2, indices.get(2)+1);
             }
@@ -452,7 +452,7 @@ public class GrammarGraphBuilder {
                     ((UnlexerRuleNode)rule).append_start_ranges(vals);
                 }
                 //TODO didn't sort as in grammarinator
-                int charset_id = CharSet.register_custom_charset(vals, false, graph.get_encoding());
+                int charset_id = CharSetNode.register_custom_charset(vals, false, graph.get_encoding());
                 //System.out.println(CharSet.get_encoding_characters(charset_id));
                 graph.add_edge(parent_id, graph.add_node(new CharsetNode(rule.get_id(), indices.get(2), charset_id)), null);
                 indices.set(2, indices.get(2)+1);

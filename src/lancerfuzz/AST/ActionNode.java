@@ -22,10 +22,8 @@ public class ActionNode extends Node{
         this.src=source;
     }
 
-    public List<String> render(List<String> function_list, List<String> args, String padding){
-        List<String> ans = new ArrayList<>();
-        ans.add(padding + this.src + "\n");
-        return ans;
+    public String render(List<String> function_list, List<String> args, String padding){
+        return padding + this.src + "\n";
     }
     
     public String toString(){

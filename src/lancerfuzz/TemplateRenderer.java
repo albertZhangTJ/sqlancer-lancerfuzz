@@ -442,7 +442,7 @@ public class TemplateRenderer {
             }
             template = replace_tag(template, "name", node.get_identifier()==null ? "Node"+node.get_id() : node.get_identifier());
             CharsetNode cnode = (CharsetNode)node;
-            for (Integer idx : CharSet.get_encoding_characters(cnode.get_charset())){
+            for (Integer idx : CharSetNode.get_encoding_characters(cnode.get_charset())){
                 template = replace_tag(template, "add_indices", "indices.add("+idx+");\n        ");
             }
             return strip_tags(template);

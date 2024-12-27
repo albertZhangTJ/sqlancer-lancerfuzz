@@ -92,10 +92,8 @@ public class AlternationNode extends Node {
         return super.toString() + "\n    type: AlternationNode\n    weights: "+this.weights.toString();
     }
 
-    public List<String> render(List<String> function_list, List<String> args, String padding, boolean print){
+    public String render(List<String> function_list, String padding, boolean print){
         String handle = padding + "buf.add(node"+this.get_id()+"(ctx));\n";
-        List<String> ans = new ArrayList<>();
-        ans.add(handle);
 
         //this our own function to be added to the function list
         String indentation = "    ";
@@ -103,6 +101,9 @@ public class AlternationNode extends Node {
         code = code + indentation + indentation + "Buffer buf = new Buffer();\n";
         code = code + indentation + indentation + "Options opt = new Options();\n";
         
+        //TODO
+
+        return handle;
 
     }
 
