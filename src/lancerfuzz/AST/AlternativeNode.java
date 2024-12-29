@@ -3,80 +3,36 @@ package lancerfuzz.AST;
 import lancerfuzz.Utils;
 
 public class AlternativeNode extends Node{
-    private String rule_id;
-    private int alternative_index;
-    private int index;
-    private boolean is_var; //If the current node is referring to a STATIC_VAR declaration or a VAR declaration
-    private boolean is_static; //refers to a STATIC_VAR declaration if set to true, VAR declaration otherwise
-    private boolean is_member;
-    private String var_id;
-
+    //these will be handled at the building stage
+    private int weight;
     private PredicateNode predicate;
 
-    private String type; //type (in SQL), should only be applicable if the parent is an expression node
-
     public AlternativeNode(String rule_id, int alternative_index, int index){
-        this.rule_id = rule_id;
-        this.alternative_index = alternative_index;
-        this.index = index;
-        this.is_var = false;
-        this.is_static = false;
-        this.var_id = "";
-        this.type = null;
+        this.weight = -1;
+        this.predicate = null;
     }
 
-    public String get_rule_id(){
-        return this.rule_id;
+    public double get_weight(){
+        return (double)this.weight;
     }
 
-    public int get_alternative_index(){
-        return this.alternative_index;
+    public PredicateNode get_predicate(){
+        return this.predicate;
     }
 
-    public int get_index(){
-        return this.index;
-    }
+    public String render(List<String> function_list, String padding, boolean print){
+        String handle = padding + "buf.add(node"+this.get_id()+"(ctx);\n";
 
-    public void set_var_ref(boolean is_static, boolean is_member, String var_id){
-        this.is_var = true;
-        this.is_static = is_static;
-        this.is_member = is_member;
-        this.var_id = var_id;
-    }
-
-    public boolean get_is_var(){
-        return this.is_var;
-    }
-
-    public boolean get_is_static(){
-        return this.is_static;
-    }
-
-    public boolean get_is_member(){
-        return this.is_member;
-    }
-
-    public String get_var_id(){
-        return this.var_id;
-    }
-
-    public void set_type(String type){
-        this.type = type;
-    }
-
-    public String get_type(){
-        return this.type;
-    }
-
-    public void set_predicate(PredicateNode predicate){
-        if (this.predicate!=null){
-            Utils.panic("AlternativeNode::set_predicate : Duplicate predicate for a branch");
+        String indentation = "    ";
+        String code = indentation + "public static Buffer node"+this.get_id()+"(Context ctx){\n";
+        code = code + indentation + indentation + "Buffer buf = new Buffer();\n";
+        for (Edge e : this.get_outward_edges()){
+            Node child = e.get_dest();
+            code = code + child.render(function_list, indentation+indentation, true) +"\n";
         }
-        this.predicate = predicate;
+        code = code + indentation + indentation + "return buf;\n";
+        code = code + indentation + "}\n";
+        function_list.add(code);
+        return handle;
     }
-
-    // @Override
-    // public int get_min_depth(){
-    //     return super.get_min_depth()-1;
-    // }
 }

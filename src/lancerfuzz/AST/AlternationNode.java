@@ -6,10 +6,8 @@ import java.util.ArrayList;
 import lancerfuzz.Utils;
 
 public class AlternationNode extends Node {
-    private List<Node> predicates;
+    private List<PredicateNode> predicates;
     private List<Double> weights;
-
-    private boolean is_expr;
 
     public AlternationNode(){
         this.predicates = new ArrayList<>();
