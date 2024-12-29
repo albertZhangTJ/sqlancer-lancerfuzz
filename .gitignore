@@ -16,3 +16,7 @@ databaseconnectiontest.db
 loc_results.csv
 loc.svg
 .antlr/
+database*.log
+database*.properties
+database*.script
+databases/
