@@ -25,8 +25,12 @@ public class ExpressionNode extends Node {
         return this.rhs;
     }
 
-    public String render(){
-        return "context.eval("+lhs.render()+", \""+operator+"\", "+rhs.render()+")";
+    public String render(List<String> function_list, String padding, boolean print){
+        String handle = "context.eval("+lhs.render(function_list, "", false)+", \""+operator+"\", "+rhs.render(function_list, "", false)+")";
+        if (print){
+            handle = padding +"buf.add("+handle+");\n";
+        }
+        return handle;
     }
 
 }

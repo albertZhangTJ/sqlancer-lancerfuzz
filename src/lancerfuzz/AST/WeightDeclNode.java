@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.ArrayList;
 import lancerfuzz.Utils;
 
+// I think we can skip having this separately processed in IR
+// Instead, the builder for AlternativeNodes can direcly handle this
+@Deprecated
 public class WeightDeclNode extends Node {
     private int weight;
 

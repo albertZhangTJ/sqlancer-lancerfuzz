@@ -126,7 +126,7 @@ public class Node {
     //This is just a placeholder for render function
     //Should not be executed in real life
     //Did not set to abstract to save some work for temporary IR nodes
-    public String render(){
+    public String render(List<String> function_list, String paddng, boolean print){
         Utils.panic("Node::render : Internal error, you should never have got here");
         return null;
     }
