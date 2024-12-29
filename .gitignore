@@ -13,10 +13,6 @@ SQLancer.iml
 dependency-reduced-pom.xml
 database0.db
 databaseconnectiontest.db
-database*.log
-database*.properties
-database*.script
-databases/
 loc_results.csv
 loc.svg
 .antlr/
