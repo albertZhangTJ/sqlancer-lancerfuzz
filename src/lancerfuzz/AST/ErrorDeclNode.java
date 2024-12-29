@@ -11,4 +11,13 @@ public class ErrorDeclNode extends Node {
     public List<String> get_errors(){
         return Utils.copy_list(this.errors);
     }
+
+    @Override
+    public String render(List<String> function_list, String padding, boolean print){
+        String res = "";
+        for (String err : this.errors){
+            res = res + padding + "ctx.addError(Variable.factory(\"" + err +"\"));\n";
+        } 
+        return res;
+    }
 }
