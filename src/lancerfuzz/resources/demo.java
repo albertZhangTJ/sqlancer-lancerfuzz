@@ -796,6 +796,14 @@ public class demo{
 
     }
 
+    public static List<Variable> packList(Variable... args){
+        List<Variable> l = new ArrayList<>();
+        for (Variable v: args){
+            l.add(v);
+        }
+        return l;
+    }
+
     public static List<String> rules;
 
     public static void init(){
