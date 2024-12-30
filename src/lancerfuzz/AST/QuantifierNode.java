@@ -25,5 +25,5 @@ public class QuantifierNode extends Node{
     public int get_type(){
         return this.type;
     }
-    
+    //TODO
 }
