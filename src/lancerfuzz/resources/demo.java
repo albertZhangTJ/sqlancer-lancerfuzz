@@ -98,15 +98,29 @@ public class demo{
     }
 
     public static class Context {
+        //global variables
         private HashMap<String, Variable> globalSymbols;
+        //local variables
         private HashMap<String, Variable> symbols;
         private List<HashMap<String, Variable>> symbolStack;
         private List<Variable> args;
         private List<String> errors;
+        //return value from a grammar function call
         private Variable result;
+        //JDBC connection to the DB under test, only used by the query built-in function
         private SQLConnection conn;
+        //This is the list of supported operators by SGL
         public static final List<String> OPERATORS = Collections.unmodifiableList(Arrays.asList("=", "+=", "+", "-", "==", "!=", ">", "<", ">=", "<="));
-        private HashMap<String, Integer> idCount;
+        //used by the "new" function for making sure all symbols in the target language scope is unique
+        //for example, the first call to new["table"] will return 'table1', second call will be 'table2' and so on
+        private HashMap<String, Integer> idCount; 
+        
+        private static List<String> rules = new ArrayList<>();
+
+        public static void add_rule(String name){
+            rules.add(name);
+        }
+
 
         public Context(SQLConnection conn){
             this.symbols = new HashMap<>();
@@ -125,7 +139,7 @@ public class demo{
             }
         }
 
-        public Variable call(Buffer buf, String rule, List<Variable> args, boolean print) throws Exception{
+        public Variable call(Buffer buf, String rule, List<Variable> args) throws Exception{
             this.push_args(args);
             buf.add(demo.dispatch(this, rule));
             return this.result;
@@ -168,7 +182,9 @@ public class demo{
         public void ret(String returnSymbol) throws Exception{
             //move the return value into the cache slot
             if (returnSymbol!=null){
-                this.result = this.getSymbol(returnSymbol, null);
+                //TODO: this is a lazy fix
+                //it is prolly better to directly fetch the symbol instead
+                this.result = this.getSymbol(null, returnSymbol, null);
             }
 
             //restore context for caller
@@ -179,7 +195,7 @@ public class demo{
 
         // the symbol here might be either a variable or a function
         // that is why the args arg this there, it won't even be looked at if it is actually a variable
-        public Variable getSymbol(String symbol, List<Variable> args) throws Exception{
+        public Variable getSymbol(Buffer buf, String symbol, List<Variable> args) throws Exception{
             if (symbol==null){
                 throw new IllegalArgumentException("ERROR : Fuzzer.Context.getSymbol :: the symbol accessed is null, check your grammar");
             }
@@ -194,6 +210,9 @@ public class demo{
             }
             if (symbol.equals("new")){
                 return this.new_id(args);
+            }
+            if (rules.contains(symbol)){
+                return this.call(buf, symbol, args);
             }
             if (this.symbols.get(symbol)==null && this.globalSymbols.get(symbol)==null){
                 if (Character.isUpperCase(symbol.charAt(0))){
@@ -809,6 +828,7 @@ public class demo{
     public static void init(){
         demo.rules = new ArrayList<>();
         demo.rules.add("createTable");
+        Context.add_rule("createTable");
     }
 
     // at compile time, each standalone rule (without the fragment modifier)
@@ -844,14 +864,14 @@ public class demo{
     public static Buffer createTable(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         ctx.enter(null, null); // create new stack frame, load arguments into callee frame
-        ctx.eval(ctx.getSymbol("temp", null), "=", Variable.factory(0));
-        ctx.eval(ctx.getSymbol("rep", null), "=", ctx.getSymbol("_r", List.of(Variable.factory(1), Variable.factory(6), Variable.factory(", "), Variable.factory(0))));
+        ctx.eval(ctx.getSymbol(buf, "temp", null), "=", Variable.factory(0));
+        ctx.eval(ctx.getSymbol(buf, "rep", null), "=", ctx.getSymbol(buf, "_r", List.of(Variable.factory(1), Variable.factory(6), Variable.factory(", "), Variable.factory(0))));
         buf.add(CREATE(ctx));
         ctx.addError(Variable.factory("A BLOB field is not allowed in partition function"));
         buf.add(node6(ctx));
         
         buf.add(TABLE(ctx));
-        buf.add(ctx.getSymbol("new", List.of(Variable.factory("table")))); //built-in function for generating new name
+        buf.add(ctx.getSymbol(buf, "new", List.of(Variable.factory("table")))); //built-in function for generating new name
         buf.add(LB(ctx));
         buf.add(node30(ctx));
         buf.add(RB(ctx));
@@ -863,14 +883,14 @@ public class demo{
 
     public static Buffer node30(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        Variable arg = ctx.getSymbol("rep", null);
+        Variable arg = ctx.getSymbol(buf, "rep", null);
         int r = arg.getNumerical();
         String delimiter = "";
         if (arg.getAttr("delimiter", null)!=null){
             delimiter = arg.getAttr("delimiter", null).getValue();
         }
         for (int i=0; i<r; i++){
-            buf.add(ctx.getSymbol("new", List.of(Variable.factory("column"))));
+            buf.add(ctx.getSymbol(buf, "new", List.of(Variable.factory("column"))));
             buf.add(columnDefinition(ctx));
             buf.add(Variable.factory(delimiter));
         }
@@ -887,7 +907,7 @@ public class demo{
         Buffer buf = new Buffer();
         Options opt = new Options();
         
-        if (ctx.eval(ctx.getSymbol("temp", null), "==", Variable.factory(0)).getBoolean()){
+        if (ctx.eval(ctx.getSymbol(buf, "temp", null), "==", Variable.factory(0)).getBoolean()){
             opt.addOption(1, 0.5);
         }
         opt.addOption(0, 0.5);
@@ -1010,7 +1030,7 @@ public class demo{
         Buffer buf = new Buffer();
         int r = Rand.random(0, 1); //short hand random number generator, avoid triggering the more complicated one from Context
         for (int i=0; i<r; i++){
-            ctx.eval(ctx.getSymbol("temp", null), "=", Variable.factory(1));
+            ctx.eval(ctx.getSymbol(buf, "temp", null), "=", Variable.factory(1));
             buf.add(TEMPORARY(ctx));
         }
         return buf;
