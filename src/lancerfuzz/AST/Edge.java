@@ -9,10 +9,8 @@ public class Edge {
 
     private Node destination;
 
-    public Edge(Node source, Node destination, HashMap<String, String> args){
-        this.source = source;
-        this.destination = destination;
-        this.args = args;
+    public Edge(Node destination){
+        this.destination = destinationp;
     }
 
     public Node get_dest(){

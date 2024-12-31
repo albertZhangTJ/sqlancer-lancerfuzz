@@ -148,7 +148,7 @@ public class Node {
         }
         if (schedule_points!=0){
             if (!(this.get_outward_edges().get(0).get_dest() instanceof ScheduleNode)){
-                this.outward_edges.add(0, new ScheduleNode(schedule_points));
+                this.outward_edges.add(0, new Edge(new ScheduleNode(schedule_points)));
             }
             for (int i=0; i<this.outward_edges.size(); i++){
                 for (int j=i+1; j<this.outward_edges.size(); j++){
