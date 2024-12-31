@@ -824,6 +824,7 @@ public class demo{
     }
 
     public static List<String> rules;
+    public static final int DAFAULT_MAX_REP = 8;
 
     public static void init(){
         demo.rules = new ArrayList<>();

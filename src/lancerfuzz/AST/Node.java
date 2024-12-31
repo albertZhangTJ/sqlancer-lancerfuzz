@@ -122,7 +122,25 @@ public class Node {
     public int get_min_depth(){
         return this.min_depth;
     }
-
+    //for post-processing steps that should happen at the parent nodes
+    //for example. schedule nodes and quantifier nodes
+    //otherwise, the specific type of nodes should inherent this and provide their own implementation
+    public void post_process(){
+        for (int i=0; i<this.get_outward_edges().size(); i++){
+            Node child = this.get_outward_edges().get(i).get_dest();
+            if (child instanceof QuantifierNode){
+                QuantifierNode q = (QuantifierNode)child;
+                if (q.get_type()==3){ //post-processing is only needed for type 3, ** 
+                    if (i==this.get_outward_edges().size()-1 || !(this.get_outward_edges().get(i+1).get_dest() instanceof ArgNode)){
+                        Utils.panic("Node::post_process : A quantifier node with operator ** expects a variable (or an expression that evaluates to a variable) after it");
+                    }
+                    q.set_param((ArgNode)(this.get_outward_edges().get(i+1).get_dest()));
+                    this.outward_edges.remove(i+1);
+                }
+            }
+        }
+        //TODO: add post processing logic for schedule node
+    }
     //This is just a placeholder for render function
     //Should not be executed in real life
     //Did not set to abstract to save some work for temporary IR nodes

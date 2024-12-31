@@ -15,6 +15,7 @@ public class AlternationNode extends Node {
     }
 
     public void post_process(){
+        super.post_process();
         //step 1: get all the explicitly declared weights and predicates
         List<Edge> children = super.get_outward_edges();
         for (int i=0; i<children.size(); i++){
@@ -58,6 +59,7 @@ public class AlternationNode extends Node {
         return super.toString() + "\n    type: AlternationNode\n    weights: "+this.weights.toString();
     }
 
+    //the print flag is ignored here, as there is no realistic reason why some section of a function should be suppressed
     public String render(List<String> function_list, String padding, boolean print){
         String handle = padding + "buf.add(node"+this.get_id()+"(ctx));\n";
 
