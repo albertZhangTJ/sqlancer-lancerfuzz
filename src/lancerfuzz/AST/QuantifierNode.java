@@ -37,7 +37,6 @@ public class QuantifierNode extends Node{
         String indentation = "    ";
         String code = indentation + "public Buffer node"+this.get_id()+"(Context ctx){\n";
         code = code + indentation + indentation + "Buffer buf = new Buffer();\n";
-        code = code + indentation + indentation + "Options opt = new Options();\n";
         if (this.get_type() == 0){
             code = code + indentation + indentation + "int rep = Rand.random(0, 1);\n";
             code = code + indentation + indentation + "String delimiter = \"\";\n";

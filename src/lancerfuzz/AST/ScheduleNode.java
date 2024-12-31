@@ -24,10 +24,10 @@ public class ScheduleNode extends Node{
         code = code + indentation + indentation + "Buffer buf = new Buffer();\n";
         for (Edge e: this.get_outward_edges()){
             Node child = e.get_dest();
-            code = code + child.render(function_list, indentation + indentation);
+            code = code + child.render(function_list, indentation + indentation, true);
         }
         code = code + indentation + indentation + "return buf;\n";
-        code = code + indentation + "};";
+        code = code + indentation + "}\n";
         function_list.add(code);
         return handle;
     }

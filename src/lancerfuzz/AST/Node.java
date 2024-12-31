@@ -139,7 +139,28 @@ public class Node {
                 }
             }
         }
-        //TODO: add post processing logic for schedule node
+        //post processing logic for schedule node
+        int schedule_points = 0;
+        for (Edge e : this.get_outward_edges()){
+            if (e.get_dest() instanceof ScheduleNode){
+                schedule_points++;
+            }
+        }
+        if (schedule_points!=0){
+            if (!(this.get_outward_edges().get(0).get_dest() instanceof ScheduleNode)){
+                this.outward_edges.add(0, new ScheduleNode(schedule_points));
+            }
+            for (int i=0; i<this.outward_edges.size(); i++){
+                for (int j=i+1; j<this.outward_edges.size(); j++){
+                    //if the next node is also a ScheduleNode, then we are done moving whatever belongs to the current node
+                    if (this.outward_edges.get(j).get_dest() instanceof ScheduleNode){
+                        break;
+                    }
+                    this.outward_edges.get(i).get_dest().add_outward_edge(this.outward_edges.remove(j));
+                    j--;
+                }
+            }
+        }
     }
     //This is just a placeholder for render function
     //Should not be executed in real life
