@@ -14,6 +14,7 @@ import sqlancer.SQLConnection;
 import java.sql.ResultSet;
 public class demo{
     public static class UnavailableException extends Exception {
+        private static final long serialVersionUID = 1L;
         public boolean isUndefined; //the variable/attr requested does not exist
         public boolean isUninitialized; //the variable/attr requests exists but has no value associated
         public boolean isOut; //the variable/attr requested exists but is insufficient in numbers (no more unique ones exists)
@@ -26,6 +27,7 @@ public class demo{
     }
 
     public static class DeadEndException extends Exception {
+        private static final long serialVersionUID = 1L;
         public DeadEndException(String message){
             super(message);
         }
@@ -62,7 +64,7 @@ public class demo{
             this.children.add(child);
         }
 
-        public Variable add(Variable terminal){
+        public Variable add(Variable terminal) throws Exception{
             this.children.add(new Buffer(terminal.getValue()));
             return terminal;
         }
@@ -130,7 +132,7 @@ public class demo{
             this.idCount = new HashMap<>();
         }
 
-        public void addError(Variable v) throws IllegalArgumentException{
+        public void addError(Variable v) throws Exception{
             try {
                 this.errors.add(v.getValue());
             }
@@ -139,6 +141,16 @@ public class demo{
             }
         }
 
+        //the calling convention in SGL is:
+        //The caller evaluates the arguments and pass its own buffer, the name of the callee, and the arguments here
+        //This function will will push the passed arguments to this.args (think arguments passed using registers)
+        //Then the control is passed to the callee
+        //If the function is not a fragment
+        //The callee will create a new stack frame of its own
+        //arg_decls will first be evaluated in the callee frame (which is empty up until now)
+        //Then the callee will use enter() to move the arguments to its own stack frame (only itself knows how to do that)
+        //After completing its business, the callee will push its return value to this.result (again, think register) and restore the stack frame for caller
+        //The call() function will add the returned buffer to the caller one and return this.result (so that the behavior is consistent)
         public Variable call(Buffer buf, String rule, List<Variable> args) throws Exception{
             this.push_args(args);
             buf.add(demo.dispatch(this, rule));
@@ -149,33 +161,37 @@ public class demo{
             this.args = args;
         }
 
-        // arg_symbols are the symbols in the new stack frame
-        // defaults are the supplied default values, a null place holder must be provided if not corresponding default value is specified
-        // args are the actual values passed in from outside
-        public void enter(List<String> arg_symbols, List<Variable> defaults) throws Exception{
+        public void push_frame(){
             HashMap<String, Variable> newFrame = new HashMap<>();
-            if (arg_symbols.size()!=defaults.size()){
-                throw new IllegalArgumentException("ERROR: Fuzzer.Context.call :: internal error, argument list size does not match that of default list");
-            }
-            for (int i=0; i<arg_symbols.size(); i++){
-                String symbol = arg_symbols.get(i);
-                if (this.args.size()>i){
-                    newFrame.put(symbol, this.args.get(i));
-                }
-                else if (defaults.get(i)!=null){
-                    newFrame.put(symbol, defaults.get(i));
-                }
-                else {
-                    throw new DeadEndException("Context::enter : cannot resolve value for argument symbol "+symbol);
-                }
-            }
-
             //preserve current symbols
             this.symbolStack.add(this.symbols);
             this.symbols = newFrame;
 
             //set the return value to null to avoid confusion
             this.result = null;
+        }
+        // arg_decls is the parameter list declared in the lhs of the current/callee rule
+        // it will first be evaluated in the callee frame (which is empty up until now)
+        // in this pass, the variables without default values will be assigned with placeholders
+        // those with default values will be assigned with their corrsponding defaults
+        // then a second pass will assign the passed arguments positionally, overwriting exisiting placeholders and defaults
+        // finally, we will check for placeholders in the parameter list
+        // If any is found, then we will throw an exception as it is not covered by either default or passed
+        public void enter(List<Variable> arg_decls) throws Exception{
+            if (args!=null && args.size()>0){
+                if (args.size()>arg_decls.size()){
+                    throw new IllegalArgumentException("Fuzzer.Context.enter :: size of provided argument list exceeds that in the rule signature");
+                }
+                for (int i=0; i<this.args.size(); i++){
+                    arg_decls.get(i).clone(this.args.get(i));    
+                }
+            }
+            for (Variable v : arg_decls){
+                if (v.isPlaceHolder()){
+                    throw new IllegalArgumentException("Fuzzer.Context.enter :: an argument must either be assigned through default value or passed parameter");
+                }
+            }
+            this.args = null;
         }
 
 
@@ -216,10 +232,10 @@ public class demo{
             }
             if (this.symbols.get(symbol)==null && this.globalSymbols.get(symbol)==null){
                 if (Character.isUpperCase(symbol.charAt(0))){
-                    this.globalSymbols.put(symbol, Variable.factory());
+                    this.globalSymbols.put(symbol, Variable.placeholder());
                 }
                 else if (Character.isLowerCase(symbol.charAt(0))){
-                    this.symbols.put(symbol, Variable.factory());
+                    this.symbols.put(symbol, Variable.placeholder());
                 }
                 else {
                     throw new Exception("Variable.getSymbol : a user-defined symbol must start with either lower case letter (local) or upper case letter (global)");
@@ -236,7 +252,7 @@ public class demo{
         // decay_spec should be an interger ranging 0 to 4, default 2
         // 0 for uniform distribution, uniform distribution without a max is not allowed
         // 1 for 0.25^x, 2 for 0.5^x, 3 for 0.75^x, 4 for 0.99^x
-        public Variable random(List<Variable> args) throws IllegalArgumentException{
+        public Variable random(List<Variable> args) throws Exception{
             try{
                 if (args.size()==2){
                     int val = args.get(0).getNumerical();
@@ -312,7 +328,7 @@ public class demo{
         //returning a variable object containing an empty string since
         //all calls to a function is expected to return something
         //so we are using this as a placeholder
-        public Variable addExpectedError(List<Variable> args){
+        public Variable addExpectedError(List<Variable> args) throws Exception{
             for (Variable arg : args){
                 this.errors.add(arg.getValue());
             }
@@ -392,7 +408,7 @@ public class demo{
             return v;
         }
         //for the "new" built-in function 
-        public Variable new_id(List<Variable> args){
+        public Variable new_id(List<Variable> args) throws Exception{
             if (args.size()!=1){
                 throw new IllegalArgumentException("ERROR : Fuzzer.Context.new_id :: a call to the new function expects exactly 1 argument: the prefix of the id to be generated");
             }
@@ -418,10 +434,11 @@ public class demo{
         private List<Integer> uniqueUsageCount;
         private HashMap<String, Variable> attributes;
         private int cursor; //non-decreasing, modulus entries.size() will be used for extracting index 
+        private boolean isUninitialized;
 
         public static final List<String> RESERVED_ATTR = Collections.unmodifiableList(Arrays.asList("new", "any", "next", "len", "unique_any", "query", "filter", "cur"));
         
-        public Variable(){
+        private Variable(){
             this.isSingleValued = false;
             this.containsNumerical = false;
             this.containsBoolean = false;
@@ -429,8 +446,9 @@ public class demo{
             this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
             this.cursor = 0;
+            this.isUninitialized = false;
         }
-        public Variable(String value){
+        private Variable(String value){
             this.value = value;
             this.isSingleValued = true;
             this.containsNumerical = false;
@@ -439,8 +457,9 @@ public class demo{
             this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
             this.cursor = 0;
+            this.isUninitialized = false;
         }
-        public Variable(int numerical){
+        private Variable(int numerical){
             this.value = ""+numerical;
             this.numerical = numerical;
             this.isSingleValued = true;
@@ -450,8 +469,9 @@ public class demo{
             this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
             this.cursor = 0;
+            this.isUninitialized = false;
         }
-        public Variable(boolean bool){
+        private Variable(boolean bool){
             this.value = ""+bool;
             this.bool = bool;
             this.isSingleValued = true;
@@ -461,6 +481,10 @@ public class demo{
             this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
             this.cursor = 0;
+            this.isUninitialized = false;
+        }
+        private Variable(boolean placeholder, boolean p){
+            this.isUninitialized = true;
         }
         //by returning this at the end of the setter, we can use this class in an FP way
         public Variable setAttr(String attr_name, Variable value) throws IllegalArgumentException{
@@ -484,11 +508,18 @@ public class demo{
         public static Variable factory(boolean bool){
             return new Variable(bool);
         }
+        public static Variable placeholder(){
+            return new Variable(true, true);
+        }
         
         //make the current variable a shallow-copy of other
         //the cursor will be set to 0
         //mainly used for assignment (i.e. a=b will be context.getSymbol("a").clone(context.getSymbol("b")))
-        public void clone(Variable other){
+        @SuppressWarnings("unused")
+        public void clone(Variable other) throws Exception{
+            if (other.isUninitialized){
+                throw new UnavailableException("An uninitialized variable should not be cloned, check your grammar file for assignments using these", false, true, false);
+            }
             this.isSingleValued = other.isSingleValued;
             this.value = other.value;
             this.numerical = other.numerical;
@@ -640,23 +671,41 @@ public class demo{
             }
             throw new IllegalArgumentException("Fuzzer.Variable.compare :: comparator "+comparator+" is not recognizable");
         }
-        public String getValue() throws IllegalArgumentException{
+        public String getValue() throws Exception{
+            if (this.isUninitialized){
+                throw new UnavailableException("Fuzzer.Variable.getValue :: the current variable is not initialized", false, true, false);
+            }
             if (!this.isSingleValued){
                 throw new IllegalArgumentException("Fuzzer.Variable.getValue :: getValue is not applicable to multi-valued variable");
             }
             return this.value;
         }
-        public boolean isNumerical(){
+        public boolean isPlaceHolder(){
+            return this.isUninitialized;
+        }
+        public boolean isNumerical() throws UnavailableException{
+            if (this.isUninitialized){
+                throw new UnavailableException("Fuzzer.Variable.isNumerical :: the current variable is not initialized", false, true, false);
+            }
             return this.containsNumerical;
         }
 
-        public int getNumerical(){
+        public int getNumerical() throws UnavailableException{
+            if (this.isUninitialized){
+                throw new UnavailableException("Fuzzer.Variable.getNumerical :: the current variable is not initialized", false, true, false);
+            }
             return this.numerical;
         }
-        public boolean isBoolean(){
+        public boolean isBoolean() throws UnavailableException{
+            if (this.isUninitialized){
+                throw new UnavailableException("Fuzzer.Variable.isBoolean :: the current variable is not initialized", false, true, false);
+            }
             return this.containsBoolean;
         }
-        public boolean getBoolean(){
+        public boolean getBoolean() throws UnavailableException{
+            if (this.isUninitialized){
+                throw new UnavailableException("Fuzzer.Variable.getBoolean :: the current variable is not initialized", false, true, false);
+            }
             if (!this.containsBoolean){
                 throw new IllegalArgumentException("Fuzzer.Variable.getBoolean :: the current variable is not a boolean one");
             }
@@ -664,7 +713,10 @@ public class demo{
         }
 
         //by returning this at the end of the setter, we can use this class in an FP way
-        public Variable addEntry(Variable v) throws IllegalArgumentException{
+        public Variable addEntry(Variable v) throws Exception{
+            if (this.isUninitialized){
+                throw new UnavailableException("Fuzzer.Variable.addEntry :: the current variable is not initialized", false, true, false);
+            }
             if (this.isSingleValued){
                 throw new IllegalArgumentException("Fuzzer.Variable.addEntry :: addEntry is not applicable to single-valued variable");
             }
@@ -672,9 +724,12 @@ public class demo{
             this.uniqueUsageCount.add(0);
             return this;
         }
-        public Variable getEntry(int idx)throws IllegalArgumentException{
+        public Variable getEntry(int idx)throws Exception{
+            if (this.isUninitialized){
+                throw new UnavailableException("Fuzzer.Variable.getEntry :: the current variable is not initialized", false, true, false);
+            }
             if (this.isSingleValued){
-                throw new IllegalArgumentException("Fuzzer.Variable.addEntry :: addEntry is not applicable to single-valued variable");
+                throw new IllegalArgumentException("Fuzzer.Variable.getEntry :: addEntry is not applicable to single-valued variable");
             }
             return this.entries.get(idx);
         }
@@ -864,7 +919,9 @@ public class demo{
     // context stack frame is callee established
     public static Buffer createTable(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        ctx.enter(null, null); // create new stack frame, load arguments into callee frame
+        ctx.push_frame();
+        List<Variable> arg_decls = new ArrayList<>();
+        ctx.enter(arg_decls); // create new stack frame, load arguments into callee frame
         ctx.eval(ctx.getSymbol(buf, "temp", null), "=", Variable.factory(0));
         ctx.eval(ctx.getSymbol(buf, "rep", null), "=", ctx.getSymbol(buf, "_r", List.of(Variable.factory(1), Variable.factory(6), Variable.factory(", "), Variable.factory(0))));
         buf.add(CREATE(ctx));
@@ -923,13 +980,13 @@ public class demo{
         return buf;
     }
 
-    public static Buffer node66(Context ctx){
+    public static Buffer node66(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         buf.add(Variable.factory(""));
         return buf;
     }
 
-    public static Buffer node76(Context ctx){
+    public static Buffer node76(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         buf.add(Variable.factory("PARTITION BY"));
         return buf;
@@ -972,17 +1029,17 @@ public class demo{
     // This is an alternative node (a specific branch of alternation node)
     // in this specific case, since there is only one literal in the branch
     // it looks similar to the keyword definitions
-    public static Buffer node16(Context ctx){
+    public static Buffer node16(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         buf.add(Variable.factory("INT"));
         return buf;
     }
-    public static Buffer node26(Context ctx){
+    public static Buffer node26(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         buf.add(Variable.factory("FLOAT"));
         return buf;
     }
-    public static Buffer node36(Context ctx){
+    public static Buffer node36(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         buf.add(Variable.factory("TEXT"));
         return buf;
@@ -995,31 +1052,31 @@ public class demo{
     // Instantiating a variable will have the natural side-effect of 
     // printing to buffer, which is what we expect for a terminal string 
     // literal in ANTLR
-    public static Buffer CREATE(Context ctx){
+    public static Buffer CREATE(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         buf.add(Variable.factory("CREATE"));
         return buf;
     }
 
-    public static Buffer TABLE(Context ctx){
+    public static Buffer TABLE(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         buf.add(Variable.factory("TABLE"));
         return buf;
     }
 
-    public static Buffer TEMPORARY(Context ctx){
+    public static Buffer TEMPORARY(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         buf.add(Variable.factory("TEMPORARY"));
         return buf;
     }
 
-    public static Buffer LB(Context ctx){
+    public static Buffer LB(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         buf.add(Variable.factory("("));
         return buf;
     }
 
-    public static Buffer RB(Context ctx){
+    public static Buffer RB(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         buf.add(Variable.factory(")"));
         return buf;
