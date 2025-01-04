@@ -5,29 +5,30 @@ import java.util.List;
 import lancerfuzz.Utils;
 
 public class UnlexerRuleNode extends RuleNode{
-    private List<Integer> start_ranges;
     public UnlexerRuleNode(String name){
-        super(name, null, RuleNodeType.UNLEXER);
-        this.start_ranges = null;
+        super(name, RuleNodeType.UNLEXER);
     }
 
-    public List<Integer> get_start_ranges(){
-        return Utils.copy_list(this.start_ranges);
-    }
+    //basically the same as UnparserRuleNode
+    //There do not have arguments or returns, they don't need stack frame
+    //Essentially context-free
+    //supports CharSetNode (which are not allowed in UnparserRuleNode)
+    public String render(List<String> function_list, String padding, boolean print){
+        String handle = this.get_identifier()+"(ctx)";
+        if (print){
+            handle = padding +"buf.add(" + handle + ");\n";
+        }
 
-    public void set_start_ranges(List<Integer> start_ranges){
-        if (this.start_ranges!=null){
-            Utils.oops("UnlexerRuleNode::set_start_ranges : start_ranges already been set, overwriting");
+        String indent = "    ";
+        String code = indent + "public static Buffer " + this.get_identifier() + "(Context ctx){\n";
+        code = code + indent + indent + "Buffer buf = new Buffer();\n";
+        for (Edge e : this.get_outward_edges()){
+            Node child = e.get_dest();
+            code = code + child.render(function_list, indent+indent, true) +"\n";
         }
-        if (start_ranges==null){
-            Utils.oops("UnlexerRuleNode::set_start_ranges : New start_ranges is null, ignored");
-        }
-        this.start_ranges = start_ranges;
-    }
-
-    public void append_start_ranges(List<Integer> start_range){
-        for (Integer i : start_range){
-            this.start_ranges.add(i);
-        }
+        code = code + indent + indent + "return buf;\n";
+        code = code + indent + "}\n";
+        function_list.add(code);
+        return handle;
     }
 }

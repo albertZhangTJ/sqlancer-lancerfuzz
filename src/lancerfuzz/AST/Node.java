@@ -37,19 +37,6 @@ public class Node {
         this.walked=false;
     }
 
-    public Node(String name, String label){
-        this.id = nodes_count;
-        nodes_count++;
-        this.outward_edges = new ArrayList<>();
-        if (label==null){
-            this.identifier = name;
-        }
-        else {
-            this.identifier = name + "_" + label;
-        }
-        this.walked=false;
-    }
-
     public int get_id(){
         return this.id;
     }

@@ -195,13 +195,9 @@ public class demo{
         }
 
 
-        public void ret(String returnSymbol) throws Exception{
+        public void ret(Variable result) throws Exception{
             //move the return value into the cache slot
-            if (returnSymbol!=null){
-                //TODO: this is a lazy fix
-                //it is prolly better to directly fetch the symbol instead
-                this.result = this.getSymbol(null, returnSymbol, null);
-            }
+            this.result= result;
 
             //restore context for caller
             this.symbols = this.symbolStack.get(this.symbolStack.size()-1);
