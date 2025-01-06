@@ -243,56 +243,30 @@ public class demo{
         //random generator 
         // handles the following cases
         //_r[fix_number, delimiter]
+        //_r[min, max]
         //_r[min, delimiter, decay_spec]
+        //_r[min, max, delimiter]
         //_r[min, max, delimiter, decay_spec]
-        // decay_spec should be an interger ranging 0 to 4, default 2
+        // decay_spec should be an interger ranging 0 to 99, default 50
         // 0 for uniform distribution, uniform distribution without a max is not allowed
-        // 1 for 0.25^x, 2 for 0.5^x, 3 for 0.75^x, 4 for 0.99^x
+        // Otherwise, the probability of getting x is (decay_spec/100)*(1-decay_spec/100)^(x-1)
         public Variable random(List<Variable> args) throws Exception{
             try{
                 if (args.size()==2){
-                    int val = args.get(0).getNumerical();
-                    String delimiter = args.get(1).getValue();
-                    Variable res = Variable.factory(val);
-                    res.setAttr("delimiter", Variable.factory(delimiter));
-                    return res;
-                }
-                if (args.size()==3){
-                    int min = args.get(0).getNumerical();
-                    String delimiter = args.get(1).getValue();
-                    int ds = args.get(2).getNumerical();
-                    if (ds==0){
-                        throw new IllegalArgumentException("ERROR : Fuzzer.Context.random :: random function cannot be called with no max AND uniform distribution");
+                    //_r[fix, delimiter]
+                    if (args.get(0).isNumerical() && args.get(1).isString()){
+                        int val = args.get(0).getNumerical();
+                        String delimiter = args.get(1).getValue();
+                        Variable res = Variable.factory(val);
+                        res.setAttr("delimiter", Variable.factory(delimiter));
+                        return res;
                     }
-                    if (ds>4 || ds<0){
-                        throw new IllegalArgumentException("ERROR : Fuzzer.Context.random :: unrecognizable decay_spec, accepted value are integers in range [0,4]");
-                    }
-                    int val = min;
-                    double dr = ds==1 ? 0.25 : ds==2 ? 0.5 : ds==3 ? 0.75 : 0.99;
-                    while (true){
-                        if (Math.random()<dr){
-                            break;
-                        }
-                        val++;
-                    }
-                    Variable res = Variable.factory(val);
-                    res.setAttr("delimiter", Variable.factory(delimiter));
-                    return res;
-                }
-                if (args.size()==4){
-                    int min = args.get(0).getNumerical();
-                    int max = args.get(1).getNumerical();
-                    String delimiter = args.get(2).getValue();
-                    int ds = args.get(3).getNumerical();
-                    if (ds>4 || ds<0){
-                        throw new IllegalArgumentException("ERROR : Fuzzer.Context.random :: unrecognizable decay_spec, accepted value are integers in range [0,4]");
-                    }
-                    int val = min;
-                    if (ds==0){
-                        val += (int)((max-min+1)*Math.random());
-                    }
-                    else {
-                        double dr = ds==1 ? 0.25 : ds==2 ? 0.5 : ds==3 ? 0.75 : 0.99;
+                    //_r[min, max]
+                    if (args.get(0).isNumerical() && args.get(1).isNumerical()){
+                        int min = args.get(0).getNumerical();
+                        int max = args.get(1).getNumerical();
+                        double dr = 0.5;
+                        int val = min;
                         while (true){
                             if (Math.random()<dr){
                                 break;
@@ -303,21 +277,102 @@ public class demo{
                                 val = min;
                             }
                         }
+                        return Variable.factory(val);
                     }
-                    Variable res = Variable.factory(val);
-                    res.setAttr("delimiter", Variable.factory(delimiter));
-                    return res;
+                }
+                if (args.size()==3){
+                    //_r[min, delimiter, decay_spec]
+                    if (args.get(0).isNumerical() && args.get(1).isString() && args.get(2).isNumerical()){
+                        int min = args.get(0).getNumerical();
+                        String delimiter = args.get(1).getValue();
+                        int ds = args.get(2).getNumerical();
+                        if (ds==0){
+                            throw new IllegalArgumentException("ERROR : Fuzzer.Context.random :: random function cannot be called with no max AND uniform distribution");
+                        }
+                        if (ds>99 || ds<0){
+                            throw new IllegalArgumentException("ERROR : Fuzzer.Context.random :: unrecognizable decay_spec, accepted value are integers in range [0,99]");
+                        }
+                        int val = min;
+                        double dr = ds/100.0;
+                        while (true){
+                            if (Math.random()<dr){
+                                break;
+                            }
+                            val++;
+                        }
+                        Variable res = Variable.factory(val);
+                        res.setAttr("delimiter", Variable.factory(delimiter));
+                        return res;
+                    }
+                    //_r[min,max,decay_spec]
+                    if (args.get(0).isNumerical() && args.get(1).isNumerical() && args.get(2).isNumerical()){
+                        int min = args.get(0).getNumerical();
+                        int max = args.get(1).getNumerical();
+                        int ds = args.get(2).getNumerical();
+                        if (ds==0){
+                            throw new IllegalArgumentException("ERROR : Fuzzer.Context.random :: random function cannot be called with no max AND uniform distribution");
+                        }
+                        if (ds>99 || ds<0){
+                            throw new IllegalArgumentException("ERROR : Fuzzer.Context.random :: unrecognizable decay_spec, accepted value are integers in range [0,99]");
+                        }
+                        int val = min;
+                        double dr = ds/100.0;
+                        while (true){
+                            if (Math.random()<dr){
+                                break;
+                            }
+                            val++;
+                            //wrap around when overflow
+                            if (val>max){
+                                val = min;
+                            }
+                        }
+                        Variable res = Variable.factory(val);
+                        return res;
+                    }
+                }
+                if (args.size()==4){
+                    if (args.get(0).isNumerical() && args.get(1).isNumerical() && args.get(2).isString() && args.get(3).isNumerical()){
+                        int min = args.get(0).getNumerical();
+                        int max = args.get(1).getNumerical();
+                        String delimiter = args.get(2).getValue();
+                        int ds = args.get(3).getNumerical();
+                        if (ds>4 || ds<0){
+                            throw new IllegalArgumentException("ERROR : Fuzzer.Context.random :: unrecognizable decay_spec, accepted value are integers in range [0,4]");
+                        }
+                        int val = min;
+                        if (ds==0){
+                            val += (int)((max-min+1)*Math.random());
+                        }
+                        else {
+                            double dr = ds/100.0;
+                            while (true){
+                                if (Math.random()<dr){
+                                    break;
+                                }
+                                val++;
+                                //wrap around when overflow
+                                if (val>max){
+                                    val = min;
+                                }
+                            }
+                        }
+                        Variable res = Variable.factory(val);
+                        res.setAttr("delimiter", Variable.factory(delimiter));
+                        return res;
+                    }
                 }
                 throw new IllegalArgumentException("ERROR : Fuzzer.Context.random :: Expecting 2, 3, or 4 arguments, got "+args.size());
             }
             catch (IllegalArgumentException e){
-                throw new IllegalArgumentException("ERROR : Fuzzer.Context.random :: arguments passed are not recognizable, the recognized formats are\n"+
+                throw new IllegalArgumentException("ERROR : Fuzzer.Context.random :: arguments passed do not match any know signatures\n"+
                                                     "_r[fix_number, delimiter]\n" + 
+                                                    "_r[min, max]\n" +
                                                     "_r[min, delimiter, decay_spec]\n" + 
+                                                    "_r[min, max, delimiter]\n" +
                                                     "_r[min, max, delimiter, decay_spec]\n" + 
-                                                    "decay_spec should be an interger ranging 0 to 4, default 2\n" + 
-                                                    "0 for uniform distribution, uniform distribution without a max is not allowed\n" + 
-                                                    "1 for 0.25^x, 2 for 0.5^x, 3 for 0.75^x, 4 for 0.99^x", e);
+                                                    "decay_spec should be an interger ranging 0 to 99, default 50\n" + 
+                                                    "0 for uniform distribution, uniform distribution without a max is not allowed\n", e);
             }
         }
 
@@ -426,6 +481,7 @@ public class demo{
         private boolean bool;
         private boolean containsNumerical;
         private boolean containsBoolean;
+        private boolean containsString;
         private List<Variable> entries;
         private List<Integer> uniqueUsageCount;
         private HashMap<String, Variable> attributes;
@@ -438,6 +494,7 @@ public class demo{
             this.isSingleValued = false;
             this.containsNumerical = false;
             this.containsBoolean = false;
+            this.containsString = false;
             this.entries = new ArrayList<>();
             this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
@@ -449,6 +506,7 @@ public class demo{
             this.isSingleValued = true;
             this.containsNumerical = false;
             this.containsBoolean = false;
+            this.containsString = true;
             this.entries = new ArrayList<>();
             this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
@@ -461,6 +519,7 @@ public class demo{
             this.isSingleValued = true;
             this.containsNumerical = true;
             this.containsBoolean = false;
+            this.containsString = false;
             this.entries = new ArrayList<>();
             this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
@@ -473,12 +532,15 @@ public class demo{
             this.isSingleValued = true;
             this.containsNumerical = false;
             this.containsBoolean = true;
+            this.containsString = false;
             this.entries = new ArrayList<>();
             this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
             this.cursor = 0;
             this.isUninitialized = false;
         }
+
+        //just need a new signature, those arguments are not actually used
         private Variable(boolean placeholder, boolean p){
             this.isUninitialized = true;
         }
@@ -491,19 +553,27 @@ public class demo{
             return this;
         }
 
+        // factory method for a Variable of list type
         public static Variable factory(){
             return new Variable();
         }
 
+        // factory method for a Variable of string type
         public static Variable factory(String value){
             return new Variable(value);
         }
+
+        // factory method for a Variable of numerical type
         public static Variable factory(int numerical){
             return new Variable(numerical);
         }
+
+        // factory method for a Variable of boolean type
         public static Variable factory(boolean bool){
             return new Variable(bool);
         }
+
+        // factory method for a placeholder Variable
         public static Variable placeholder(){
             return new Variable(true, true);
         }
@@ -667,6 +737,9 @@ public class demo{
             }
             throw new IllegalArgumentException("Fuzzer.Variable.compare :: comparator "+comparator+" is not recognizable");
         }
+
+        //getValue returns the content of the current variable regardless if it is of string type or not
+        //roughly equals to toString
         public String getValue() throws Exception{
             if (this.isUninitialized){
                 throw new UnavailableException("Fuzzer.Variable.getValue :: the current variable is not initialized", false, true, false);
@@ -676,6 +749,14 @@ public class demo{
             }
             return this.value;
         }
+
+        public boolean isString() throws UnavailableException{
+            if (this.isUninitialized){
+                throw new UnavailableException("Fuzzer.Variable.isString :: the current variable is not initialized", false, true, false);
+            }
+            return this.containsString;
+        }
+
         public boolean isPlaceHolder(){
             return this.isUninitialized;
         }
