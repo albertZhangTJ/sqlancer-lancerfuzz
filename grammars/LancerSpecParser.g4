@@ -142,7 +142,7 @@ ruleSpec
    ;
 
 parserRuleSpec
-   : ruleModifier? RULE_REF argActionBlock?  (ruleReturns localsSpec | localsSpec? ruleReturns?) COLON ruleBlock SEMI
+   : ruleModifier? RULE_REF argActionBlock? ruleReturns? COLON ruleBlock SEMI
    ;
 
 

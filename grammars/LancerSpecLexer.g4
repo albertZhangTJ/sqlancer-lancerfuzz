@@ -126,17 +126,17 @@ FRAGMENT
    : 'fragment'
    ;
 
-SCHEMA
-   : 'schema'
-   ;
+// SCHEMA
+//    : 'schema'
+//    ;
 
-EXPR
-   : 'expr'
-   ;
+// EXPR
+//    : 'expr'
+//    ;
 
-STATEMENT
-   : 'statement'
-   ;
+// STATEMENT
+//    : 'statement'
+//    ;
 
 LEXER
    : 'lexer'
@@ -150,51 +150,51 @@ GRAMMAR
    : 'grammar'
    ;
 
-PROTECTED
-   : 'protected'
-   ;
+// PROTECTED
+//    : 'protected'
+//    ;
 
-PUBLIC
-   : 'public'
-   ;
+// PUBLIC
+//    : 'public'
+//    ;
 
-PRIVATE
-   : 'private'
-   ;
+// PRIVATE
+//    : 'private'
+//    ;
 
 RETURNS
    : 'returns'
    ;
 
-LOCALS
-   : 'locals'
-   ;
+// LOCALS
+//    : 'locals'
+//    ;
 
-THROWS
-   : 'throws'
-   ;
+// THROWS
+//    : 'throws'
+//    ;
 
-CATCH
-   : 'catch'
-   ;
+// CATCH
+//    : 'catch'
+//    ;
 
-FINALLY
-   : 'finally'
-   ;
+// FINALLY
+//    : 'finally'
+//    ;
 
-MODE
-   : 'mode'
-   ;
-   // -------------------------
-   // Punctuation
+// MODE
+//    : 'mode'
+//    ;
+//    // -------------------------
+//    // Punctuation
 
-BEGIN_ERR
-   : '_e(' 
-   ;
+// BEGIN_ERR
+//    : '_e(' 
+//    ;
 
-BEGIN_REP
-   : '_r(' 
-   ;
+// BEGIN_REP
+//    : '_r(' 
+//    ;
 
 
 
