@@ -64,17 +64,6 @@ LINE_COMMENT
    ;
 
 // -------------------------
-// Integer
-
-INT
-   : DecimalNumeral
-   ;
-
-BOOL
-   : 'true' | 'false'
-   ;
-
-// -------------------------
 // Literal string
 //
 // ANTLR makes no distinction between a single character literal and a
@@ -89,6 +78,13 @@ UNTERMINATED_STRING_LITERAL
    : USQuoteLiteral
    ;
 
+BOOL_LITERAL
+   : BoolLiteral
+   ;
+
+INT_LITERAL
+   : DecDigit+
+   ;
 
 // -------------------------
 // Target Language Actions

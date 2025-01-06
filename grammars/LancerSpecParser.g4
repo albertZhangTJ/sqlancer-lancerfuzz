@@ -78,7 +78,7 @@ optionValue
    : identifier (DOT identifier)*
    | STRING_LITERAL
    | actionBlock
-   | INT
+   | INT_LITERAL
    ;
    // ------------
    // Delegates
@@ -115,15 +115,6 @@ idList
    : identifier (COMMA identifier)* COMMA?
    ;
 
-
-repetitionBlock
-   : BEGIN_REP arg (COMMA arg)* RPAREN
-   ;
-
-errorBlock
-   : BEGIN_ERR STRING_LITERAL (COMMA STRING_LITERAL)* RPAREN
-   ;
-
 argActionBlock
    : LBRACK arg (COMMA arg)* RBRACK
    ;
@@ -151,12 +142,6 @@ ruleReturns
    : RETURNS argActionBlock
    ;
 
-
-localsSpec
-   : LOCALS argActionBlock
-   ;
-
-
 ruleModifier
    : FRAGMENT
    ;
@@ -167,15 +152,7 @@ ruleModifier
 
 
 ruleBlock
-   : ruleAltList
-   ;
-
-ruleAltList
-   : labeledAlt (OR labeledAlt)*
-   ;
-
-labeledAlt
-   : alternative (POUND identifier)?
+   : altList
    ;
 
 altList
@@ -191,18 +168,20 @@ alternative
 element
    : actionBlock
    | predicate
-   | errorBlock //handles error declaration
-   | repetitionBlock //handles repetition declaration
+   | weightage
+   | precedence
    | arg ebnfSuffix?
-   | atom ebnfSuffix? //string literals, variable access, rule reference
    | ebnf //non-root alternation nodes, parenthesized repetitions, and basically just any blocks
    ;
 
 predicate
    : LT arg GT
+   | actionBlock QUESTION
    ;
 
-
+//should a expression be suppressed, it is done here
+//I seriously cannot think of a use case for silencing w/o assignment
+//so this shld be fine for now
 expression
    : mexpr ((ASSIGN | PLUS_ASSIGN) DOLLAR? mexpr)*
    ;
@@ -220,12 +199,12 @@ lexpr
 variable
    : compIdentifier
    | STRING_LITERAL
-   | INT
-   | BOOL
+   | INT_LITERAL
+   | BOOL_LITERAL
    ;
 
 ebnf
-   : block ebnfSuffix?
+   : block ebnfSuffix
    ;
 
 //nongreedy matching are no longer supported
@@ -251,11 +230,11 @@ atom
    ;
 
 weightage
-   : INT PERCENTAGE
+   : INT_LITERAL PERCENTAGE
    ;
 
 precedence
-   : AT INT
+   : AT INT_LITERAL
    ;
 
 // --------------------
@@ -295,7 +274,7 @@ terminal
    ;
 
 compIdentifier
-   : identifier argActionBlock? ( DOT compIdentifier)*
+   : ID argActionBlock? ( DOT compIdentifier)*
    ;
 
 identifier
@@ -331,8 +310,6 @@ lexerElements
 
 lexerElement
    : actionBlock QUESTION?
-   | errorBlock
-   | repetitionBlock
    | expression
    | lexerAtom ebnfSuffix?
    | lexerBlock ebnfSuffix?
