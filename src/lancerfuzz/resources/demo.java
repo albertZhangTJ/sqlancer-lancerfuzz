@@ -214,10 +214,10 @@ public class demo{
             if (symbol.equals("query")){
                 return this.query(args);
             }
-            if (symbol.equals("_r")){
+            if (symbol.equals("random")){
                 return this.random(args);
             }
-            if (symbol.equals("_e")){
+            if (symbol.equals("error")){
                 return this.addExpectedError(args);
             }
             if (symbol.equals("new")){

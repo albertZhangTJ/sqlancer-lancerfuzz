@@ -25,18 +25,18 @@ THE SOFTWARE.
 grammar MiniMySQL;
 
 alterTable
-    : _e['exist'] ALTER TABLE t = table.any
-     ( alterSpecification )**_r[1, 6, ','] SC
+    : error['exist'] ALTER TABLE t = table.any
+     ( alterSpecification )**random[1, 6, ','] SC
     ;
 
 fragment alterSpecification
     : 
     ADD COLUMN? new[column] columnDefinition FIRST?    
-    | ADD COLUMN? '(' (column.new columnDefinition)_r[1, 3, ','] ')' 
-    | DROP COLUMN? column[t].unique_any _e['delete all', 'has a partitioning function dependency']
-    | DROP PRIMARY KEY _e['primary']
+    | ADD COLUMN? '(' (column.new columnDefinition)random[1, 3, ','] ')' 
+    | DROP COLUMN? column[t].unique_any error['delete all', 'has a partitioning function dependency']
+    | DROP PRIMARY KEY error['primary']
     | RENAME ( TO | AS ) new[table]
-    | RENAME COLUMN column[t].unique_any TO column.unique_any _e['has a partitioning function dependency and cannot be dropped or renamed']
+    | RENAME COLUMN column[t].unique_any TO column.unique_any error['has a partitioning function dependency and cannot be dropped or renamed']
     ;
 
 fragment columnDefinition
@@ -61,14 +61,14 @@ useDatabase
     ;
 
 createTable
-    : CREATE _e['A BLOB field is not allowed in partition function', 'is of a not allowed type for this type of partitioning'] 
-      ( 90% ' '  | TEMPORARY _e['Cannot create temporary table with partitions'] ) TABLE 
+    : CREATE error['A BLOB field is not allowed in partition function', 'is of a not allowed type for this type of partitioning'] 
+      ( 90% ' '  | TEMPORARY error['Cannot create temporary table with partitions'] ) TABLE 
         ifNotExists? table.new
         (
-            90% LB ( cn+=column.new columnDefinition)**_r[1, 5, ',', 10] RB 
+            90% LB ( cn+=column.new columnDefinition)**random[1, 5, ',', 10] RB 
             ( 80% ' '  |
                     ' ENGINE ' EQ (' MyISAM ' | ' InnoDB ' ) |
-                    PARTITION BY (LINEAR)? _e['allowed type']
+                    PARTITION BY (LINEAR)? error['allowed type']
                     ( 
                         'HASH(' cn.any ')' |
                         ' KEY ' ( 'ALGORITHM=' ('1'|'2'))? '(' cn.any ')'
@@ -79,33 +79,33 @@ createTable
     ;
 
 createIndex
-    : _e['used in key specification without a key length'] CREATE  
+    : error['used in key specification without a key length'] CREATE  
     ((
-       49% UNIQUE _e['Duplicate', 'A UNIQUE INDEX must include all columns in the '] | 
-        49% FULLTEXT _e['cannot be part of',' support FULLTEXT indexes'] | 
-        _e['A SPATIAL index may only contain a geometrical type column']  SPATIAL
-    ) )**_r[0, 1, 90]
+       49% UNIQUE error['Duplicate', 'A UNIQUE INDEX must include all columns in the '] | 
+        49% FULLTEXT error['cannot be part of',' support FULLTEXT indexes'] | 
+        error['A SPATIAL index may only contain a geometrical type column']  SPATIAL
+    ) )**random[0, 1, 90]
     INDEX index.new
-    ON t=table.any c=$column[t] '(' ( c.unique_any )**_r[1, 6] ')'
+    ON t=table.any c=$column[t] '(' ( c.unique_any )**random[1, 6] ')'
     (
         ALGORITHM EQ (DEFAULT | INPLACE | COPY)
         | LOCK EQ (DEFAULT | NONE | SHARED | EXCLUSIVE)
-    ) _e['is not supported']
+    ) error['is not supported']
     SC
     ;
 
 truncateTable : TRUNCATE TABLE table.any SC ;
     
 insertStatement
-    : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? _e['Duplicate'] t=table.any
-    '('  ( c+=column[t] )**_r[1, 6, ',', 75] ')' 
-    VALUES '(' ( expression[c.next] )**_r[c.len,','] ')'
+    : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? error['Duplicate'] t=table.any
+    '('  ( c+=column[t] )**random[1, 6, ',', 75] ')' 
+    VALUES '(' ( expression[c.next] )**random[c.len,','] ')'
     SC
     ;
 
 updateStatement
-    : UPDATE _e['Duplicate'] LOW_PRIORITY? IGNORE? t=tableName 
-    SET (cc=columnName[t].any '=' expression[cc])**_r[1,6] (WHERE (NOT)? cc=columnName[t].any '=' expression[cc])? SC
+    : UPDATE error['Duplicate'] LOW_PRIORITY? IGNORE? t=tableName 
+    SET (cc=columnName[t].any '=' expression[cc])**random[1,6] (WHERE (NOT)? cc=columnName[t].any '=' expression[cc])? SC
     ;
 
 expression [type]
@@ -116,11 +116,11 @@ expression [type]
     | greatest 
     | if_func;
 
-selectStatement [rep=_r[1,5,',']] returns [c] :
+selectStatement [rep=random[1,5,',']] returns [c] :
     @2
 	SELECT (
         90% (   (tt=t.any DOT | tt=$t.any) c+=tt.c.unique_any
-            | column_expression
+            | columnerrorxpression
         )**rep
         | ASTERISK
     ) 
@@ -133,13 +133,13 @@ selectStatement [rep=_r[1,5,',']] returns [c] :
     @3
     where_predicate?
 	( 
-		( UNION | INTERSECT ) query_core[_r[c.len,',']]
+		( UNION | INTERSECT ) query_core[random[c.len,',']]
 	)?
 	;
 	
 where_predicate:
 	WHERE predicate
-	| WHERE c IN '(' query_core[_r[1]] ')'
+	| WHERE c IN '(' query_core[random[1]] ')'
 	| WHERE NOT? EXISTS '(' query_core ')'
 	;
 
@@ -175,10 +175,10 @@ last_insert_id : ' LAST_INSERT_ID() ';
 
 float_expr : ( 50% float_val | abs  | NULL ) ;
 float_val : int_val ('.' int_val )? ;
-int_expr : ( 50% (DS)**_r[0, 1] int_val | bit_count | strcmp | last_insert_id | NULL );
-int_val :  (DIGIT)**_r[1, 5, 0] ;
+int_expr : ( 50% (DS)**random[0, 1] int_val | bit_count | strcmp | last_insert_id | NULL );
+int_val :  (DIGIT)**random[1, 5, 0] ;
 text_expr : ( 70% text_val | substr | substring | lcase | ucase | space | trim | NULL );
-text_val :  DQ ( (CH | DIGIT) )**_r[1, 100] DQ ;
+text_val :  DQ ( (CH | DIGIT) )**random[1, 100] DQ ;
 
 db returns [d] : d=$query['SHOW DATABASES;', 'Database'] ;
 table returns [t] : t=$query['SHOW TABLES;', 'Tables_in_'+DB];

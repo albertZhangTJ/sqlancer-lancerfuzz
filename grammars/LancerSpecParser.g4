@@ -133,7 +133,7 @@ ruleSpec
    ;
 
 parserRuleSpec
-   : ruleModifier? RULE_REF argActionBlock? ruleReturns? COLON ruleBlock SEMI
+   : ruleModifier? RULE_REF argActionBlock? ruleReturns? COLON altList SEMI
    ;
 
 
@@ -146,14 +146,6 @@ ruleModifier
    : FRAGMENT
    ;
 
-
-
-
-
-
-ruleBlock
-   : altList
-   ;
 
 altList
    : alternative (OR alternative)*
@@ -204,7 +196,7 @@ variable
    ;
 
 ebnf
-   : block ebnfSuffix
+   : block ebnfSuffix?
    ;
 
 //nongreedy matching are no longer supported
@@ -250,7 +242,7 @@ blockSet
    ;
 
 setElement
-   : ID
+   : identifier
    | STRING_LITERAL 
    | characterRange
    | LEXER_CHAR_SET
@@ -274,23 +266,18 @@ terminal
    ;
 
 compIdentifier
-   : ID argActionBlock? ( DOT compIdentifier)*
+   : identifier argActionBlock? ( DOT compIdentifier)*
    ;
 
 identifier
    : RULE_REF
    | TOKEN_REF
-   | ID
    ;
    
 
 
 lexerRuleSpec
-   : ruleModifier? TOKEN_REF optionsSpec? COLON lexerRuleBlock SEMI
-   ;
-
-lexerRuleBlock
-   : lexerAltList
+   : ruleModifier? TOKEN_REF COLON lexerAltList SEMI
    ;
 
 lexerAltList
@@ -298,14 +285,9 @@ lexerAltList
    ;
 
 lexerAlt
-   : lexerElements
-   |
-   // explicitly allow empty alts
-   ;
-
-lexerElements
    : lexerElement+
    |
+   // explicitly allow empty alts
    ;
 
 lexerElement

@@ -161,30 +161,6 @@ public class LancerSpecParserBaseListener implements LancerSpecParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterRepetitionBlock(LancerSpecParser.RepetitionBlockContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitRepetitionBlock(LancerSpecParser.RepetitionBlockContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterErrorBlock(LancerSpecParser.ErrorBlockContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitErrorBlock(LancerSpecParser.ErrorBlockContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterArgActionBlock(LancerSpecParser.ArgActionBlockContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -257,18 +233,6 @@ public class LancerSpecParserBaseListener implements LancerSpecParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterLocalsSpec(LancerSpecParser.LocalsSpecContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitLocalsSpec(LancerSpecParser.LocalsSpecContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterRuleModifier(LancerSpecParser.RuleModifierContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -276,42 +240,6 @@ public class LancerSpecParserBaseListener implements LancerSpecParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitRuleModifier(LancerSpecParser.RuleModifierContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterRuleBlock(LancerSpecParser.RuleBlockContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitRuleBlock(LancerSpecParser.RuleBlockContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterRuleAltList(LancerSpecParser.RuleAltListContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitRuleAltList(LancerSpecParser.RuleAltListContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterLabeledAlt(LancerSpecParser.LabeledAltContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitLabeledAlt(LancerSpecParser.LabeledAltContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -377,13 +305,37 @@ public class LancerSpecParserBaseListener implements LancerSpecParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterVariableAssignment(LancerSpecParser.VariableAssignmentContext ctx) { }
+	@Override public void enterMexpr(LancerSpecParser.MexprContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitVariableAssignment(LancerSpecParser.VariableAssignmentContext ctx) { }
+	@Override public void exitMexpr(LancerSpecParser.MexprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterLexpr(LancerSpecParser.LexprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitLexpr(LancerSpecParser.LexprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterVariable(LancerSpecParser.VariableContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitVariable(LancerSpecParser.VariableContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -569,18 +521,6 @@ public class LancerSpecParserBaseListener implements LancerSpecParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterLexerRuleBlock(LancerSpecParser.LexerRuleBlockContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitLexerRuleBlock(LancerSpecParser.LexerRuleBlockContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterLexerAltList(LancerSpecParser.LexerAltListContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -600,18 +540,6 @@ public class LancerSpecParserBaseListener implements LancerSpecParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitLexerAlt(LancerSpecParser.LexerAltContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterLexerElements(LancerSpecParser.LexerElementsContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitLexerElements(LancerSpecParser.LexerElementsContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
