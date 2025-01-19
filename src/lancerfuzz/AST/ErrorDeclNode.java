@@ -3,6 +3,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 import lancerfuzz.Utils;
+@Deprecated
 public class ErrorDeclNode extends Node {
     private List<String> errors;
     public ErrorDeclNode(List<String> errors){

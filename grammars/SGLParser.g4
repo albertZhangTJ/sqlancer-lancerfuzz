@@ -37,10 +37,10 @@
  *	-- moved members to LexerAdaptor
  * 	-- move fragments to imports
  */
-parser grammar LancerSpecParser;
+parser grammar SGLParser;
 
 
-options { tokenVocab = LancerSpecLexer; }
+options { tokenVocab = SGLLexer; }
 // The main entry point for parsing a v4 grammar.
 grammarSpec
    : grammarDecl prequelConstruct* rules EOF
@@ -175,18 +175,29 @@ predicate
 //I seriously cannot think of a use case for silencing w/o assignment
 //so this shld be fine for now
 expression
-   : mexpr ((ASSIGN | PLUS_ASSIGN) DOLLAR? mexpr)*
+   : mexpr (expr_op mexpr)?
+   ;
+
+expr_op
+   : (ASSIGN | PLUS_ASSIGN) DOLLAR?
    ;
 
 mexpr
-   : lexpr ((ASSIGN ASSIGN | NEGATE ASSIGN | GT ASSIGN | LT ASSIGN | GT | LT) lexpr)*
+   : lexpr (mexpr_op lexpr)*
+   ;
+
+mexpr_op
+   : ASSIGN ASSIGN | NEGATE ASSIGN | GT ASSIGN | LT ASSIGN | GT | LT
    ;
 
 lexpr
-   : variable ((PLUS | DASH) variable)*
+   : variable (lexpr_op variable)*
    ;
    // --------------------
    // EBNF and blocks
+
+lexpr_op
+   : PLUS | DASH;
 
 variable
    : compIdentifier
@@ -208,18 +219,17 @@ ebnfSuffix
    ;
 
 lexerAtom
-   : characterRange 
-   | terminal
-   | notSet
-   | LEXER_CHAR_SET
+   : NOT? characterRange 
+   | NOT? terminal
+   | NOT? charSet
    ;
 
-atom
-   : terminal
-   | notSet
-   | precedence
-   | weightage
-   ;
+// atom
+//    : terminal
+//    //| notSet
+//    | precedence
+//    | weightage
+//    ;
 
 weightage
    : INT_LITERAL PERCENTAGE
@@ -232,10 +242,10 @@ precedence
 // --------------------
 // Inverted element set
 //confirm to be needed
-notSet
-   : NOT setElement
-   | NOT blockSet
-   ;
+// notSet
+//    : NOT setElement
+//    | NOT blockSet
+//    ;
 
 blockSet
    : LPAREN setElement (OR setElement)* RPAREN
@@ -245,7 +255,7 @@ setElement
    : identifier
    | STRING_LITERAL 
    | characterRange
-   | LEXER_CHAR_SET
+   //| LEXER_CHAR_SET
    ;
 
 // -------------
@@ -291,11 +301,11 @@ lexerAlt
    ;
 
 lexerElement
-   : actionBlock QUESTION?
+   : actionBlock
+   | predicate
    | expression
    | lexerAtom ebnfSuffix?
    | lexerBlock ebnfSuffix?
-   | charSet
    ;
    // but preds can be anywhere
 

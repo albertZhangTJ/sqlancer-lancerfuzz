@@ -13,13 +13,13 @@ import java.io.FileWriter;
 import org.antlr.v4.runtime.*;
 import org.json.JSONObject;
 
-import lancerfuzz.parser.LancerSpecLexer;
-import lancerfuzz.parser.LancerSpecParser;
-import lancerfuzz.parser.LancerSpecParser.DelegateGrammarContext;
-import lancerfuzz.parser.LancerSpecParser.GrammarSpecContext;
-import lancerfuzz.parser.LancerSpecParser.IdentifierContext;
-import lancerfuzz.parser.LancerSpecParser.PrequelConstructContext;
-import lancerfuzz.parser.LancerSpecParser.RuleSpecContext;
+import lancerfuzz.parser.SGLLexer;
+import lancerfuzz.parser.SGLParser;
+import lancerfuzz.parser.SGLParser.DelegateGrammarContext;
+import lancerfuzz.parser.SGLParser.GrammarSpecContext;
+import lancerfuzz.parser.SGLParser.IdentifierContext;
+import lancerfuzz.parser.SGLParser.PrequelConstructContext;
+import lancerfuzz.parser.SGLParser.RuleSpecContext;
 import lancerfuzz.AST.GrammarGraph;
 import lancerfuzz.AST.GrammarGraphBuilder;
 
@@ -60,14 +60,8 @@ public class Processor {
         for (String grammar_file: grammar_files){
             try {
                 @SuppressWarnings("deprecation")
-                CharStream fis = new ANTLRFileStream(grammar_file);
-                LancerSpecLexer antlr_lexer = new LancerSpecLexer(fis);
-                TokenStream t_stream = new CommonTokenStream(antlr_lexer);
-                LancerSpecParser antlr_parser = new LancerSpecParser(t_stream);
-                GrammarSpecContext current_root = antlr_parser.grammarSpec();
-                // what if there is a syntax error in the grammar file?
-                // looked for antlr_parser._syntaxError as in the python version
-                // didn't find anything
+                SGLParser parser = new SGLParser(new CommonTokenStream(new SGLLexer(new ANTLRFileStream(grammar_file))));
+                GrammarSpecContext current_root = parser.grammarSpec();
                 if (root == null){
                     root = current_root;
                 }
@@ -92,7 +86,7 @@ public class Processor {
         GrammarSpecContext parser_root = null;
 
         for (String grammar: options.grammarRules){
-            if (grammar.endsWith(".g4")){
+            if (grammar.endsWith(".sgl")){
                 List<String> work_list = new ArrayList<>();
                 work_list.add(grammar);
                 GrammarSpecContext root = parse_grammar(work_list, options);
@@ -104,21 +98,11 @@ public class Processor {
                 }
             }
             else {
-                Utils.panic("Expecting ANTLRv4 grammar file(s) with .g4 file extension");
+                Utils.panic("Expecting SGL grammar file(s) with .sgl file extension");
             }
         }
 
-        GrammarGraph graph = GrammarGraphBuilder.build_grammar_graph(lexer_root, parser_root, options);
-        graph.handle_schema_locals();
-        Utils.log("Schema locals processed");
-        graph.handle_expr_locals();
-        Utils.log("Expression locals processed");
-        graph.handle_dependent_local();
-        Utils.log("Dependent locals processed");
-        graph.handle_component_local();
-        Utils.log("Component locals processed");
-        graph.check_imag_rules();
-        Utils.log("ImagRules verified");
+        GrammarGraph graph = GrammarGraph.build(parser_root, lexer_root, options);
         graph.check_for_duplicate_identifier();
         Utils.log_stage("Grammar graph sanity checked passed");
         graph.calc_depth();
@@ -130,37 +114,26 @@ public class Processor {
         List<DBMSOption> dbms_options = ConfigProcessor.get_options(config_file);
         ConfigProcessor.sanity_check(graph, stages);
         Utils.log_stage("Configuration sanity checked passed");
-
-        List<String> template_files = new ArrayList<>();
-        template_files.add("action_node.st");
-        template_files.add("alternation_node_sub_option.st");
-        template_files.add("alternation_node.st");
-        template_files.add("alternative_node.st");
-        template_files.add("call_rule_name.st");
-        template_files.add("charset_node.st");
-        template_files.add("expr_core_call_children.st");
-        template_files.add("expr_core.st");
-        template_files.add("expr_node.st");
-        template_files.add("fuzzer.st");
-        template_files.add("lambda_node.st");
-        template_files.add("literal_node.st");
-        template_files.add("quantifier_node.st");
-        template_files.add("schema_node.st");
-        template_files.add("stage_serialize_rule.st");
-        template_files.add("stage.st");
-        template_files.add("unlexer_rule_node.st");
-        template_files.add("unparser_call_children.st");
-        template_files.add("unparser_rule_node.st");
         
         
 
         Utils.log("Rendering fuzzer");
-
-        TemplateRenderer template = new TemplateRenderer(template_files);
+        String template = "";
+        // The template files are expected to come within the jar file instead of being provided by the user
+        try{
+            InputStream in = getClass().getResourceAsStream("/fuzzer.st");
+            if (in==null){
+                Utils.panic("Processor::generate_fuzzer : cannot get input stream for template fuzzer.st");
+            }
+            template = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        catch (IOException e){
+            Utils.panic("TemplateRenderer::initialize : Error reading template files\n"+e.toString());
+        }
 
         try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(graph.get_name()+"Fuzzer.java"));
-            writer.write(template.render(graph, stages, dbms_options));
+            BufferedWriter writer = new BufferedWriter(new FileWriter("Fuzzer.java"));
+            writer.write(graph.render(template));
             writer.close();
             Utils.log_stage("Fuzzer rendered");
         }

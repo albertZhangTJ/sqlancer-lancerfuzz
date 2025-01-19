@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Set;
 
 import lancerfuzz.Utils;
+import lancerfuzz.parser.SGLParser.RuleSpecContext;
 
 public class RuleNode extends Node{
     public static enum RuleNodeType {UNLEXER, UNPARSER};
@@ -19,6 +20,15 @@ public class RuleNode extends Node{
 
     public RuleNodeType get_type(){
         return this.type;
+    }
+
+    public static void build(GrammarGraph graph, RuleSpecContext rulespec){
+        if (rulespec.parserRuleSpec()!=null){
+            UnparserRuleNode.build(graph, rulespec.parserRuleSpec());
+        }
+        else {
+            UnlexerRuleNode.build(graph, rulespec.lexerRuleSpec());
+        }
     }
 
     //This is just a placeholder for render function

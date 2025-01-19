@@ -4,6 +4,10 @@ import java.util.List;
 import java.util.ArrayList;
 
 import lancerfuzz.Utils;
+import lancerfuzz.parser.SGLParser.AltListContext;
+import lancerfuzz.parser.SGLParser.AlternativeContext;
+import lancerfuzz.parser.SGLParser.LexerAltContext;
+import lancerfuzz.parser.SGLParser.LexerAltListContext;
 
 public class AlternationNode extends Node {
     private List<PredicateNode> predicates;
@@ -12,6 +16,24 @@ public class AlternationNode extends Node {
     public AlternationNode(){
         this.predicates = new ArrayList<>();
         this.weights = new ArrayList<>();
+    }
+
+    public static AlternationNode build(GrammarGraph graph, AltListContext altList){
+        AlternationNode node = new AlternationNode();
+        graph.add_node(node);
+        for (AlternativeContext alter : altList.alternative()){
+            graph.add_edge(node, AlternativeNode.build(graph, alter));
+        }
+        return node;
+    }
+
+    public static AlternationNode build(GrammarGraph graph, LexerAltListContext altList){
+        AlternationNode node = new AlternationNode();
+        graph.add_node(node);
+        for (LexerAltContext alter : altList.lexerAlt()){
+            graph.add_edge(node, AlternativeNode.build(graph, alter));
+        }
+        return node;
     }
 
     public void post_process(){

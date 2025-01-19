@@ -3,14 +3,18 @@ package lancerfuzz.AST;
 import java.util.List;
 
 import lancerfuzz.Utils;
+import lancerfuzz.parser.SGLParser.VariableContext;
 
-public class VariableNode extends Node{
+public class VariableNode extends ExpressionNode{
     private CompIdentifierNode identifierNode;
     private String strLiteral;
     private int intLiteral;
     private boolean boolLiteral;
     private int type;
 
+    public static VariableNode build(GrammarGraph graph, VariableContext var){
+        //TODO
+    }
 
     public VariableNode(CompIdentifierNode identifierNode){
         this.identifierNode = identifierNode;

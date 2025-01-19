@@ -76,49 +76,45 @@ public abstract class LexerAdaptor extends Lexer {
         int oldMode = _mode;
         int newMode = popMode();
         boolean isActionWithinAction = _modeStack.size() > 0
-            && newMode == LancerSpecLexer.TargetLanguageAction
+            && newMode == SGLLexer.TargetLanguageAction
             && oldMode == newMode;
 
         if (isActionWithinAction) {
-            setType(LancerSpecLexer.ACTION_CONTENT);
+            setType(SGLLexer.ACTION_CONTENT);
         }
-    }
-
-    protected void handleEndErrDecl() {
-        popMode();
     }
 
     @Override
     public Token emit() {
-        if ((_type == LancerSpecLexer.OPTIONS || _type == LancerSpecLexer.TOKENS || _type == LancerSpecLexer.CHANNELS)
+        if ((_type == SGLLexer.OPTIONS || _type == SGLLexer.TOKENS || _type == SGLLexer.CHANNELS)
                 && getCurrentRuleType() == Token.INVALID_TYPE) { // enter prequel construct ending with an RBRACE
             setCurrentRuleType(PREQUEL_CONSTRUCT);
-        } else if (_type == LancerSpecLexer.OPTIONS && getCurrentRuleType() == LancerSpecLexer.TOKEN_REF)
+        } else if (_type == SGLLexer.OPTIONS && getCurrentRuleType() == SGLLexer.TOKEN_REF)
         {
             setCurrentRuleType(OPTIONS_CONSTRUCT);
-        } else if (_type == LancerSpecLexer.RBRACE && getCurrentRuleType() == PREQUEL_CONSTRUCT) { // exit prequel construct
+        } else if (_type == SGLLexer.RBRACE && getCurrentRuleType() == PREQUEL_CONSTRUCT) { // exit prequel construct
             setCurrentRuleType(Token.INVALID_TYPE);
-        } else if (_type == LancerSpecLexer.RBRACE && getCurrentRuleType() == OPTIONS_CONSTRUCT)
+        } else if (_type == SGLLexer.RBRACE && getCurrentRuleType() == OPTIONS_CONSTRUCT)
         { // exit options
-            setCurrentRuleType(LancerSpecLexer.TOKEN_REF);
-        } else if (_type == LancerSpecLexer.AT && getCurrentRuleType() == Token.INVALID_TYPE) { // enter action
-            setCurrentRuleType(LancerSpecLexer.AT);
-        } else if (_type == LancerSpecLexer.SEMI && getCurrentRuleType() == OPTIONS_CONSTRUCT)
+            setCurrentRuleType(SGLLexer.TOKEN_REF);
+        } else if (_type == SGLLexer.AT && getCurrentRuleType() == Token.INVALID_TYPE) { // enter action
+            setCurrentRuleType(SGLLexer.AT);
+        } else if (_type == SGLLexer.SEMI && getCurrentRuleType() == OPTIONS_CONSTRUCT)
         { // ';' in options { .... }. Don't change anything.
-        } else if (_type == LancerSpecLexer.END_ACTION && getCurrentRuleType() == LancerSpecLexer.AT) { // exit action
+        } else if (_type == SGLLexer.END_ACTION && getCurrentRuleType() == SGLLexer.AT) { // exit action
             setCurrentRuleType(Token.INVALID_TYPE);
-        } else if (_type == LancerSpecLexer.ID) {
+        } else if (_type == SGLLexer.ID) {
             String firstChar = _input.getText(Interval.of(_tokenStartCharIndex, _tokenStartCharIndex));
             if (Character.isUpperCase(firstChar.charAt(0))) {
-                _type = LancerSpecLexer.TOKEN_REF;
+                _type = SGLLexer.TOKEN_REF;
             } else {
-                _type = LancerSpecLexer.RULE_REF;
+                _type = SGLLexer.RULE_REF;
             }
 
             if (getCurrentRuleType() == Token.INVALID_TYPE) { // if outside of rule def
                 setCurrentRuleType(_type); // set to inside lexer or parser rule
             }
-        } else if (_type == LancerSpecLexer.SEMI) { // exit rule def
+        } else if (_type == SGLLexer.SEMI) { // exit rule def
             setCurrentRuleType(Token.INVALID_TYPE);
         }
 
@@ -126,12 +122,12 @@ public abstract class LexerAdaptor extends Lexer {
     }
 
     private boolean inLexerRule() {
-        return getCurrentRuleType() == LancerSpecLexer.TOKEN_REF;
+        return getCurrentRuleType() == SGLLexer.TOKEN_REF;
     }
 
     @SuppressWarnings("unused")
     private boolean inParserRule() { // not used, but added for clarity
-        return getCurrentRuleType() == LancerSpecLexer.RULE_REF;
+        return getCurrentRuleType() == SGLLexer.RULE_REF;
     }
 
     @Override

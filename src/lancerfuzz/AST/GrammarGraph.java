@@ -7,10 +7,10 @@ import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import javax.imageio.ImageIO;
+import lancerfuzz.Options;
 
 import lancerfuzz.Utils;
-import lancerfuzz.ANTLR.ANTLRv4Parser;
+import lancerfuzz.parser.SGLParser.*;
 
 @SuppressWarnings("unused")
 public class GrammarGraph{
@@ -31,17 +31,26 @@ public class GrammarGraph{
         this.lambda_id = -1;
     }
 
-    public void set_lambda_id(int lambda_id){
-        if (this.lambda_id!=-1){
-            Utils.oops("GrammarGraph::add_node : attempting to overwrite existing lambda id, ignored");
+    public static GrammarGraph build(GrammarSpecContext root, GrammarSpecContext lroot, Options opt){
+        GrammarGraph graph = new GrammarGraph();
+        if (lroot==null && root==null){
+            Utils.panic("GrammarGraph::build : both parser root and lexer root are empty");
         }
-        else {
-            this.lambda_id = lambda_id;
+        if (lroot!=null){
+            RulesContext lrules = lroot.rules();
+            graph.set_name(lroot.grammarDecl().identifier().getText());
+            for (RuleSpecContext rulespec : rules.ruleSpec()){
+                RuleNode.build(graph, rulespec);
+            }
         }
-    }
-
-    public int get_lambda_id(){
-        return this.lambda_id;
+        if (root!=null){
+            RulesContext rules = root.rules();
+            graph.set_name(root.grammarDecl().identifier().getText());
+            for (RuleSpecContext rulespec : rules.ruleSpec()){
+                RuleNode.build(graph, rulespec);
+            }
+        }
+        
     }
 
     public boolean contains_node_with_id(int id){
@@ -83,7 +92,7 @@ public class GrammarGraph{
         return this.name;
     }
 
-    public void add_edge(Node source, Node destination, HashMap<String, String> args){
+    public void add_edge(Node source, Node destination){
         if (this.vertices.get(source.get_id())==null){
             Utils.panic("GrammarGraph::add_edge : source node "+source.toString()+" does not exist");
         }
@@ -91,22 +100,9 @@ public class GrammarGraph{
             Utils.panic("GrammarGraph::add_edge : destination node "+destination.toString()+" does not exist");
         }
         
-        Edge edge = new Edge(this.vertices.get(source.get_id()), this.vertices.get(destination.get_id()), args);
+        Edge edge = new Edge(this.vertices.get(destination.get_id()));
 
         this.vertices.get(source.get_id()).add_outward_edge(edge);
-    }
-
-    public void add_edge(int source_id, int destination_id, HashMap<String, String> args){
-        if (this.vertices.get(source_id)==null){
-            Utils.panic("GrammarGraph::add_edge : source node with id "+source_id+" does not exist");
-        }
-        if (this.vertices.get(destination_id)==null){
-            Utils.panic("GrammarGraph::add_edge : destination node with id "+destination_id+" does not exist");
-        }
-        
-        Edge edge = new Edge(this.vertices.get(source_id), this.vertices.get(destination_id), args);
-
-        this.vertices.get(source_id).add_outward_edge(edge);
     }
 
     public void add_option(String key, String value){
@@ -226,79 +222,7 @@ public class GrammarGraph{
     }
 
 
-    //calculate the min depth for each node
-    //The result is stored in the each node object
-    //pre-compute to detected unsolvable cycles early and save time for the rendering process
-    public void calc_depth(){
-        List<Node> relaxed = new ArrayList<>();
-        List<Node> relaxing = new ArrayList<>();
-        List<Node> unrelaxed = new ArrayList<>();
-        for (Integer i: this.vertices.keySet()){
-            unrelaxed.add(this.vertices.get(i));
-        }
-        for (int i=0; i<unrelaxed.size(); i++){
-            if (unrelaxed.get(i).get_outward_edges().size()==0){
-                unrelaxed.get(i).set_min_depth(0);
-                relaxed.add(unrelaxed.remove(i));
-                i--;
-            }
-        }
-        int steps = 1;
-        while (unrelaxed.size()>0){
-            for (int i=0; i<unrelaxed.size(); i++){
-                if (unrelaxed.get(i) instanceof AlternationNode){
-                    for (int j=0; j<unrelaxed.get(i).get_outward_edges().size(); j++){
-                        if (relaxed.contains(unrelaxed.get(i).get_outward_edges().get(j).get_dest())){
-                            relaxing.add(unrelaxed.remove(i));
-                            i--;
-                            break;
-                        }
-                    }
-                }
-                else {
-                    boolean all_children_relaxed = true;
-                    for (int j=0; j<unrelaxed.get(i).get_outward_edges().size(); j++){
-                        if (!relaxed.contains(unrelaxed.get(i).get_outward_edges().get(j).get_dest())){
-                            all_children_relaxed = false;
-                            break;
-                        }
-                    }
-                    if (all_children_relaxed){
-                        relaxing.add(unrelaxed.remove(i));
-                        i--;
-                    }
-                }
-            }
-            if (relaxing.size()==0){
-                Utils.panic("GrammarGraph::calc_depth : Unrelaxable nodes found, infinite loop?");
-            }
-            while (relaxing.size()>0){
-                relaxing.get(0).set_min_depth(steps);
-                relaxed.add(relaxing.remove(0));
-            }
-            steps++;
-        }
-    }
-
-    //Image rule nodes are nodes that are references to rules defined outside the file
-    //as this is just referring to an identifier in the grammar file
-    //it should not have an children nodes
-    //we will record the id of the actual rule node 
-    //this should only be called after the entire graph is built so that the referred node is guaranteed to be there
-    //but before rendering the fuzzer template so that the renderer can find the real node
-    public void check_imag_rules(){
-        for (Integer key : this.vertices.keySet()){
-            if (this.vertices.get(key) instanceof ImagRuleNode){
-                ImagRuleNode i_node = (ImagRuleNode)(this.vertices.get(key));
-                int real_id = this.get_node_id_with_identifier(i_node.get_identifier());
-                if (real_id==key.intValue()){
-                    Utils.panic("GrammarGraph::check_imag_rules : cannot find referred node with identifier: " + i_node.get_identifier());
-                }
-                i_node.set_real_id(real_id);
-            }
-        }
-    }
-
+    
     public void check_for_duplicate_identifier(){
         //despite this is O(N^2), since the number of nodes are not expected to be large
         //this_is_fine.jpeg 

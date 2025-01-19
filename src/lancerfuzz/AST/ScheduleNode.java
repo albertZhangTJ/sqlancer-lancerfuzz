@@ -4,6 +4,9 @@
 // the priority of the a default Node is 65536 before processing
 // if any node has a ScheduleNode as child
 // all its children must be ScheduleNodes before rendering
+
+import lancerfuzz.parser.SGLParser.PrecedenceContext;
+
 public class ScheduleNode extends Node{
     private int priority;
     public ScheduleNode(int priority){
@@ -11,6 +14,13 @@ public class ScheduleNode extends Node{
     }
     public int get_priority(){
         return this.priority;
+    }
+
+    public static ScheduleNode build(GrammarGraph graph, PrecedenceContext pre){
+        int precedence = Integer.valueOf(pre.INT_LITERAL().getText());
+        ScheduleNode node = new ScheduleNode(precedence);
+        graph.add_node(node);
+        return node;
     }
 
     @Override

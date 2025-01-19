@@ -1,6 +1,9 @@
 package lancerfuzz.AST;
 
 import java.util.List;
+
+import lancerfuzz.parser.SGLParser.ParserRuleSpecContext;
+
 import java.util.ArrayList;
 
 public class UnparserRuleNode extends RuleNode{
@@ -16,6 +19,20 @@ public class UnparserRuleNode extends RuleNode{
         this.ret_var = null;
     }
 
+    public static UnparserRuleNode build(GrammarGraph graph, ParserRuleSpecContext ruleSpec){
+        String name = ruleSpec.RULE_REF().getText();
+        UnparserRuleNode rule = new UnparserRuleNode(name);
+        graph.add_node(rule);
+        if (ruleSpec.ruleModifier()!=null){
+            rule.set_fragment();
+        }
+        graph.add_edge(rule, AlternationNode.build(graph, ruleSpec.altList()));
+        
+    }
+
+    public void set_fragment(){
+        this.is_fragment = true;
+    }
     public String render(List<String> function_list, String padding, boolean print){
         String handle = this.get_identifier()+"(ctx)";
         if (print){

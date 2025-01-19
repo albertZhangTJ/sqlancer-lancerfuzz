@@ -3,10 +3,21 @@ package lancerfuzz.AST;
 import java.util.List;
 
 import lancerfuzz.Utils;
+import lancerfuzz.parser.SGLParser.LexerRuleSpecContext;
 
 public class UnlexerRuleNode extends RuleNode{
     public UnlexerRuleNode(String name){
         super(name, RuleNodeType.UNLEXER);
+    }
+
+    public static UnlexerRuleNode build(GrammarGraph graph, LexerRuleSpecContext ruleSpec){
+        // we do not need to process the fragment keyword
+        // as lexer rules don't have their own stack frame in the first place
+        String name = ruleSpec.TOKEN_REF().getText();
+        UnlexerRuleNode rule = new UnlexerRuleNode(name);
+        graph.add_node(rule);
+        graph.add_edge(rule, AlternationNode.build(graph, ruleSpec.lexerAltList()));
+        return rule;
     }
 
     //basically the same as UnparserRuleNode

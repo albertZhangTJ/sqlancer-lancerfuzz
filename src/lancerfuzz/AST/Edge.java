@@ -1,7 +1,5 @@
 package lancerfuzz.AST;
 
-import java.util.HashMap;
-
 import lancerfuzz.Utils;
 
 // This represents a directed Edge in the AST
@@ -10,7 +8,7 @@ public class Edge {
     private Node destination;
 
     public Edge(Node destination){
-        this.destination = destinationp;
+        this.destination = destination;
     }
 
     public Node get_dest(){
@@ -20,7 +18,7 @@ public class Edge {
     public boolean equals(Object other){
         if (other!=null && other instanceof Edge){
             Edge other_edge = (Edge)other;
-            return Utils.null_safe_equals(this.destination, other_edge.destination)
+            return Utils.null_safe_equals(this.destination, other_edge.destination);
         }
         return false;
     }

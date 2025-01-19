@@ -39,7 +39,7 @@
 // Lexer specification
 // ======================================================
 
-lexer grammar LancerSpecLexer;
+lexer grammar SGLLexer;
 
 options { superClass = LexerAdaptor; }
 import LexBasic;

@@ -2,7 +2,10 @@ package lancerfuzz.AST;
 
 import java.util.ArrayList;
 
+import org.antlr.v4.runtime.tree.TerminalNode;
+
 import lancerfuzz.Utils;
+import lancerfuzz.parser.SGLParser.ActionBlockContext;
 
 public class ActionNode extends Node{
     private String src;
@@ -13,6 +16,16 @@ public class ActionNode extends Node{
 
     public String get_src(){
         return this.src;
+    }
+
+    public static ActionNode build(GrammarGraph graph, ActionBlockContext act){
+        String src = "";
+        for (TerminalNode t : act.ACTION_CONTENT()){
+            src = src + t.getText();
+        }
+        ActionNode node = new ActionNode(src);
+        graph.add_node(node);
+        return node;
     }
 
     public void update_src(String source){

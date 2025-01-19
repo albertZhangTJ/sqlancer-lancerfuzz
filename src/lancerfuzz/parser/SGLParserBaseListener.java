@@ -1,605 +1,617 @@
 package lancerfuzz.parser;
-// Generated from LancerSpecParser.g4 by ANTLR 4.13.0
+// Generated from SGLParser.g4 by ANTLR 4.13.0
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 /**
- * This class provides an empty implementation of {@link LancerSpecParserListener},
+ * This class provides an empty implementation of {@link SGLParserListener},
  * which can be extended to create a listener which only needs to handle a subset
  * of the available methods.
  */
 @SuppressWarnings("CheckReturnValue")
-public class LancerSpecParserBaseListener implements LancerSpecParserListener {
+public class SGLParserBaseListener implements SGLParserListener {
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterGrammarSpec(LancerSpecParser.GrammarSpecContext ctx) { }
+	@Override public void enterGrammarSpec(SGLParser.GrammarSpecContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitGrammarSpec(LancerSpecParser.GrammarSpecContext ctx) { }
+	@Override public void exitGrammarSpec(SGLParser.GrammarSpecContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterGrammarDecl(LancerSpecParser.GrammarDeclContext ctx) { }
+	@Override public void enterGrammarDecl(SGLParser.GrammarDeclContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitGrammarDecl(LancerSpecParser.GrammarDeclContext ctx) { }
+	@Override public void exitGrammarDecl(SGLParser.GrammarDeclContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterPrequelConstruct(LancerSpecParser.PrequelConstructContext ctx) { }
+	@Override public void enterPrequelConstruct(SGLParser.PrequelConstructContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitPrequelConstruct(LancerSpecParser.PrequelConstructContext ctx) { }
+	@Override public void exitPrequelConstruct(SGLParser.PrequelConstructContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterOptionsSpec(LancerSpecParser.OptionsSpecContext ctx) { }
+	@Override public void enterOptionsSpec(SGLParser.OptionsSpecContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitOptionsSpec(LancerSpecParser.OptionsSpecContext ctx) { }
+	@Override public void exitOptionsSpec(SGLParser.OptionsSpecContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterOption(LancerSpecParser.OptionContext ctx) { }
+	@Override public void enterOption(SGLParser.OptionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitOption(LancerSpecParser.OptionContext ctx) { }
+	@Override public void exitOption(SGLParser.OptionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterOptionValue(LancerSpecParser.OptionValueContext ctx) { }
+	@Override public void enterOptionValue(SGLParser.OptionValueContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitOptionValue(LancerSpecParser.OptionValueContext ctx) { }
+	@Override public void exitOptionValue(SGLParser.OptionValueContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterDelegateGrammars(LancerSpecParser.DelegateGrammarsContext ctx) { }
+	@Override public void enterDelegateGrammars(SGLParser.DelegateGrammarsContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitDelegateGrammars(LancerSpecParser.DelegateGrammarsContext ctx) { }
+	@Override public void exitDelegateGrammars(SGLParser.DelegateGrammarsContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterDelegateGrammar(LancerSpecParser.DelegateGrammarContext ctx) { }
+	@Override public void enterDelegateGrammar(SGLParser.DelegateGrammarContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitDelegateGrammar(LancerSpecParser.DelegateGrammarContext ctx) { }
+	@Override public void exitDelegateGrammar(SGLParser.DelegateGrammarContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterAction_(LancerSpecParser.Action_Context ctx) { }
+	@Override public void enterAction_(SGLParser.Action_Context ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitAction_(LancerSpecParser.Action_Context ctx) { }
+	@Override public void exitAction_(SGLParser.Action_Context ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTokensSpec(LancerSpecParser.TokensSpecContext ctx) { }
+	@Override public void enterTokensSpec(SGLParser.TokensSpecContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTokensSpec(LancerSpecParser.TokensSpecContext ctx) { }
+	@Override public void exitTokensSpec(SGLParser.TokensSpecContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterActionBlock(LancerSpecParser.ActionBlockContext ctx) { }
+	@Override public void enterActionBlock(SGLParser.ActionBlockContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitActionBlock(LancerSpecParser.ActionBlockContext ctx) { }
+	@Override public void exitActionBlock(SGLParser.ActionBlockContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterIdList(LancerSpecParser.IdListContext ctx) { }
+	@Override public void enterIdList(SGLParser.IdListContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitIdList(LancerSpecParser.IdListContext ctx) { }
+	@Override public void exitIdList(SGLParser.IdListContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterArgActionBlock(LancerSpecParser.ArgActionBlockContext ctx) { }
+	@Override public void enterArgActionBlock(SGLParser.ArgActionBlockContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitArgActionBlock(LancerSpecParser.ArgActionBlockContext ctx) { }
+	@Override public void exitArgActionBlock(SGLParser.ArgActionBlockContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterArg(LancerSpecParser.ArgContext ctx) { }
+	@Override public void enterArg(SGLParser.ArgContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitArg(LancerSpecParser.ArgContext ctx) { }
+	@Override public void exitArg(SGLParser.ArgContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterRules(LancerSpecParser.RulesContext ctx) { }
+	@Override public void enterRules(SGLParser.RulesContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitRules(LancerSpecParser.RulesContext ctx) { }
+	@Override public void exitRules(SGLParser.RulesContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterRuleSpec(LancerSpecParser.RuleSpecContext ctx) { }
+	@Override public void enterRuleSpec(SGLParser.RuleSpecContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitRuleSpec(LancerSpecParser.RuleSpecContext ctx) { }
+	@Override public void exitRuleSpec(SGLParser.RuleSpecContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterParserRuleSpec(LancerSpecParser.ParserRuleSpecContext ctx) { }
+	@Override public void enterParserRuleSpec(SGLParser.ParserRuleSpecContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitParserRuleSpec(LancerSpecParser.ParserRuleSpecContext ctx) { }
+	@Override public void exitParserRuleSpec(SGLParser.ParserRuleSpecContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterRuleReturns(LancerSpecParser.RuleReturnsContext ctx) { }
+	@Override public void enterRuleReturns(SGLParser.RuleReturnsContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitRuleReturns(LancerSpecParser.RuleReturnsContext ctx) { }
+	@Override public void exitRuleReturns(SGLParser.RuleReturnsContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterRuleModifier(LancerSpecParser.RuleModifierContext ctx) { }
+	@Override public void enterRuleModifier(SGLParser.RuleModifierContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitRuleModifier(LancerSpecParser.RuleModifierContext ctx) { }
+	@Override public void exitRuleModifier(SGLParser.RuleModifierContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterAltList(LancerSpecParser.AltListContext ctx) { }
+	@Override public void enterAltList(SGLParser.AltListContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitAltList(LancerSpecParser.AltListContext ctx) { }
+	@Override public void exitAltList(SGLParser.AltListContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterAlternative(LancerSpecParser.AlternativeContext ctx) { }
+	@Override public void enterAlternative(SGLParser.AlternativeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitAlternative(LancerSpecParser.AlternativeContext ctx) { }
+	@Override public void exitAlternative(SGLParser.AlternativeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterElement(LancerSpecParser.ElementContext ctx) { }
+	@Override public void enterElement(SGLParser.ElementContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitElement(LancerSpecParser.ElementContext ctx) { }
+	@Override public void exitElement(SGLParser.ElementContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterPredicate(LancerSpecParser.PredicateContext ctx) { }
+	@Override public void enterPredicate(SGLParser.PredicateContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitPredicate(LancerSpecParser.PredicateContext ctx) { }
+	@Override public void exitPredicate(SGLParser.PredicateContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterExpression(LancerSpecParser.ExpressionContext ctx) { }
+	@Override public void enterExpression(SGLParser.ExpressionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitExpression(LancerSpecParser.ExpressionContext ctx) { }
+	@Override public void exitExpression(SGLParser.ExpressionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterMexpr(LancerSpecParser.MexprContext ctx) { }
+	@Override public void enterExpr_op(SGLParser.Expr_opContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitMexpr(LancerSpecParser.MexprContext ctx) { }
+	@Override public void exitExpr_op(SGLParser.Expr_opContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterLexpr(LancerSpecParser.LexprContext ctx) { }
+	@Override public void enterMexpr(SGLParser.MexprContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitLexpr(LancerSpecParser.LexprContext ctx) { }
+	@Override public void exitMexpr(SGLParser.MexprContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterVariable(LancerSpecParser.VariableContext ctx) { }
+	@Override public void enterMexpr_op(SGLParser.Mexpr_opContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitVariable(LancerSpecParser.VariableContext ctx) { }
+	@Override public void exitMexpr_op(SGLParser.Mexpr_opContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterEbnf(LancerSpecParser.EbnfContext ctx) { }
+	@Override public void enterLexpr(SGLParser.LexprContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitEbnf(LancerSpecParser.EbnfContext ctx) { }
+	@Override public void exitLexpr(SGLParser.LexprContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterEbnfSuffix(LancerSpecParser.EbnfSuffixContext ctx) { }
+	@Override public void enterLexpr_op(SGLParser.Lexpr_opContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitEbnfSuffix(LancerSpecParser.EbnfSuffixContext ctx) { }
+	@Override public void exitLexpr_op(SGLParser.Lexpr_opContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterLexerAtom(LancerSpecParser.LexerAtomContext ctx) { }
+	@Override public void enterVariable(SGLParser.VariableContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitLexerAtom(LancerSpecParser.LexerAtomContext ctx) { }
+	@Override public void exitVariable(SGLParser.VariableContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterAtom(LancerSpecParser.AtomContext ctx) { }
+	@Override public void enterEbnf(SGLParser.EbnfContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitAtom(LancerSpecParser.AtomContext ctx) { }
+	@Override public void exitEbnf(SGLParser.EbnfContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterWeightage(LancerSpecParser.WeightageContext ctx) { }
+	@Override public void enterEbnfSuffix(SGLParser.EbnfSuffixContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitWeightage(LancerSpecParser.WeightageContext ctx) { }
+	@Override public void exitEbnfSuffix(SGLParser.EbnfSuffixContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterPrecedence(LancerSpecParser.PrecedenceContext ctx) { }
+	@Override public void enterLexerAtom(SGLParser.LexerAtomContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitPrecedence(LancerSpecParser.PrecedenceContext ctx) { }
+	@Override public void exitLexerAtom(SGLParser.LexerAtomContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterNotSet(LancerSpecParser.NotSetContext ctx) { }
+	@Override public void enterWeightage(SGLParser.WeightageContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitNotSet(LancerSpecParser.NotSetContext ctx) { }
+	@Override public void exitWeightage(SGLParser.WeightageContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterBlockSet(LancerSpecParser.BlockSetContext ctx) { }
+	@Override public void enterPrecedence(SGLParser.PrecedenceContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitBlockSet(LancerSpecParser.BlockSetContext ctx) { }
+	@Override public void exitPrecedence(SGLParser.PrecedenceContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSetElement(LancerSpecParser.SetElementContext ctx) { }
+	@Override public void enterBlockSet(SGLParser.BlockSetContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitSetElement(LancerSpecParser.SetElementContext ctx) { }
+	@Override public void exitBlockSet(SGLParser.BlockSetContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterBlock(LancerSpecParser.BlockContext ctx) { }
+	@Override public void enterSetElement(SGLParser.SetElementContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitBlock(LancerSpecParser.BlockContext ctx) { }
+	@Override public void exitSetElement(SGLParser.SetElementContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterCharacterRange(LancerSpecParser.CharacterRangeContext ctx) { }
+	@Override public void enterBlock(SGLParser.BlockContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitCharacterRange(LancerSpecParser.CharacterRangeContext ctx) { }
+	@Override public void exitBlock(SGLParser.BlockContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTerminal(LancerSpecParser.TerminalContext ctx) { }
+	@Override public void enterCharacterRange(SGLParser.CharacterRangeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTerminal(LancerSpecParser.TerminalContext ctx) { }
+	@Override public void exitCharacterRange(SGLParser.CharacterRangeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterCompIdentifier(LancerSpecParser.CompIdentifierContext ctx) { }
+	@Override public void enterTerminal(SGLParser.TerminalContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitCompIdentifier(LancerSpecParser.CompIdentifierContext ctx) { }
+	@Override public void exitTerminal(SGLParser.TerminalContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterIdentifier(LancerSpecParser.IdentifierContext ctx) { }
+	@Override public void enterCompIdentifier(SGLParser.CompIdentifierContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitIdentifier(LancerSpecParser.IdentifierContext ctx) { }
+	@Override public void exitCompIdentifier(SGLParser.CompIdentifierContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterLexerRuleSpec(LancerSpecParser.LexerRuleSpecContext ctx) { }
+	@Override public void enterIdentifier(SGLParser.IdentifierContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitLexerRuleSpec(LancerSpecParser.LexerRuleSpecContext ctx) { }
+	@Override public void exitIdentifier(SGLParser.IdentifierContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterLexerAltList(LancerSpecParser.LexerAltListContext ctx) { }
+	@Override public void enterLexerRuleSpec(SGLParser.LexerRuleSpecContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitLexerAltList(LancerSpecParser.LexerAltListContext ctx) { }
+	@Override public void exitLexerRuleSpec(SGLParser.LexerRuleSpecContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterLexerAlt(LancerSpecParser.LexerAltContext ctx) { }
+	@Override public void enterLexerAltList(SGLParser.LexerAltListContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitLexerAlt(LancerSpecParser.LexerAltContext ctx) { }
+	@Override public void exitLexerAltList(SGLParser.LexerAltListContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterLexerElement(LancerSpecParser.LexerElementContext ctx) { }
+	@Override public void enterLexerAlt(SGLParser.LexerAltContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitLexerElement(LancerSpecParser.LexerElementContext ctx) { }
+	@Override public void exitLexerAlt(SGLParser.LexerAltContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterLexerBlock(LancerSpecParser.LexerBlockContext ctx) { }
+	@Override public void enterLexerElement(SGLParser.LexerElementContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitLexerBlock(LancerSpecParser.LexerBlockContext ctx) { }
+	@Override public void exitLexerElement(SGLParser.LexerElementContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterCharSet(LancerSpecParser.CharSetContext ctx) { }
+	@Override public void enterLexerBlock(SGLParser.LexerBlockContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitCharSet(LancerSpecParser.CharSetContext ctx) { }
+	@Override public void exitLexerBlock(SGLParser.LexerBlockContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterCharSetContent(LancerSpecParser.CharSetContentContext ctx) { }
+	@Override public void enterCharSet(SGLParser.CharSetContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitCharSetContent(LancerSpecParser.CharSetContentContext ctx) { }
+	@Override public void exitCharSet(SGLParser.CharSetContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterGrammarOperator(LancerSpecParser.GrammarOperatorContext ctx) { }
+	@Override public void enterCharSetContent(SGLParser.CharSetContentContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitGrammarOperator(LancerSpecParser.GrammarOperatorContext ctx) { }
+	@Override public void exitCharSetContent(SGLParser.CharSetContentContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterGrammarOperator(SGLParser.GrammarOperatorContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitGrammarOperator(SGLParser.GrammarOperatorContext ctx) { }
 
 	/**
 	 * {@inheritDoc}

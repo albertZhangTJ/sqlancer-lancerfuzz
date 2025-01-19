@@ -1,5 +1,5 @@
 package lancerfuzz.parser;
-// Generated from LancerSpecLexer.g4 by ANTLR 4.13.0
+// Generated from SGLLexer.g4 by ANTLR 4.13.0
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.Token;
@@ -10,7 +10,7 @@ import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.misc.*;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast", "CheckReturnValue"})
-public class LancerSpecLexer extends LexerAdaptor {
+public class SGLLexer extends LexerAdaptor {
 	static { RuntimeMetaData.checkVersion("4.13.0", RuntimeMetaData.VERSION); }
 
 	protected static final DFA[] _decisionToDFA;
@@ -119,13 +119,13 @@ public class LancerSpecLexer extends LexerAdaptor {
 	}
 
 
-	public LancerSpecLexer(CharStream input) {
+	public SGLLexer(CharStream input) {
 		super(input);
 		_interp = new LexerATNSimulator(this,_ATN,_decisionToDFA,_sharedContextCache);
 	}
 
 	@Override
-	public String getGrammarFileName() { return "LancerSpecLexer.g4"; }
+	public String getGrammarFileName() { return "SGLLexer.g4"; }
 
 	@Override
 	public String[] getRuleNames() { return ruleNames; }
