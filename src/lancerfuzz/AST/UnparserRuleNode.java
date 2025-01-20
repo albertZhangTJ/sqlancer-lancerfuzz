@@ -2,6 +2,7 @@ package lancerfuzz.AST;
 
 import java.util.List;
 
+import lancerfuzz.Utils;
 import lancerfuzz.parser.SGLParser.ParserRuleSpecContext;
 
 import java.util.ArrayList;
@@ -9,8 +10,8 @@ import java.util.ArrayList;
 public class UnparserRuleNode extends RuleNode{
     private boolean is_fragment;
 
-    private List<ArgNode> arg_list;
-    private CompIdentifierNode ret_var;
+    private List<Node> arg_list;
+    private Node ret_var;
 
     public UnparserRuleNode(String name){
         super(name, RuleNodeType.UNPARSER);
@@ -27,11 +28,30 @@ public class UnparserRuleNode extends RuleNode{
             rule.set_fragment();
         }
         graph.add_edge(rule, AlternationNode.build(graph, ruleSpec.altList()));
-        
+        List<Node> params = new ArrayList<>();
+        if (ruleSpec.argActionBlock()!=null){
+            for (ArgContext arg: ruleSpec.argActionBlock().arg()){
+                params.add(ArgNode.build(graph, arg));
+            }   
+        }
+        rule.set_params(params);
+        if (ruleSpec.ruleReturns()!=null){
+            if (ruleSpec.ruleReturns().argActionBlock().arg().size()!=1){
+                Utils.panic("UnparserRuleNode::build : parser rules can only return 1 variable, "+ruleSpec.ruleReturns().argActionBlock().arg().size()+" found for "+name);
+            }
+            rule.set_ret(ArgNode.build(graph, ruleSpec.ruleReturns().argActionBlock().arg().get(0)));
+        }
+        return rule;
     }
 
     public void set_fragment(){
         this.is_fragment = true;
+    }
+    public void set_params(List<Node> params){
+        this.arg_list = Utils.copy_list(params);
+    }
+    public void set_ret(Node ret){
+        this.ret_var = ret;
     }
     public String render(List<String> function_list, String padding, boolean print){
         String handle = this.get_identifier()+"(ctx)";
@@ -45,7 +65,7 @@ public class UnparserRuleNode extends RuleNode{
         if (!is_fragment){
             code = code + indent + indent + "ctx.push_frame();\n";
             code = code + indent + indent + "List<Variable> arg_decls = new ArrayList<>();\n";
-            for (ArgNode a : this.arg_list){
+            for (Node a : this.arg_list){
                 code = code + indent + indent + "List<Variable> arg_decls.add(" + a.render(rules, "", false) + ");\n";
             }
             code = code + indent + indent + "ctx.enter(arg_decls);\n";

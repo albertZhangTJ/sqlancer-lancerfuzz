@@ -13,7 +13,28 @@ public class VariableNode extends ExpressionNode{
     private int type;
 
     public static VariableNode build(GrammarGraph graph, VariableContext var){
-        //TODO
+        if (var.compIdentifier()!=null){
+            VariableNode node = new VariableNode(CompIdentifierNode.build(graph, var.compIdentifier(), true));
+            graph.add_node(node);
+            return node;
+        }
+        if (var.STRING_LITERAL()!=null){
+            VariableNode node = new VariableNode(var.STRING_LITERAL().getText().substring(1, var.STRING_LITERAL().getText().length()-1));
+            graph.add_node(node);
+            return node;
+        }
+        if (var.INT_LITERAL()!=null){
+            VariableNode node = new VariableNode(Integer.valueOf(var.INT_LITERAL().getText()));
+            graph.add_node(node);
+            return node;
+        }
+        if (var.BOOL_LITERAL()!=null){
+            VariableNode node = new VariableNode(var.BOOL_LITERAL().getText().equals("true"));
+            graph.add_node(node);
+            return node;
+        }
+        Utils.panic("VariableNode::build : Internal error");
+        return null;
     }
 
     public VariableNode(CompIdentifierNode identifierNode){

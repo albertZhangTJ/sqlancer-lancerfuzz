@@ -2,26 +2,45 @@ package lancerfuzz.AST;
 
 import java.util.*;
 import lancerfuzz.Utils;
+import lancerfuzz.parser.SGLParser.ArgContext;
+import lancerfuzz.parser.SGLParser.CompIdentifierContext;
 
 public class CompIdentifierNode extends Node {
     //a[b].c.d
     //anything in the tail (c.d) will be stored in the child nodes which is linked using outward edges
     private String identifier; // a
-    private List<ArgNode> param; // the ones passed in using [...], b
+    private List<Node> param; // the ones passed in using [...], b
     private CompIdentifierNode attr;
 
     // if head, then this.id is either a rule/token ref or a variable name
     // otherwise it will either be an attribute (if param is null) or a function (if param is not)
     private boolean head; 
 
-    public CompIdentifierNode(String ID, List<ArgNode> param, boolean is_head){
+    public CompIdentifierNode(String ID, List<Node> param, boolean is_head, CompIdentifierNode attr){
         this.identifier = ID;
         this.param = Utils.copy_list(param);
         this.head = is_head;
-        this.attr = null;
+        this.attr = attr;
     }
 
-    public List<ArgNode> get_param(){
+    public static CompIdentifierNode build(GrammarGraph graph, CompIdentifierContext id, boolean is_head){
+        String identifier = id.identifier().getText();
+        List<Node> params = new ArrayList<>();
+        if (id.argActionBlock()!=null){
+            for (ArgContext arg: id.argActionBlock().arg()){
+                params.add(ArgNode.build(graph, arg));
+            }   
+        }
+        CompIdentifierNode attr = null;
+        if (id.compIdentifier()!=null && id.compIdentifier().size()>0){
+            attr = CompIdentifierNode.build(graph, id.compIdentifier(0), false);
+        }
+        CompIdentifierNode node = new CompIdentifierNode(identifier, params, is_head, attr);
+        graph.add_node(node);
+        return node;
+    }
+
+    public List<Node> get_param(){
         return Utils.copy_list(this.param);
     }
 
@@ -36,7 +55,7 @@ public class CompIdentifierNode extends Node {
         String res = "";
         if (this.is_head() && this.param!=null && this.param.size()>0){
             res = "context.getSymbol(buf, \""+this.identifier +"\", packList(";
-            for (ArgNode arg : this.param){
+            for (Node arg : this.param){
                 res = res + arg.render(function_list, "", false) + ",";
             }
             res = res.substring(0, res.length()-1) + "))";
@@ -46,7 +65,7 @@ public class CompIdentifierNode extends Node {
         }
         else if (this.param!=null && this.param.size()>0){
             res = ".getAttr(\""+this.identifier +"\", packList(";
-            for (ArgNode arg : this.param){
+            for (Node arg : this.param){
                 res = res + arg.render(function_list, "", false) + ",";
             }
             res = res.substring(0, res.length()-1) + "))";

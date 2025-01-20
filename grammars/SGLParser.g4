@@ -276,7 +276,7 @@ terminal
    ;
 
 compIdentifier
-   : identifier argActionBlock? ( DOT compIdentifier)*
+   : identifier argActionBlock? ( DOT compIdentifier)?
    ;
 
 identifier
