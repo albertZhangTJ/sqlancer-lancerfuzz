@@ -220,7 +220,7 @@ ebnfSuffix
 
 lexerAtom
    : NOT? characterRange 
-   | NOT? terminal
+   //| NOT? terminal
    | NOT? charSet
    ;
 
