@@ -1,11 +1,18 @@
 package lancerfuzz.AST;
 
+import java.util.List;
+
 import lancerfuzz.Utils;
+import lancerfuzz.parser.SGLParser.ArgContext;
+import lancerfuzz.parser.SGLParser.EbnfContext;
+import lancerfuzz.parser.SGLParser.EbnfSuffixContext;
+import lancerfuzz.parser.SGLParser.LexerAltListContext;
+import lancerfuzz.parser.SGLParser.LexerAtomContext;
 
 //Defines how many repetition a rule should have
 public class QuantifierNode extends Node{
     private int type; //0 for ?, 1 for +, 2 for *, 3 for **
-    private ArgNode parameter;
+    private Node parameter;
     
     public QuantifierNode(String suffix){
         if (suffix.equals("?")){
@@ -21,6 +28,37 @@ public class QuantifierNode extends Node{
             this.type = 3;
         }
         Utils.panic("QuantifierNode::QuantifierNode : unrecognized suffix "+suffix);
+    }
+
+    public static QuantifierNode build(GrammarGraph graph, LexerAtomContext atom, EbnfSuffixContext suffix){
+        QuantifierNode node = new QuantifierNode(suffix.getText());
+        graph.add_node(node);
+        graph.add_edge(node, CharSetNode.build(graph, atom));
+        return node;
+    }
+
+    public static QuantifierNode build(GrammarGraph graph, ArgContext arg, EbnfSuffixContext suffix){
+        QuantifierNode node = new QuantifierNode(suffix.getText());
+        graph.add_node(node);
+        graph.add_edge(node, ArgNode.build(graph, arg));
+        return node;
+    }
+
+    public static QuantifierNode build(GrammarGraph graph, LexerAltListContext altlist, EbnfSuffixContext suffix){
+        QuantifierNode node = new QuantifierNode(suffix.getText());
+        graph.add_node(node);
+        graph.add_edge(node, AlternationNode.build(graph, altlist));
+        return node;
+    }
+
+    public static Node build(GrammarGraph graph, EbnfContext ebnf){
+        if (ebnf.ebnfSuffix()!=null){
+            QuantifierNode node = new QuantifierNode(ebnf.ebnfSuffix().getText());
+            graph.add_node(node);
+            graph.add_edge(node, AlternationNode.build(graph, ebnf.block().altList()));
+            return node;
+        }
+        return AlternationNode.build(graph, ebnf.block().altList());
     }
 
     public int get_type(){
@@ -52,7 +90,7 @@ public class QuantifierNode extends Node{
         if (this.get_type() == 3){
             code = code + indentation + indentation + "Variable v = " + this.parameter.render(rules, "", false) + ";\n";
             code = code + indentation + indentation + "int rep = v.getNumerical();\n";
-            code = code + indentation + indentation + "String delimiter = v.getAttr(\"delimiter\", null)==null ? "" : v.getAttr(\"delimiter\", null).getValue();\n";
+            code = code + indentation + indentation + "String delimiter = v.getAttr(\"delimiter\", null)==null ? \"\" : v.getAttr(\"delimiter\", null).getValue();\n";
 
         }
         code = code + indentation + indentation + "for (int i=0; i<rep; i++){\n";

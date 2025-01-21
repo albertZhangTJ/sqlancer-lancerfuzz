@@ -5,9 +5,9 @@ import java.util.List;
 import lancerfuzz.parser.SGLParser.ArgContext;
 
 public class ArgNode extends Node{
-    private ExpressionNode a;
-    private VariableNode b;
-    private boolean is_expr;
+    // private ExpressionNode a;
+    // private VariableNode b;
+    // private boolean is_expr;
 
     //We die-die (singlish for definitely, to whoever is not working in SG) don't want to have the whole depth of the parse tree reflected in rendering
     //so this might short-circuit all the way down to a VariableNode
@@ -18,10 +18,10 @@ public class ArgNode extends Node{
         return actual;
     }
 
-    public String render(List<String> function_list, String padding, boolean print){
-        return is_expr ?
-                a.render(function_list, padding, print) :
-                b.render(function_list, padding, print) ;
-    } 
+    // public String render(List<String> function_list, String padding, boolean print){
+    //     return is_expr ?
+    //             a.render(function_list, padding, print) :
+    //             b.render(function_list, padding, print) ;
+    // } 
     
 }
