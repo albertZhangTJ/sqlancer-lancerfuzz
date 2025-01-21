@@ -46,8 +46,8 @@ public class Node {
 
         //built-in functions 
         //built-in attributes of variables are not handled here as they are not standalone
-        register_rule("_e"); //built-in function for expected error
-        register_rule("_r"); //built-in function for random 
+        register_rule("error"); //built-in function for expected error
+        register_rule("random"); //built-in function for random 
         register_rule("query"); //built-in function for querying target DBMS
     }
 
@@ -118,10 +118,10 @@ public class Node {
             if (child instanceof QuantifierNode){
                 QuantifierNode q = (QuantifierNode)child;
                 if (q.get_type()==3){ //post-processing is only needed for type 3, ** 
-                    if (i==this.get_outward_edges().size()-1 || !(this.get_outward_edges().get(i+1).get_dest() instanceof ArgNode)){
+                    if (i==this.get_outward_edges().size()-1){
                         Utils.panic("Node::post_process : A quantifier node with operator ** expects a variable (or an expression that evaluates to a variable) after it");
                     }
-                    q.set_param((ArgNode)(this.get_outward_edges().get(i+1).get_dest()));
+                    q.set_param((this.get_outward_edges().get(i+1).get_dest()));
                     this.outward_edges.remove(i+1);
                 }
             }

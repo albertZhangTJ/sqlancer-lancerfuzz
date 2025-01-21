@@ -64,7 +64,7 @@ public class QuantifierNode extends Node{
     public int get_type(){
         return this.type;
     }
-    public void set_param(ArgNode arg){
+    public void set_param(Node arg){
         this.parameter = arg;
     }
     

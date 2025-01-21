@@ -1,10 +1,12 @@
 package lancerfuzz;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputFilter.Config;
 import java.util.regex.Pattern;
 import java.io.BufferedWriter;
@@ -21,7 +23,6 @@ import lancerfuzz.parser.SGLParser.IdentifierContext;
 import lancerfuzz.parser.SGLParser.PrequelConstructContext;
 import lancerfuzz.parser.SGLParser.RuleSpecContext;
 import lancerfuzz.AST.GrammarGraph;
-import lancerfuzz.AST.GrammarGraphBuilder;
 
 @SuppressWarnings("unused")
 public class Processor {
@@ -82,35 +83,27 @@ public class Processor {
 
     @SuppressWarnings("unused")
     public static void generate_fuzzer(Options options){
-        GrammarSpecContext lexer_root = null;
-        GrammarSpecContext parser_root = null;
+        List<GrammarSpecContext> roots = new ArrayList<>();
 
         for (String grammar: options.grammarRules){
             if (grammar.endsWith(".sgl")){
                 List<String> work_list = new ArrayList<>();
                 work_list.add(grammar);
-                GrammarSpecContext root = parse_grammar(work_list, options);
-                if (root.grammarDecl().grammarType().LEXER()!=null || root.grammarDecl().grammarType().PARSER()==null){
-                    lexer_root = root;
-                }
-                else {
-                    parser_root = root;
-                }
+                roots.add(parse_grammar(work_list, options));
             }
             else {
                 Utils.panic("Expecting SGL grammar file(s) with .sgl file extension");
             }
         }
 
-        GrammarGraph graph = GrammarGraph.build(parser_root, lexer_root, options);
+        GrammarGraph graph = GrammarGraph.build(roots, options);
         graph.check_for_duplicate_identifier();
         Utils.log_stage("Grammar graph sanity checked passed");
-        graph.calc_depth();
         Utils.log("Grammar graph depth calculated");
         //graph.walk_print(); //for debugging
 
         JSONObject config_file = ConfigProcessor.read_json_file(options.config);
-        List<Stage> stages = ConfigProcessor.get_stages(config_file, graph.get_defaut_rule()==null ? null : graph.get_defaut_rule().get_identifier());
+        List<Stage> stages = ConfigProcessor.get_stages(config_file);
         List<DBMSOption> dbms_options = ConfigProcessor.get_options(config_file);
         ConfigProcessor.sanity_check(graph, stages);
         Utils.log_stage("Configuration sanity checked passed");
@@ -133,7 +126,7 @@ public class Processor {
 
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter("Fuzzer.java"));
-            writer.write(graph.render(template));
+            writer.write(graph.render(template).toCharArray());
             writer.close();
             Utils.log_stage("Fuzzer rendered");
         }

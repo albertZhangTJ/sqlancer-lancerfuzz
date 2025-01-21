@@ -14,6 +14,10 @@ public class UnlexerRuleNode extends RuleNode{
         // we do not need to process the fragment keyword
         // as lexer rules don't have their own stack frame in the first place
         String name = ruleSpec.TOKEN_REF().getText();
+        if (!graph.add_rule_name(name)){
+            Utils.oops("UnlexerRuleNode::build : rule "+name+" has been defined, keeping the first definition");
+            return null;
+        }
         UnlexerRuleNode rule = new UnlexerRuleNode(name);
         graph.add_node(rule);
         graph.add_edge(rule, AlternationNode.build(graph, ruleSpec.lexerAltList()));

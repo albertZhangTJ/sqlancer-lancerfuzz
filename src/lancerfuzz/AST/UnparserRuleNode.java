@@ -22,10 +22,17 @@ public class UnparserRuleNode extends RuleNode{
 
     public static UnparserRuleNode build(GrammarGraph graph, ParserRuleSpecContext ruleSpec){
         String name = ruleSpec.RULE_REF().getText();
+        if (!graph.add_rule_name(name)){
+            Utils.oops("UnparserRuleNode::build : rule "+name+" has been defined, keeping the first definition");
+            return null;
+        }
         UnparserRuleNode rule = new UnparserRuleNode(name);
         graph.add_node(rule);
         if (ruleSpec.ruleModifier()!=null){
             rule.set_fragment();
+        }
+        else {
+            graph.add_callable_rule_name(name);
         }
         graph.add_edge(rule, AlternationNode.build(graph, ruleSpec.altList()));
         List<Node> params = new ArrayList<>();

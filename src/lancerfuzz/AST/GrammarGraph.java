@@ -23,6 +23,10 @@ public class GrammarGraph{
     private Node default_rule = null;
     private int lambda_id;
 
+    private static List<String> rule_names;
+    //these are the parser rules that do not come with fragment keyword
+    //directly callable from outside
+    private static List<String> callable_rule_names; 
 
     public GrammarGraph(){
         this.vertices = new LinkedHashMap<>();
@@ -31,26 +35,37 @@ public class GrammarGraph{
         this.lambda_id = -1;
     }
 
-    public static GrammarGraph build(GrammarSpecContext root, GrammarSpecContext lroot, Options opt){
+    public static boolean add_rule_name(String name){
+        if (rule_names==null){
+            rule_names = new ArrayList<>();
+        }
+        if (rule_names.contains(name)){
+            return false;
+        }
+        rule_names.add(name);
+        return true;
+    }
+
+    public static void add_callable_rule_name(String name){
+        if (callable_rule_names==null){
+            callable_rule_names = new ArrayList<>();
+        }
+        callable_rule_names.add(name);
+    }
+    public static GrammarGraph build(List<GrammarSpecContext> roots, Options opt){
         GrammarGraph graph = new GrammarGraph();
-        if (lroot==null && root==null){
-            Utils.panic("GrammarGraph::build : both parser root and lexer root are empty");
-        }
-        if (lroot!=null){
-            RulesContext lrules = lroot.rules();
-            graph.set_name(lroot.grammarDecl().identifier().getText());
-            for (RuleSpecContext rulespec : rules.ruleSpec()){
-                RuleNode.build(graph, rulespec);
-            }
-        }
-        if (root!=null){
+        for (GrammarSpecContext root: roots){
             RulesContext rules = root.rules();
             graph.set_name(root.grammarDecl().identifier().getText());
             for (RuleSpecContext rulespec : rules.ruleSpec()){
                 RuleNode.build(graph, rulespec);
             }
         }
-        
+        Set<Integer> key_set = graph.vertices.keySet();
+        for (Integer key : key_set){
+            graph.vertices.get(key).post_process();
+        }
+        return graph;
     }
 
     public boolean contains_node_with_id(int id){
@@ -148,30 +163,6 @@ public class GrammarGraph{
         return Utils.copy_map(this.vertices);
     }
 
-    public int get_node_id_with_identifier(String identifier){
-        int imag_id = -1;
-        for (Integer key : this.vertices.keySet()){
-            if (Utils.null_safe_equals(identifier, this.vertices.get(key).get_identifier())){
-                if (this.vertices.get(key) instanceof ImagRuleNode){
-                    imag_id = key;
-                }
-                else {
-                    return key;
-                }
-            }
-        }
-        
-        return imag_id;
-    }
-
-    public void set_default_rule(String rule_name){
-        int rule_id = this.get_node_id_with_identifier(rule_name);
-        if (rule_id==-1){
-            Utils.panic("GrammarGraph::set_default_rule : cannot find rule with name "+rule_name);
-        }
-        this.default_rule=this.vertices.get(rule_id);
-    }
-
    
 
     // for debugging purpose
@@ -183,7 +174,7 @@ public class GrammarGraph{
         System.out.println(root);
         root.walked=true;
         for (Edge e : root.get_outward_edges()){
-            walk_print(e.get_dest(), ""+root.get_identifier()+" "+root.get_id()+" "+(e.get_args()==null ? "null" : e.get_args().toString()));
+            walk_print(e.get_dest(), ""+root.get_identifier()+" "+root.get_id());
         }
     }
 
@@ -217,10 +208,6 @@ public class GrammarGraph{
         return parent;
     }
 
-    public Node get_defaut_rule(){
-        return this.default_rule;
-    }
-
 
     
     public void check_for_duplicate_identifier(){
@@ -234,12 +221,15 @@ public class GrammarGraph{
                 //if at least one side is an ImagRuleNode then it is fine
                 //as ImagRuleNodes are pointers to the actual RuleNode
                 //For nodes without identifiers, the mechanism of Node will ensure no two nodes will have the same id
-                if (!(a instanceof ImagRuleNode || b instanceof ImagRuleNode) && 
-                        !(a.get_identifier()==null || b.get_identifier()==null) &&
+                if (!(a.get_identifier()==null || b.get_identifier()==null) &&
                         a.get_identifier().equals(b.get_identifier())){
                     Utils.panic("GrammarGraph::check_for_duplicate_identifier : Redefinition of rule "+a.get_identifier());
                 }
             }
         }
+    }
+
+    public String render(String template){
+        return "TODO";
     }
 }
