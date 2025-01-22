@@ -1,6 +1,7 @@
 package lancerfuzz.AST;
 
-import lancerfuzz.Utils;
+import java.util.List;
+
 import lancerfuzz.parser.SGLParser.AlternativeContext;
 import lancerfuzz.parser.SGLParser.ElementContext;
 import lancerfuzz.parser.SGLParser.LexerAltContext;
@@ -76,8 +77,9 @@ public class AlternativeNode extends Node{
                     graph.add_edge(node, AlternationNode.build(graph, element.lexerBlock().lexerAltList()));
                 }
             }
-            return node;
+            
         }
+        return node;
     }
 
     public double get_weight(){
@@ -97,7 +99,7 @@ public class AlternativeNode extends Node{
     }
 
     public String render(List<String> function_list, String padding, boolean print){
-        String handle = padding + "buf.add(node"+this.get_id()+"(ctx);\n";
+        String handle = padding + "buf.add(node"+this.get_id()+"(ctx));\n";
 
         String indentation = "    ";
         String code = indentation + "public static Buffer node"+this.get_id()+"(Context ctx){\n";

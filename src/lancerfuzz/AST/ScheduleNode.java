@@ -1,9 +1,13 @@
+package lancerfuzz.AST;
+
 //this is the IR for @X notations
 // during IR processing, all nodes with this expansion priority will be moved
 // to be a child of this node
 // the priority of the a default Node is 65536 before processing
 // if any node has a ScheduleNode as child
 // all its children must be ScheduleNodes before rendering
+
+import java.util.List;
 
 import lancerfuzz.parser.SGLParser.PrecedenceContext;
 
@@ -30,7 +34,7 @@ public class ScheduleNode extends Node{
 
         //this our own function to be added to the function list
         String indentation = "    ";
-        String code = indentation + "public Buffer node"+this.get_id()+"(Context ctx){\n}";
+        String code = indentation + "public Buffer node"+this.get_id()+"(Context ctx){\n";
         code = code + indentation + indentation + "Buffer buf = new Buffer();\n";
         for (Edge e: this.get_outward_edges()){
             Node child = e.get_dest();

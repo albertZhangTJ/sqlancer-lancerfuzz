@@ -65,21 +65,21 @@ public class VariableNode extends ExpressionNode{
         if (this.type == 2){
             String res = "Variable.factory(\""+this.strLiteral+"\")";
             if (print){
-                res = "buf.add(" + res + ")";
+                res = padding+"buf.add(" + res + ");";
             }
             return res;
         }
         if (this.type == 3){
             String res = "Variable.factory("+this.intLiteral+")";
             if (print){
-                res = "buf.add(" + res + ")";
+                res = padding+"buf.add(" + res + ");";
             }
             return res;
         }
         if (this.type == 4){
             String res = "Variable.factory("+this.boolLiteral+ ")";
             if (print){
-                res = "buf.add(" + res + ")";
+                res = padding+"buf.add(" + res + ");";
             }
             return res;
         }

@@ -1,6 +1,6 @@
 package lancerfuzz.AST;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import org.antlr.v4.runtime.tree.TerminalNode;
 

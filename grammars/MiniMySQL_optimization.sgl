@@ -32,7 +32,7 @@ alterTable
 fragment alterSpecification
     : 
     ADD COLUMN? new[column] columnDefinition FIRST?    
-    | ADD COLUMN? '(' (column.new columnDefinition)random[1, 3, ','] ')' 
+    | ADD COLUMN? '(' (column.new columnDefinition)**random[1, 3, ','] ')' 
     | DROP COLUMN? column[t].unique_any error['delete all', 'has a partitioning function dependency']
     | DROP PRIMARY KEY error['primary']
     | RENAME ( TO | AS ) new[table]

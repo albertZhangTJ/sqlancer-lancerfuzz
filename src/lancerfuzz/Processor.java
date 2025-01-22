@@ -81,8 +81,7 @@ public class Processor {
         return root;
     }
 
-    @SuppressWarnings("unused")
-    public static void generate_fuzzer(Options options){
+    public void generate_fuzzer(Options options){
         List<GrammarSpecContext> roots = new ArrayList<>();
 
         for (String grammar: options.grammarRules){
@@ -97,9 +96,7 @@ public class Processor {
         }
 
         GrammarGraph graph = GrammarGraph.build(roots, options);
-        graph.check_for_duplicate_identifier();
-        Utils.log_stage("Grammar graph sanity checked passed");
-        Utils.log("Grammar graph depth calculated");
+        Utils.log_stage("Grammar graph built");
         //graph.walk_print(); //for debugging
 
         JSONObject config_file = ConfigProcessor.read_json_file(options.config);

@@ -27,7 +27,9 @@ public class QuantifierNode extends Node{
         else if (suffix.equals("**")){
             this.type = 3;
         }
-        Utils.panic("QuantifierNode::QuantifierNode : unrecognized suffix "+suffix);
+        else{
+            Utils.panic("QuantifierNode::QuantifierNode : unrecognized suffix "+suffix);
+        }
     }
 
     public static QuantifierNode build(GrammarGraph graph, LexerAtomContext atom, EbnfSuffixContext suffix){
@@ -73,7 +75,7 @@ public class QuantifierNode extends Node{
         
         //this our own function to be added to the function list
         String indentation = "    ";
-        String code = indentation + "public Buffer node"+this.get_id()+"(Context ctx){\n";
+        String code = indentation + "public static Buffer node"+this.get_id()+"(Context ctx){\n";
         code = code + indentation + indentation + "Buffer buf = new Buffer();\n";
         if (this.get_type() == 0){
             code = code + indentation + indentation + "int rep = Rand.random(0, 1);\n";
@@ -99,7 +101,7 @@ public class QuantifierNode extends Node{
         code = code + indentation + indentation + indentation + "}\n";
         for (Edge e : this.get_outward_edges()){
             Node child = e.get_dest();
-            code = code + child.render(rules, indentation+indentation+indentation, true);
+            code = code + child.render(function_list, indentation+indentation+indentation, true);
         }
         code = code + indentation + indentation + "}\n";
         code = code + indentation + indentation + "return buf;\n" + indentation + "}\n";

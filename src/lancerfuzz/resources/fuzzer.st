@@ -153,7 +153,7 @@ public class Fuzzer{
         //The call() function will add the returned buffer to the caller one and return this.result (so that the behavior is consistent)
         public Variable call(Buffer buf, String rule, List<Variable> args) throws Exception{
             this.push_args(args);
-            buf.add(demo.dispatch(this, rule));
+            buf.add(Fuzzer.dispatch(this, rule));
             return this.result;
         }
 
@@ -425,7 +425,7 @@ public class Fuzzer{
             if (symbol==null || symbol.length()==0 || !((symbol.charAt(0)>=65 && symbol.charAt(0)<=90) || (symbol.charAt(0)>=97 && symbol.charAt(0)<=122))){
                 throw new IllegalArgumentException("ERROR : Fuzzer.Context.setSymbol :: symbol must be non-empty and start with an ASCII letter");
             }
-            if (demo.rules.contains(symbol)){
+            if (Fuzzer.rules.contains(symbol)){
                 throw new Exception("Context::setSymbol : symbol conflict with rule "+symbol);
             }
             // starts with a capital letter
@@ -959,11 +959,11 @@ public class Fuzzer{
     public static final int DAFAULT_MAX_REP = 8;
 
     public static void init(){
-        demo.rules = new ArrayList<>();
+        Fuzzer.rules = new ArrayList<>();
         // EXAMPLE:
-        // demo.rules.add("createTable");
+        // Fuzzer.rules.add("createTable");
         // Context.add_rule("createTable");
-//<INIT_RULES/>
+<INIT_RULES/>
     }
 
     // at compile time, each standalone rule (without the fragment modifier)
@@ -973,8 +973,8 @@ public class Fuzzer{
         // if (rule.equals("createTable")){
         //     return createTable(ctx);
         // }
-//<DISPATCH_RULES/>        
-        throw new Exception("demo::dispatch : there is no rule registered with name "+rule);
+<DISPATCH_RULES/>        
+        throw new Exception("Fuzzer::dispatch : there is no rule registered with name "+rule);
     }
 
     // this is the entry point
@@ -984,6 +984,6 @@ public class Fuzzer{
         return buf.toString();
     }
 
-//<RULES/>
+<RULES/>
 
 }

@@ -2,7 +2,6 @@ package lancerfuzz.AST;
 
 import java.util.List;
 
-import lancerfuzz.Utils;
 import lancerfuzz.parser.SGLParser.ExpressionContext;
 import lancerfuzz.parser.SGLParser.MexprContext;
 import lancerfuzz.parser.SGLParser.LexprContext;
@@ -118,6 +117,9 @@ public class ExpressionNode extends Node {
         String handle = "context.eval("+lhs.render(function_list, "", false)+", \""+operator+"\", "+rhs.render(function_list, "", false)+")";
         if (print && !suppressed){
             handle = padding +"buf.add("+handle+");\n";
+        }
+        else if (print){
+            handle = padding + handle +";\n";
         }
         return handle;
     }

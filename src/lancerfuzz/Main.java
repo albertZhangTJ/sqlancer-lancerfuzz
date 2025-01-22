@@ -34,6 +34,7 @@ public class Main {
             Utils.panic("Main::main : need one configuration file");
         }
 
-        Processor.generate_fuzzer(options);
+        Processor p = new Processor();
+        p.generate_fuzzer(options);
     }
 }

@@ -1,6 +1,5 @@
 // An argument will be either an ExpressionNode or a VariableNode
 package lancerfuzz.AST;
-import java.util.List;
 
 import lancerfuzz.parser.SGLParser.ArgContext;
 
@@ -14,7 +13,7 @@ public class ArgNode extends Node{
     //or in the worst case, be the root of a very complicated ExpressionNode
     //we don't know yet
     public static Node build(GrammarGraph graph, ArgContext arg){
-        Node actual = ExpressionNode.build(graph, arg.expression);
+        Node actual = ExpressionNode.build(graph, arg.expression());
         return actual;
     }
 

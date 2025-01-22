@@ -224,13 +224,13 @@ public class CharSetNode extends Node {
 
     @Override
     public String render(List<String> function_list, String padding, boolean print){
-        String func = "    public static Buffer node"+this.get_id()+"(ctx){\n" +
+        String func = "    public static Buffer node"+this.get_id()+"(Context ctx){\n" +
         "        List<Integer> s = new ArrayList<>();\n";
         for(Integer i : this.char_set){
             func = func + "        s.add("+i.intValue()+");\n";
         }
         func = func + "        return new Buffer(\"\"+(char)(CharSet.get_random_character_from_set(s)));\n";
-        func = func + "    }";
+        func = func + "    }\n";
         function_list.add(func);
         return padding + "node"+this.get_id()+"(ctx)";
     }

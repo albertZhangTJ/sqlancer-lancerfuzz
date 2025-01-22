@@ -32,8 +32,8 @@ public class CompIdentifierNode extends Node {
             }   
         }
         CompIdentifierNode attr = null;
-        if (id.compIdentifier()!=null && id.compIdentifier().size()>0){
-            attr = CompIdentifierNode.build(graph, id.compIdentifier(0), false);
+        if (id.compIdentifier()!=null){
+            attr = CompIdentifierNode.build(graph, id.compIdentifier(), false);
         }
         CompIdentifierNode node = new CompIdentifierNode(identifier, params, is_head, attr);
         graph.add_node(node);

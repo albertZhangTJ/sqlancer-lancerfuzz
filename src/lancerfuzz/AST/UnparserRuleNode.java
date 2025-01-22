@@ -3,6 +3,7 @@ package lancerfuzz.AST;
 import java.util.List;
 
 import lancerfuzz.Utils;
+import lancerfuzz.parser.SGLParser.ArgContext;
 import lancerfuzz.parser.SGLParser.ParserRuleSpecContext;
 
 import java.util.ArrayList;
@@ -73,7 +74,7 @@ public class UnparserRuleNode extends RuleNode{
             code = code + indent + indent + "ctx.push_frame();\n";
             code = code + indent + indent + "List<Variable> arg_decls = new ArrayList<>();\n";
             for (Node a : this.arg_list){
-                code = code + indent + indent + "List<Variable> arg_decls.add(" + a.render(rules, "", false) + ");\n";
+                code = code + indent + indent + "arg_decls.add(" + a.render(rules, "", false) + ");\n";
             }
             code = code + indent + indent + "ctx.enter(arg_decls);\n";
         }
@@ -82,7 +83,11 @@ public class UnparserRuleNode extends RuleNode{
             code = code + child.render(function_list, indent+indent, true) +"\n";
         }
         if (is_fragment){
-            code = code + indent + indent + "ctx.ret(" + ret_var==null ? "null" : ret_var.render(function_list, "", false) + ");\n";
+            String ret = "null";
+            if (ret_var!=null){
+                ret = ret_var.render(function_list, "", false);
+            }
+            code = code + indent + indent + "ctx.ret(" + ret + ");\n";
         }
         code = code + indent + indent + "return buf;\n";
         code = code + indent + "}\n";

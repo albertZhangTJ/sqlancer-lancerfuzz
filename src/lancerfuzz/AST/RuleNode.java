@@ -1,10 +1,6 @@
 package lancerfuzz.AST;
 
 import java.util.List;
-import java.util.regex.Pattern;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Set;
 
 import lancerfuzz.Utils;
 import lancerfuzz.parser.SGLParser.RuleSpecContext;

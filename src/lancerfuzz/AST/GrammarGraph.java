@@ -23,10 +23,10 @@ public class GrammarGraph{
     private Node default_rule = null;
     private int lambda_id;
 
-    private static List<String> rule_names;
+    private List<String> rule_names;
     //these are the parser rules that do not come with fragment keyword
     //directly callable from outside
-    private static List<String> callable_rule_names; 
+    private List<String> callable_rule_names; 
 
     public GrammarGraph(){
         this.vertices = new LinkedHashMap<>();
@@ -35,7 +35,7 @@ public class GrammarGraph{
         this.lambda_id = -1;
     }
 
-    public static boolean add_rule_name(String name){
+    public boolean add_rule_name(String name){
         if (rule_names==null){
             rule_names = new ArrayList<>();
         }
@@ -46,7 +46,7 @@ public class GrammarGraph{
         return true;
     }
 
-    public static void add_callable_rule_name(String name){
+    public void add_callable_rule_name(String name){
         if (callable_rule_names==null){
             callable_rule_names = new ArrayList<>();
         }
@@ -208,28 +208,70 @@ public class GrammarGraph{
         return parent;
     }
 
-
-    
-    public void check_for_duplicate_identifier(){
-        //despite this is O(N^2), since the number of nodes are not expected to be large
-        //this_is_fine.jpeg 
-        List<Integer> indices = new ArrayList<>(this.vertices.keySet());
-        for (int i=0; i<indices.size(); i++){
-            for (int j=i+1; j<indices.size(); j++){
-                Node a = this.vertices.get(indices.get(i));
-                Node b = this.vertices.get(indices.get(j));
-                //if at least one side is an ImagRuleNode then it is fine
-                //as ImagRuleNodes are pointers to the actual RuleNode
-                //For nodes without identifiers, the mechanism of Node will ensure no two nodes will have the same id
-                if (!(a.get_identifier()==null || b.get_identifier()==null) &&
-                        a.get_identifier().equals(b.get_identifier())){
-                    Utils.panic("GrammarGraph::check_for_duplicate_identifier : Redefinition of rule "+a.get_identifier());
-                }
+    public Node get_node_with_identifier(String identifier){
+        for (Integer key : this.vertices.keySet()){
+            if (Utils.null_safe_equals(identifier, this.vertices.get(key).get_identifier())){
+                return this.vertices.get(key);
             }
         }
+        Utils.panic("GrammarGraph::get_node_with_identifier : cannot find node with identifier "+identifier);
+        return null;
+    }
+
+    private static String render_tag(String template, String key, String value){
+        String tag = "<"+key.toUpperCase()+"/>";
+        int length = tag.length()+value.length();
+        for (int cursor = 0; cursor<template.length()-tag.length(); cursor++){
+            if (template.substring(cursor, cursor+tag.length()).toUpperCase().equals(tag)){
+                template = template.substring(0,cursor) + value + template.substring(cursor);
+                cursor += value.length();
+            }
+        }
+        return template;
+    }
+
+    //TODO: enhance the robustness here
+    // This is a rather simple String matching (no parsing here)
+    // This procedure will look for each occurence of the string "\>" and search back forward for the nearest "<", remove what's between
+    // Also for now spaces in tags are disallowed so any occurence of space before finding the corresponding left bracket will be considered as syntax error
+    private static String strip_tags(String template){
+        String left_bracket = "<";
+        String right_bracket = "/>";
+        while (template.indexOf(right_bracket)!=-1){
+            int right_idx = template.indexOf(right_bracket);
+            int left_idx = template.substring(0, right_idx).lastIndexOf(left_bracket);
+            // just a bit of sanity check here, no guarantee
+            if (left_idx==-1){
+                Utils.panic("GrammarGraph::strip_tags : cannot find left bracket for tag");
+            }
+            if (template.substring(left_idx, right_idx).indexOf(" ")!=-1){
+                Utils.panic("GrammarGraph::strip_tags : found a tag name with space");
+            }
+
+            template = template.substring(0, left_idx) + template.substring(right_idx+2);
+        }
+        return template;
     }
 
     public String render(String template){
-        return "TODO";
+        //step 1: render all rules in the current graph
+        //replace the <RULES/> tab in the template
+        List<String> func_list = new ArrayList<>();
+        for (String rule_name: this.rule_names){
+            String handle = this.get_node_with_identifier(rule_name).render(func_list, "", false);
+            if (this.callable_rule_names.contains(rule_name)){
+                String dispatch = "        if (rule.equals(\""+rule_name+"\")){\n" +
+                                  "            return "+handle+";\n" +
+                                  "        }\n";
+                String register = "        Fuzzer.rules.add(\""+rule_name+"\");\n" +
+                                  "        Context.add_rule(\""+rule_name+"\");\n";
+                template = render_tag(template, "DISPATCH_RULES", dispatch);
+                template = render_tag(template, "INIT_RULES", register);
+            }
+        }
+        for (String rule: func_list){
+            template = render_tag(template, "RULES", rule);
+        }
+        return strip_tags(template);
     }
 }
