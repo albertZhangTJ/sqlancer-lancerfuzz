@@ -35,7 +35,7 @@ public class UnlexerRuleNode extends RuleNode{
         }
 
         String indent = "    ";
-        String code = indent + "public static Buffer " + this.get_identifier() + "(Context ctx){\n";
+        String code = indent + "public static Buffer " + this.get_identifier() + "(Context ctx) throws Exception{\n";
         code = code + indent + indent + "Buffer buf = new Buffer();\n";
         for (Edge e : this.get_outward_edges()){
             Node child = e.get_dest();

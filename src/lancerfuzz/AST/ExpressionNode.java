@@ -35,7 +35,7 @@ public class ExpressionNode extends Node {
                 ExpressionNode.build(graph, expr.mexpr().get(0)), 
                 expr.expr_op().ASSIGN()!=null ? "=" : "+=", 
                 ExpressionNode.build(graph, expr.mexpr().get(1)), 
-                expr.expr_op().DOLLAR()==null
+                expr.expr_op().DOLLAR()!=null
             );
             graph.add_node(node);
             return node;
@@ -114,7 +114,7 @@ public class ExpressionNode extends Node {
 
     @Override
     public String render(List<String> function_list, String padding, boolean print){
-        String handle = "context.eval("+lhs.render(function_list, "", false)+", \""+operator+"\", "+rhs.render(function_list, "", false)+")";
+        String handle = "ctx.eval("+lhs.render(function_list, "", false)+", \""+operator+"\", "+rhs.render(function_list, "", false)+")";
         if (print && !suppressed){
             handle = padding +"buf.add("+handle+");\n";
         }

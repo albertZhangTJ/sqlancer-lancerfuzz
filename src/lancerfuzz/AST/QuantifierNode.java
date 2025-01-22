@@ -75,7 +75,7 @@ public class QuantifierNode extends Node{
         
         //this our own function to be added to the function list
         String indentation = "    ";
-        String code = indentation + "public static Buffer node"+this.get_id()+"(Context ctx){\n";
+        String code = indentation + "public static Buffer node"+this.get_id()+"(Context ctx) throws Exception{\n";
         code = code + indentation + indentation + "Buffer buf = new Buffer();\n";
         if (this.get_type() == 0){
             code = code + indentation + indentation + "int rep = Rand.random(0, 1);\n";
@@ -97,7 +97,7 @@ public class QuantifierNode extends Node{
         }
         code = code + indentation + indentation + "for (int i=0; i<rep; i++){\n";
         code = code + indentation + indentation + indentation + "if (i!=0){\n";
-        code = code + indentation + indentation + indentation + indentation + "buf.add(delimiter);\n";
+        code = code + indentation + indentation + indentation + indentation + "buf.add(Variable.factory(delimiter));\n";
         code = code + indentation + indentation + indentation + "}\n";
         for (Edge e : this.get_outward_edges()){
             Node child = e.get_dest();

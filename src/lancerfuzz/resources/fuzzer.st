@@ -4,8 +4,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
-import lancerfuzz.Utils;
-
 import java.util.Arrays;
 
 import java.lang.IllegalArgumentException;
@@ -65,11 +63,17 @@ public class Fuzzer{
         }
 
         public Variable add(Variable terminal) throws Exception{
+            if (terminal==null || !terminal.isSingleValued){
+                return terminal;
+            }
             this.children.add(new Buffer(terminal.getValue()));
             return terminal;
         }
 
         public void set(int index, Buffer child){
+            while (this.children.size()<=index){
+                this.children.add(new Buffer());
+            }
             this.children.set(index, child);
         }
 
@@ -101,7 +105,7 @@ public class Fuzzer{
 
     public static class Context {
         //global variables
-        private HashMap<String, Variable> globalSymbols;
+        private HashMap<String, Variable> globalSymbols = new HashMap<>();
         //local variables
         private HashMap<String, Variable> symbols;
         private List<HashMap<String, Variable>> symbolStack;
@@ -337,8 +341,8 @@ public class Fuzzer{
                         int max = args.get(1).getNumerical();
                         String delimiter = args.get(2).getValue();
                         int ds = args.get(3).getNumerical();
-                        if (ds>4 || ds<0){
-                            throw new IllegalArgumentException("ERROR : Fuzzer.Context.random :: unrecognizable decay_spec, accepted value are integers in range [0,4]");
+                        if (ds>99 || ds<0){
+                            throw new IllegalArgumentException("ERROR : Fuzzer.Context.random :: unrecognizable decay_spec, accepted value are integers in range [0,99]");
                         }
                         int val = min;
                         if (ds==0){
@@ -403,7 +407,7 @@ public class Fuzzer{
             }
             if (operator.equals("+=")){
                 a.addEntry(b);
-                return a;
+                return b;
             }
             if (operator.equals("+")){
                 if (a.isNumerical() && b.isNumerical()){
@@ -439,6 +443,9 @@ public class Fuzzer{
         //requires 2 or more arguments
         //the 
         public Variable query(List<Variable> args) throws Exception{
+            if (this.conn==null){
+                throw new IllegalArgumentException("ERROR : Fuzzer.Context.query :: JDBC Connection to target DBMS is not set or set to null, query function not available");
+            }
             if (args.size()<2){
                 throw new IllegalArgumentException("ERROR : Fuzzer.Context.query :: a call to the query function must contain at least 2 arguments: query and column name");
             }
@@ -586,6 +593,7 @@ public class Fuzzer{
             if (other.isUninitialized){
                 throw new UnavailableException("An uninitialized variable should not be cloned, check your grammar file for assignments using these", false, true, false);
             }
+            this.isUninitialized = false;
             this.isSingleValued = other.isSingleValued;
             this.value = other.value;
             this.numerical = other.numerical;
@@ -792,7 +800,7 @@ public class Fuzzer{
         //by returning this at the end of the setter, we can use this class in an FP way
         public Variable addEntry(Variable v) throws Exception{
             if (this.isUninitialized){
-                throw new UnavailableException("Fuzzer.Variable.addEntry :: the current variable is not initialized", false, true, false);
+                this.clone(factory());
             }
             if (this.isSingleValued){
                 throw new IllegalArgumentException("Fuzzer.Variable.addEntry :: addEntry is not applicable to single-valued variable");
@@ -872,9 +880,9 @@ public class Fuzzer{
         // The length of the result List is guaranteed to be even
         // The values stored at even indices represents the beginning of a range (inclusive)
         // The value stored after that represents the end of that range (not inclusive)
-        public static List<Integer> printable_ranges(int lower_bound, int upper_bound){
+        public static List<Integer> printable_ranges(int lower_bound, int upper_bound) throws Exception{
             if (lower_bound<0 || upper_bound<0 || upper_bound<lower_bound){
-                Utils.panic("AstUtils::printable_ranges : invalid range "+lower_bound+", "+upper_bound);
+                throw new Exception("AstUtils::printable_ranges : invalid range "+lower_bound+", "+upper_bound);
             }
             List<Integer> ranges = new ArrayList<Integer>();
             int start = -1;
@@ -896,12 +904,12 @@ public class Fuzzer{
 
             return ranges;
         }
-        public static int get_random_character_from_set(List<Integer> set){
+        public static int get_random_character_from_set(List<Integer> set) throws Exception{
             if (set.size()==0){
-                Utils.panic("CharSet::get_random_character_from_set : Cannot handle empty set");
+                throw new Exception("CharSet::get_random_character_from_set : Cannot handle empty set");
             }
             if (set.size()%2!=0){
-                Utils.panic("CharSet::get_random_character_from_set : size of the set must be even, actual size: "+set.size());
+                throw new Exception("CharSet::get_random_character_from_set : size of the set must be even, actual size: "+set.size());
             }
     
             //randomly select a range

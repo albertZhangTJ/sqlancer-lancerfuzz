@@ -68,7 +68,7 @@ public class UnparserRuleNode extends RuleNode{
         }
 
         String indent = "    ";
-        String code = indent + "public static Buffer " + this.get_identifier() + "(Context ctx){\n";
+        String code = indent + "public static Buffer " + this.get_identifier() + "(Context ctx) throws Exception{\n";
         code = code + indent + indent + "Buffer buf = new Buffer();\n";
         if (!is_fragment){
             code = code + indent + indent + "ctx.push_frame();\n";
@@ -82,7 +82,7 @@ public class UnparserRuleNode extends RuleNode{
             Node child = e.get_dest();
             code = code + child.render(function_list, indent+indent, true) +"\n";
         }
-        if (is_fragment){
+        if (!is_fragment){
             String ret = "null";
             if (ret_var!=null){
                 ret = ret_var.render(function_list, "", false);

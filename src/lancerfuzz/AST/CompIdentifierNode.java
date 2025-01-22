@@ -54,14 +54,14 @@ public class CompIdentifierNode extends Node {
         }
         String res = "";
         if (this.is_head() && this.param!=null && this.param.size()>0){
-            res = "context.getSymbol(buf, \""+this.identifier +"\", packList(";
+            res = "ctx.getSymbol(buf, \""+this.identifier +"\", packList(";
             for (Node arg : this.param){
                 res = res + arg.render(function_list, "", false) + ",";
             }
             res = res.substring(0, res.length()-1) + "))";
         }
         else if (this.is_head()){
-            res = "context.getSymbol(buf, \""+this.identifier +"\", new ArrayList<>())";
+            res = "ctx.getSymbol(buf, \""+this.identifier +"\", new ArrayList<>())";
         }
         else if (this.param!=null && this.param.size()>0){
             res = ".getAttr(\""+this.identifier +"\", packList(";

@@ -259,15 +259,13 @@ public class GrammarGraph{
         List<String> func_list = new ArrayList<>();
         for (String rule_name: this.rule_names){
             String handle = this.get_node_with_identifier(rule_name).render(func_list, "", false);
-            if (this.callable_rule_names.contains(rule_name)){
-                String dispatch = "        if (rule.equals(\""+rule_name+"\")){\n" +
-                                  "            return "+handle+";\n" +
-                                  "        }\n";
-                String register = "        Fuzzer.rules.add(\""+rule_name+"\");\n" +
-                                  "        Context.add_rule(\""+rule_name+"\");\n";
-                template = render_tag(template, "DISPATCH_RULES", dispatch);
-                template = render_tag(template, "INIT_RULES", register);
-            }
+            String dispatch = "        if (rule.equals(\""+rule_name+"\")){\n" +
+                                "            return "+handle+";\n" +
+                                "        }\n";
+            String register = "        Fuzzer.rules.add(\""+rule_name+"\");\n" +
+                                "        Context.add_rule(\""+rule_name+"\");\n";
+            template = render_tag(template, "DISPATCH_RULES", dispatch);
+            template = render_tag(template, "INIT_RULES", register);
         }
         for (String rule: func_list){
             template = render_tag(template, "RULES", rule);

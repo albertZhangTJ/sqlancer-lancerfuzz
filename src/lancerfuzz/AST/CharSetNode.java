@@ -224,7 +224,7 @@ public class CharSetNode extends Node {
 
     @Override
     public String render(List<String> function_list, String padding, boolean print){
-        String func = "    public static Buffer node"+this.get_id()+"(Context ctx){\n" +
+        String func = "    public static Buffer node"+this.get_id()+"(Context ctx) throws Exception{\n" +
         "        List<Integer> s = new ArrayList<>();\n";
         for(Integer i : this.char_set){
             func = func + "        s.add("+i.intValue()+");\n";

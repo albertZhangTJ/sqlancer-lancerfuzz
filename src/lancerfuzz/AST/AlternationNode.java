@@ -87,7 +87,7 @@ public class AlternationNode extends Node {
 
         //this our own function to be added to the function list
         String indentation = "    ";
-        String code = indentation + "public static Buffer node"+this.get_id()+"(Context ctx){\n";
+        String code = indentation + "public static Buffer node"+this.get_id()+"(Context ctx) throws Exception{\n";
         code = code + indentation + indentation + "Buffer buf = new Buffer();\n";
         code = code + indentation + indentation + "Options opt = new Options();\n";
         

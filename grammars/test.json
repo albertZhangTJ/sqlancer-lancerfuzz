@@ -1,0 +1,43 @@
+
+{   
+    "options" : [
+        {
+            "name" : "host", 
+            "default" : "localhost"
+        },
+        {
+            "name" : "port", 
+            "default" : "3306"
+        },
+        {
+            "name" : "username", 
+            "default" : "new_user"
+        },
+        {
+            "name" : "password", 
+            "default" : "password"
+        },
+        {
+            "name" : "db_prefix", 
+            "default" : "mysql"
+        },
+        {
+            "name" : "conn_str", 
+            "default" : "jdbc:($db_prefix$)://($host$):($port$)"
+        },
+        {
+            "name" : "jdbc_class", 
+            "default" : "com.mysql.cj.jdbc.Driver"
+        }
+    ],
+    "stages" : [
+    	{
+            "name" : "stage1",
+            "rules" : [
+                "test"
+            ],
+            "min" : 1,
+            "max" : 1
+        }
+    ]
+}
