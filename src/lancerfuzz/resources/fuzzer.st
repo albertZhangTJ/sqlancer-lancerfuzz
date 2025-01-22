@@ -943,6 +943,7 @@ public class Fuzzer{
             for (double w: this.weights){
                 total = total + w;
             }
+            total = total * Math.random();
             for (int i=0; i<this.indices.size(); i++){
                 if (total<this.weights.get(i)){
                     return this.indices.get(i);
