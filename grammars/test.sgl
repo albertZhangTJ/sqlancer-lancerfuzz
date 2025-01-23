@@ -1,15 +1,15 @@
 grammar test;
 
 test 
-    : createTable | t[2]
+    : cn=$createTable.any '--' cn | t[random[6,16]]
     ;
 
-createTable
+createTable returns[cn]
     : ' CREATE ' error['A BLOB field is not allowed in partition function', 'is of a not allowed type for this type of partitioning'] 
       ( 90% ' '  | ' TEMPORARY ' error['Cannot create temporary table with partitions'] ) TABLE 
         ' IF NOT EXISTS '? new['table']
         (
-            '(' ( cn+=new['column'] ( 80% ' INT ' | ' FLOAT ' | ' TEXT '))**random[1, 5, ',', 10] ')'
+            '(' ( cn+=new['column'] columnDefinition)**random[1, 5, ',', 10] ')'
             ( 80% ' '  |
                     ' ENGINE = ' (' MyISAM ' | ' InnoDB ' ) |
                     ' PARTITION BY ' error['allowed type']
@@ -22,7 +22,11 @@ createTable
     ;
 
 t [c] returns [d]
-    : 'A' d=c+1
+    : <c>1> 'T' c t[c-1] d=$c | <c<=1> '<->'
+    ;
+
+fragment columnDefinition
+    : ' FLOAT ' | 80% ' INT ' | ' TEXT '
     ;
 
 TABLE : ' TABLE ';

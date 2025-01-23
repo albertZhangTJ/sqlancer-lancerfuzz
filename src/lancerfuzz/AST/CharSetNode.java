@@ -232,7 +232,11 @@ public class CharSetNode extends Node {
         func = func + "        return new Buffer(\"\"+(char)(CharSet.get_random_character_from_set(s)));\n";
         func = func + "    }\n";
         function_list.add(func);
-        return padding + "node"+this.get_id()+"(ctx)";
+        String handle = "node"+this.get_id()+"(ctx)";
+        if (print){
+            handle = padding + "buf.add(" + handle + ");\n";
+        }
+        return handle;
     }
 
 }

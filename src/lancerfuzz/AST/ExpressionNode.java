@@ -48,18 +48,18 @@ public class ExpressionNode extends Node {
             return ExpressionNode.build(graph, mexpr.lexpr().get(0));
         }
         ExpressionNode root = new ExpressionNode();
-        ExpressionNode last = root;
         for (int i=0; i<mexpr.lexpr().size()-1; i++){
-            last.set_lhs(ExpressionNode.build(graph, mexpr.lexpr().get(i)));
-            graph.add_node(last);
-            last.set_operator(mexpr.mexpr_op().get(i).getText().strip());
-            if (i==mexpr.lexpr().size()-2){
-                last.set_rhs(ExpressionNode.build(graph, mexpr.lexpr().get(i+1)));    
+            if (i==0){
+                root.set_lhs(ExpressionNode.build(graph, mexpr.lexpr().get(i)));
             }
             else {
-                last.set_rhs(new ExpressionNode());
-                last=last.get_rhs();
+                ExpressionNode temp = new ExpressionNode();
+                temp.set_lhs(root);
+                root = temp;
             }
+            root.set_rhs(ExpressionNode.build(graph, mexpr.lexpr().get(i+1)));
+            root.set_operator(mexpr.mexpr_op().get(i).getText().strip());
+            graph.add_node(root);
         }
         return root;
     }
@@ -68,18 +68,19 @@ public class ExpressionNode extends Node {
             return VariableNode.build(graph, lexpr.variable().get(0));
         }
         ExpressionNode root = new ExpressionNode();
-        ExpressionNode last = root;
         for (int i=0; i<lexpr.variable().size()-1; i++){
-            last.set_lhs(VariableNode.build(graph, lexpr.variable().get(i)));
-            graph.add_node(last);
-            last.set_operator(lexpr.lexpr_op().get(i).getText().strip());
-            if (i==lexpr.variable().size()-2){
-                last.set_rhs(VariableNode.build(graph, lexpr.variable().get(i+1)));    
+            if (i==0){
+                root.set_lhs(VariableNode.build(graph, lexpr.variable().get(i)));
             }
             else {
-                last.set_rhs(new ExpressionNode());
-                last=last.get_rhs();
+                ExpressionNode temp = new ExpressionNode();
+                temp.set_lhs(root);
+                root = temp;
             }
+            root.set_rhs(VariableNode.build(graph, lexpr.variable().get(i+1)));
+            root.set_operator(lexpr.lexpr_op().get(i).getText().strip());
+            graph.add_node(root);
+            
         }
         return root;
     }

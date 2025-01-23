@@ -99,6 +99,9 @@ public class AlternativeNode extends Node{
     }
 
     public String render(List<String> function_list, String padding, boolean print){
+        if (this.get_outward_edges().size()==1){
+            return this.get_outward_edges().get(0).get_dest().render(function_list, padding, true);
+        }
         String handle = padding + "buf.add(node"+this.get_id()+"(ctx));\n";
 
         String indentation = "    ";
