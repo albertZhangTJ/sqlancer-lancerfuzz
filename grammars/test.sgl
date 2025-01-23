@@ -21,8 +21,8 @@ createTable returns[cn]
         )  ';'
     ;
 
-t [c] returns [d]
-    : <c>1> 'T' c t[c-1] d=$c | <c<=1> '<->'
+t [c=1] returns [d]
+    : <c>=0-1> 'T' c t[c-1] d=$c | <c<1> '<->'
     ;
 
 fragment columnDefinition

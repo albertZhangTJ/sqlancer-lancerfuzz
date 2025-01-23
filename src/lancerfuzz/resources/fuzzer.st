@@ -417,6 +417,9 @@ public class Fuzzer{
             }
             if (operator.equals("-")){
                 if (a.isNumerical() && b.isNumerical()){
+                    if (a.getNumerical() - b.getNumerical() < 0){
+                        throw new Exception("ERROR : Context.eval :: Integer underflow, negative values are not supported in SGL");
+                    }
                     return Variable.factory(a.getNumerical() - b.getNumerical());
                 }
                 throw new IllegalArgumentException("ERROR : Context.eval :: the operator \"-\" is not applicable when either side of the operation is not numerical");
