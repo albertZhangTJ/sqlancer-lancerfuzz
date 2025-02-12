@@ -68,7 +68,7 @@ public class AlternationNode extends Node {
         double default_weight = (100-total_declared_weight)/(undeclared_count==0 ? 1 : undeclared_count);
         for (int i=0; i<this.weights.size(); i++){
             if (this.weights.get(i)>0){
-                this.weights.set(i, this.weights.get(i)/100);
+                this.weights.set(i, this.weights.get(i));
             }
             else {
                 this.weights.set(i, default_weight);

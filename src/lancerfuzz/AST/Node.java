@@ -135,9 +135,11 @@ public class Node {
         }
         if (schedule_points!=0){
             if (!(this.get_outward_edges().get(0).get_dest() instanceof ScheduleNode)){
-                this.outward_edges.add(0, new Edge(new ScheduleNode(schedule_points)));
+                this.outward_edges.add(0, new Edge(new ScheduleNode(schedule_points+1)));
             }
             for (int i=0; i<this.outward_edges.size(); i++){
+                //encode the positional order of the schedule node
+                ((ScheduleNode)(this.outward_edges.get(i).get_dest())).set_order(i);
                 for (int j=i+1; j<this.outward_edges.size(); j++){
                     //if the next node is also a ScheduleNode, then we are done moving whatever belongs to the current node
                     if (this.outward_edges.get(j).get_dest() instanceof ScheduleNode){
@@ -147,6 +149,23 @@ public class Node {
                     j--;
                 }
             }
+            //reorder the schedule nodes
+            List<Edge> updated_outwards = new ArrayList<>();
+            for (int p=0; p<this.get_outward_edges().size(); p++){
+                boolean found=false;
+                for (int i=0; i<this.outward_edges.size(); i++){
+                    ScheduleNode sn = (ScheduleNode)(this.outward_edges.get(i).get_dest());
+                    if (sn.get_priority()==(p+1)){
+                        updated_outwards.add(this.outward_edges.get(i));
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found){
+                    Utils.panic("Node::post_process :: schedule points should be consecutive integers starting from 1 (e.g. for 3 schedule points the values should always be 1, 2, 3)\n    "+(p+1)+" not found");
+                }
+            }
+            this.outward_edges = updated_outwards;
         }
     }
     //This is just a placeholder for render function

@@ -34,7 +34,7 @@
     	{
             "name" : "stage1",
             "rules" : [
-                "test"
+                "rule"
             ],
             "min" : 1,
             "max" : 1

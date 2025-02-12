@@ -1,0 +1,10 @@
+grammar filter;
+
+rule
+    : c=$65535 c.width=$16 l+=c ' ' 
+    c=$255 c.width=$8 l+=c ' '
+    c=$15 c.width=$4 l+=c ' '
+    c=$3 c.width=$2 l+=c ' '
+    c=$1 c.width=$1 l+=c ' '
+    (l.filter['width', '<', 16] ' ')**3
+    ;

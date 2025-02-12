@@ -13,11 +13,20 @@ import lancerfuzz.parser.SGLParser.PrecedenceContext;
 
 public class ScheduleNode extends Node{
     private int priority;
+    private int order;
     public ScheduleNode(int priority){
         this.priority = priority;
     }
     public int get_priority(){
         return this.priority;
+    }
+
+    public void set_order(int order){
+        this.order = order;
+    }
+
+    public int get_order(){
+        return this.order;
     }
 
     public static ScheduleNode build(GrammarGraph graph, PrecedenceContext pre){
@@ -30,7 +39,7 @@ public class ScheduleNode extends Node{
     @Override
     public String render(List<String> function_list, String padding, boolean print){
         //this is the handle for the caller to embed in its own function
-        String handle = padding + "buf.set("+ this.get_priority()+", node"+this.get_id()+"(ctx));\n";
+        String handle = padding + "buf.set("+ this.get_order()+", node"+this.get_id()+"(ctx));\n";
 
         //this our own function to be added to the function list
         String indentation = "    ";

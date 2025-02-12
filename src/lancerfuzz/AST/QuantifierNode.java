@@ -92,7 +92,7 @@ public class QuantifierNode extends Node{
         if (this.get_type() == 3){
             code = code + indentation + indentation + "Variable v = " + this.parameter.render(rules, "", false) + ";\n";
             code = code + indentation + indentation + "int rep = v.getNumerical();\n";
-            code = code + indentation + indentation + "String delimiter = v.getAttr(\"delimiter\", null)==null ? \"\" : v.getAttr(\"delimiter\", null).getValue();\n";
+            code = code + indentation + indentation + "String delimiter = v.getAttr(\"delimiter\", null).isPlaceHolder() ? \"\" : v.getAttr(\"delimiter\", null).getValue();\n";
 
         }
         code = code + indentation + indentation + "for (int i=0; i<rep; i++){\n";

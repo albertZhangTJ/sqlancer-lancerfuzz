@@ -675,6 +675,9 @@ public class Fuzzer{
                 }
                 return this.filter(args.get(0), args.get(1).getValue(), args.get(2));
             }
+            if (this.attributes.get(name)==null){
+                this.attributes.put(name, Variable.placeholder());
+            }
             return this.attributes.get(name);
 
         }
