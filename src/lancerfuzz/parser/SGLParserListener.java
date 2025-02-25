@@ -497,14 +497,4 @@ public interface SGLParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitCharSetContent(SGLParser.CharSetContentContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link SGLParser#grammarOperator}.
-	 * @param ctx the parse tree
-	 */
-	void enterGrammarOperator(SGLParser.GrammarOperatorContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link SGLParser#grammarOperator}.
-	 * @param ctx the parse tree
-	 */
-	void exitGrammarOperator(SGLParser.GrammarOperatorContext ctx);
 }

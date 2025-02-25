@@ -3,5 +3,5 @@ grammar predicate;
 rule : t[16];
 
 t [c=1] returns [d]
-    : <c>=11> 98% 'T' c t[c-1] d=$c | <c<11> 1% '<->' | '<==>'
+    : <c>=11> 98% 'T' c t[c$-1] d=$c | <c<11> 1% '<->' | '<==>'
     ;

@@ -11,6 +11,7 @@ import java.lang.NumberFormatException;
 import sqlancer.SQLConnection;
 import java.sql.ResultSet;
 public class Fuzzer{
+    public static final int DEFAULT_MAX_REP = 8;
     public static class UnavailableException extends Exception {
         private static final long serialVersionUID = 1L;
         public boolean isUndefined; //the variable/attr requested does not exist
@@ -116,7 +117,7 @@ public class Fuzzer{
         //JDBC connection to the DB under test, only used by the query built-in function
         private SQLConnection conn;
         //This is the list of supported operators by SGL
-        public static final List<String> OPERATORS = Collections.unmodifiableList(Arrays.asList("=", "+=", "+", "-", "==", "!=", ">", "<", ">=", "<="));
+        public static final List<String> OPERATORS = Collections.unmodifiableList(Arrays.asList("=", "+=", "$+", "$-", "==", "!=", ">", "<", ">=", "<="));
         //used by the "new" function for making sure all symbols in the target language scope is unique
         //for example, the first call to new["table"] will return 'table1', second call will be 'table2' and so on
         private HashMap<String, Integer> idCount; 
@@ -409,13 +410,13 @@ public class Fuzzer{
                 a.addEntry(b);
                 return b;
             }
-            if (operator.equals("+")){
+            if (operator.equals("$+")){
                 if (a.isNumerical() && b.isNumerical()){
                     return Variable.factory(a.getNumerical() + b.getNumerical());
                 }
                 return Variable.factory(a.getValue()+b.getValue());
             }
-            if (operator.equals("-")){
+            if (operator.equals("$-")){
                 if (a.isNumerical() && b.isNumerical()){
                     if (a.getNumerical() - b.getNumerical() < 0){
                         throw new Exception("ERROR : Context.eval :: Integer underflow, negative values are not supported in SGL");

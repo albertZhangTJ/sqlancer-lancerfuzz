@@ -197,7 +197,7 @@ lexpr
    // EBNF and blocks
 
 lexpr_op
-   : PLUS | DASH;
+   : DOLLAR PLUS | DOLLAR DASH;
 
 variable
    : compIdentifier
@@ -303,7 +303,7 @@ lexerAlt
 lexerElement
    : actionBlock
    | predicate
-   | expression
+   | expression ebnfSuffix?
    | lexerAtom ebnfSuffix?
    | lexerBlock ebnfSuffix?
    ;
@@ -319,16 +319,4 @@ charSet
 
 charSetContent
    : (~(RBRACK) | ESC)+
-   ;
-
-grammarOperator
-   : ASSIGN ASSIGN
-   | NEGATE ASSIGN
-   | PLUS ASSIGN
-   | PLUS
-   | GT ASSIGN
-   | LT ASSIGN
-   | GT
-   | LT
-   | ASSIGN
    ;

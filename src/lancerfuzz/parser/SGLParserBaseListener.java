@@ -10,7 +10,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
  * which can be extended to create a listener which only needs to handle a subset
  * of the available methods.
  */
-//@SuppressWarnings("CheckReturnValue")
+@SuppressWarnings("CheckReturnValue")
 public class SGLParserBaseListener implements SGLParserListener {
 	/**
 	 * {@inheritDoc}
@@ -600,18 +600,6 @@ public class SGLParserBaseListener implements SGLParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitCharSetContent(SGLParser.CharSetContentContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterGrammarOperator(SGLParser.GrammarOperatorContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitGrammarOperator(SGLParser.GrammarOperatorContext ctx) { }
 
 	/**
 	 * {@inheritDoc}
