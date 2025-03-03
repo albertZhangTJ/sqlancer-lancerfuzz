@@ -42,7 +42,7 @@
     <testSourceDirectory>test</testSourceDirectory>
     <resources>
       <resource>
-        <directory>src/lancerfuzz/resources</directory>
+        <directory>src/SGL/resources</directory>
       </resource>
     </resources>
     <plugins>
@@ -217,11 +217,11 @@
             </configuration>
           </execution>
           <execution>
-            <id>lancerfuzz</id>
+            <id>SGL</id>
             <goals><goal>single</goal></goals>
             <phase>package</phase>
             <configuration>
-              <classifier>lancerfuzz</classifier>
+              <classifier>SGL</classifier>
               <forceCreation>true</forceCreation>
               <descriptorRefs>
                 <descriptorRef>jar-with-dependencies</descriptorRef>
@@ -230,10 +230,10 @@
                 <manifest>
                   <addClasspath>true</addClasspath>
                   <classpathPrefix>lib/</classpathPrefix>
-                  <mainClass>lancerfuzz.Main</mainClass>
+                  <mainClass>SGL.Main</mainClass>
                 </manifest>
               </archive>
-              <finalName>lancerfuzz</finalName>
+              <finalName>SGL</finalName>
             </configuration>
           </execution>
         </executions>
