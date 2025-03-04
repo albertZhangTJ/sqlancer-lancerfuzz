@@ -2,7 +2,7 @@
 
 
 ![SQLancer](media/logo/png/sqlancer_logo_logo_pos_500.png)
-<img src="fig/seagull_logo.jpg" alt="logo" width="160"/>
+<img src="src/SGL/fig/seagull_logo.jpg" alt="logo" width="160"/>
 
 This repository contains a flavor of SQLancer with grammar-based fuzzing capabilities, enabled by SQL Generation Language(SGL).
 
