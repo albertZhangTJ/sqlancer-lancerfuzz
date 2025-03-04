@@ -3,7 +3,7 @@
 
 Notice: the current version of this tool is still work-in-progress as of now.
 
-SQL Generation Language (SGL) is a metasyntax language designed to effectively and efficiently specify SQL dialects for fuzzing purposes.
+SQL Generation Language (SGL, previously LancerFuzz) is a metasyntax language designed to effectively and efficiently specify SQL dialects for fuzzing purposes.
 SGL has an EBNF-like design based on [ANTLR](www.antlr.org). Beyond typical context-free grammar features, SGL has a variable system for maintaining context for test case generation. SGL also features a predicate system on the grammar level to enforce semantic constraints in the target languages.
 
 This repository contains a tool `Seagull` to compile SGL grammars into Java test case generators.
@@ -25,8 +25,8 @@ Start fuzzing by executing `./scripts/run.sh <path to grammar> <path to config>`
 - Target language: the language of the test cases (SQL dialects)
 - Compile: the process of generating test case generators source code from a grammar file
 - Run time: the time when a test case generator is executed
-- Turnaround time: the time from the test case generator is called to a test case is produced
-- Throughput: the amount of test case that can be generated in a given time limit (one minute unless otherwise specified)
+- Turnaround time: the time from the test case generator is called to a test case is produced, might also be dependent on the target DBMS when the `query` function is used inside the grammar
+- Throughput: the amount of test case that can be generated in a given time limit (statements/minute unless otherwise specified)
 - Output buffer: A tree-structured buffer containing the partially generated test case, which will be serialized to produce the test case
 
 ## SGL
@@ -80,6 +80,7 @@ allowing for representation of more complicated data structures.
 
 A variable can be written to using the following operators: `=`, `+=`.
 Variables can be operated on using the following operators: `$+`, `$-`, `==`, `!=`, `>`, `<`, `>=`, `<=`.
+The semantics of `$+` depends on the operands, and is generally similar to the Java `+` operator, as for the `$-` operator.
 The semantics of the `+=` operator is list appending instead of increment.
 Other than that, the operator semantics are similar to that in common programming languages.
 
