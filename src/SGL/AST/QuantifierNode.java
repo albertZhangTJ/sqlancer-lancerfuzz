@@ -35,6 +35,7 @@ public class QuantifierNode extends Node{
     public static QuantifierNode build(GrammarGraph graph, LexerAtomContext atom, EbnfSuffixContext suffix){
         QuantifierNode node = new QuantifierNode(suffix.getText());
         graph.add_node(node);
+        node.lines = atom.getStart().getLine();
         graph.add_edge(node, CharSetNode.build(graph, atom));
         return node;
     }
@@ -42,6 +43,7 @@ public class QuantifierNode extends Node{
     public static QuantifierNode build(GrammarGraph graph, ArgContext arg, EbnfSuffixContext suffix){
         QuantifierNode node = new QuantifierNode(suffix.getText());
         graph.add_node(node);
+        node.lines = arg.getStart().getLine();
         graph.add_edge(node, ArgNode.build(graph, arg));
         return node;
     }
@@ -49,6 +51,7 @@ public class QuantifierNode extends Node{
     public static QuantifierNode build(GrammarGraph graph, LexerAltListContext altlist, EbnfSuffixContext suffix){
         QuantifierNode node = new QuantifierNode(suffix.getText());
         graph.add_node(node);
+        node.lines = altlist.getStart().getLine();
         graph.add_edge(node, AlternationNode.build(graph, altlist));
         return node;
     }
@@ -57,6 +60,7 @@ public class QuantifierNode extends Node{
         if (ebnf.ebnfSuffix()!=null){
             QuantifierNode node = new QuantifierNode(ebnf.ebnfSuffix().getText());
             graph.add_node(node);
+            node.lines = ebnf.getStart().getLine();
             graph.add_edge(node, AlternationNode.build(graph, ebnf.block().altList()));
             return node;
         }
@@ -71,11 +75,11 @@ public class QuantifierNode extends Node{
     }
     
     public String render(List<String> function_list, String padding, boolean print){
-        String handle = padding + "buf.add(node"+this.get_id()+"(ctx));\n";
+        String handle = padding + this.debugging + this.lines + "\n" + padding + "buf.add(node"+this.get_id()+"(ctx));\n";
         
         //this our own function to be added to the function list
         String indentation = "    ";
-        String code = indentation + "public static Buffer node"+this.get_id()+"(Context ctx) throws Exception{\n";
+        String code = indentation + this.debugging + this.lines + "\n" + indentation + "public static Buffer node"+this.get_id()+"(Context ctx) throws Exception{\n";
         code = code + indentation + indentation + "Buffer buf = new Buffer();\n";
         if (this.get_type() == 0){
             code = code + indentation + indentation + "int rep = Rand.random(0, 1);\n";

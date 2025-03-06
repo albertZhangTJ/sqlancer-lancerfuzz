@@ -37,6 +37,7 @@ public class CompIdentifierNode extends Node {
         }
         CompIdentifierNode node = new CompIdentifierNode(identifier, params, is_head, attr);
         graph.add_node(node);
+        node.lines = id.getStart().getLine();
         return node;
     }
 
@@ -77,7 +78,7 @@ public class CompIdentifierNode extends Node {
             res = res + this.attr.render(function_list, "", false);
         }
         if (print){
-            res = padding + "buf.add(" + res + ");\n";
+            res = padding + this.debugging + this.lines + "\n" + padding + "buf.add(" + res + ");\n";
         }
         return res;
     }

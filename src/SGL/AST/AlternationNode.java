@@ -24,6 +24,7 @@ public class AlternationNode extends Node {
         for (AlternativeContext alter : altList.alternative()){
             graph.add_edge(node, AlternativeNode.build(graph, alter));
         }
+        node.lines = altList.getStart().getLine();
         return node;
     }
 
@@ -33,6 +34,7 @@ public class AlternationNode extends Node {
         for (LexerAltContext alter : altList.lexerAlt()){
             graph.add_edge(node, AlternativeNode.build(graph, alter));
         }
+        node.lines = altList.getStart().getLine();
         return node;
     }
 
@@ -86,11 +88,11 @@ public class AlternationNode extends Node {
         if (this.weights.size()==1){
             return this.get_outward_edges().get(0).get_dest().render(function_list, padding, true);
         }
-        String handle = padding + "buf.add(node"+this.get_id()+"(ctx));\n";
+        String handle = padding + this.debugging + this.lines + "\n" + padding + "buf.add(node"+this.get_id()+"(ctx));\n";
 
         //this our own function to be added to the function list
         String indentation = "    ";
-        String code = indentation + "public static Buffer node"+this.get_id()+"(Context ctx) throws Exception{\n";
+        String code = indentation + this.debugging + this.lines + "\n" + indentation + "public static Buffer node"+this.get_id()+"(Context ctx) throws Exception{\n";
         code = code + indentation + indentation + "Buffer buf = new Buffer();\n";
         code = code + indentation + indentation + "Options opt = new Options();\n";
         

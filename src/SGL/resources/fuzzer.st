@@ -9,9 +9,8 @@ import java.util.Arrays;
 import java.lang.IllegalArgumentException;
 import java.lang.NumberFormatException;
 import sqlancer.SQLConnection;
-import java.sql.ResultSet;
+import java.sql.*;
 public class Fuzzer{
-    public static final int DEFAULT_MAX_REP = 8;
     public static class UnavailableException extends Exception {
         private static final long serialVersionUID = 1L;
         public boolean isUndefined; //the variable/attr requested does not exist
@@ -36,6 +35,23 @@ public class Fuzzer{
         public static <T> T random_from_list(List<T> l){
             int idx = (int)(Math.random()*l.size());
             return l.get(idx);
+        }
+        public static <T> T random_from_list_weighted(List<T> l, List<Integer> weights) throws DeadEndException{
+            int total = 0;
+            if (l.size()==0){
+                throw new DeadEndException("Rand::random_from_list_weighted : no available options");
+            }
+            for (int w: weights){
+                total = total + w;
+            }
+            total = (int)(total * Math.random());
+            for (int i=0; i<l.size(); i++){
+                if (total<weights.get(i)){
+                    return l.get(i);
+                }
+                total = total - weights.get(i);
+            }
+            return l.get(l.size()-1);
         }
         public static int random(int min, int max){
             return (int)(min + (max-min+1)*Math.random());
@@ -247,18 +263,18 @@ public class Fuzzer{
 
         //random generator 
         // handles the following cases
-        //_r[fix_number, delimiter]
-        //_r[min, max]
-        //_r[min, delimiter, decay_spec]
-        //_r[min, max, delimiter]
-        //_r[min, max, delimiter, decay_spec]
+        //random[fix_number, delimiter]
+        //random[min, max]
+        //random[min, delimiter, decay_spec]
+        //random[min, max, delimiter]
+        //random[min, max, delimiter, decay_spec]
         // decay_spec should be an interger ranging 0 to 99, default 50
         // 0 for uniform distribution, uniform distribution without a max is not allowed
         // Otherwise, the probability of getting x is (decay_spec/100)*(1-decay_spec/100)^(x-1)
         public Variable random(List<Variable> args) throws Exception{
             try{
                 if (args.size()==2){
-                    //_r[fix, delimiter]
+                    //random[fix, delimiter]
                     if (args.get(0).isNumerical() && args.get(1).isString()){
                         int val = args.get(0).getNumerical();
                         String delimiter = args.get(1).getValue();
@@ -266,7 +282,7 @@ public class Fuzzer{
                         res.setAttr("delimiter", Variable.factory(delimiter));
                         return res;
                     }
-                    //_r[min, max]
+                    //random[min, max]
                     if (args.get(0).isNumerical() && args.get(1).isNumerical()){
                         int min = args.get(0).getNumerical();
                         int max = args.get(1).getNumerical();
@@ -286,7 +302,7 @@ public class Fuzzer{
                     }
                 }
                 if (args.size()==3){
-                    //_r[min, delimiter, decay_spec]
+                    //random[min, delimiter, decay_spec]
                     if (args.get(0).isNumerical() && args.get(1).isString() && args.get(2).isNumerical()){
                         int min = args.get(0).getNumerical();
                         String delimiter = args.get(1).getValue();
@@ -309,7 +325,7 @@ public class Fuzzer{
                         res.setAttr("delimiter", Variable.factory(delimiter));
                         return res;
                     }
-                    //_r[min,max,decay_spec]
+                    //random[min,max,decay_spec]
                     if (args.get(0).isNumerical() && args.get(1).isNumerical() && args.get(2).isNumerical()){
                         int min = args.get(0).getNumerical();
                         int max = args.get(1).getNumerical();
@@ -371,11 +387,11 @@ public class Fuzzer{
             }
             catch (IllegalArgumentException e){
                 throw new IllegalArgumentException("ERROR : Fuzzer.Context.random :: arguments passed do not match any know signatures\n"+
-                                                    "_r[fix_number, delimiter]\n" + 
-                                                    "_r[min, max]\n" +
-                                                    "_r[min, delimiter, decay_spec]\n" + 
-                                                    "_r[min, max, delimiter]\n" +
-                                                    "_r[min, max, delimiter, decay_spec]\n" + 
+                                                    "random[fix_number, delimiter]\n" + 
+                                                    "random[min, max]\n" +
+                                                    "random[min, delimiter, decay_spec]\n" + 
+                                                    "random[min, max, delimiter]\n" +
+                                                    "random[min, max, delimiter, decay_spec]\n" + 
                                                     "decay_spec should be an interger ranging 0 to 99, default 50\n" + 
                                                     "0 for uniform distribution, uniform distribution without a max is not allowed\n", e);
             }
@@ -959,8 +975,47 @@ public class Fuzzer{
             }
             return this.indices.get(this.indices.size()-1);
         }
+    }
 
+    public static class Stages {
+        private List<List<String>> rules;
+        private List<List<Integer>> weights;
+        private List<List<Integer>> counts;
+        private int tickets_current_stage;
+        private int current_stage;
+        public Stages(){
+            this.tickets_current_stage = -1;
+            this.current_stage = 0;
+            this.rules = new ArrayList<>();
+            this.weights = new ArrayList<>();
+            for (int i=0; i<<STAGE_COUNT/>; i++){
+                List<String> rule = new ArrayList<>();
+                List<Integer> weight = new ArrayList<>();
+                List<Integer> count = new ArrayList<>();
+<STAGES/>
+                rules.add(rule);
+                weights.add(weight);
+                counts.add(count);
+            }
+        }
 
+        public String get_next_rule() throws Exception{
+            if (this.current_stage>=this.rules.size()){
+                return null;
+            }
+            if (this.tickets_current_stage==-1){
+                List<Integer> count = this.counts.get(this.current_stage);
+                this.tickets_current_stage = Rand.random(count.get(0), count.get(1));
+            }
+            //select the rule
+            String result = Rand.random_from_list_weighted(this.rules.get(this.current_stage), this.weights.get(this.current_stage));
+            this.tickets_current_stage -= 1;
+            if (this.tickets_current_stage==0){
+                this.current_stage++;
+                this.tickets_current_stage = -1;
+            }
+            return result;
+        }
     }
 
     public static List<Variable> packList(Variable... args){
@@ -972,16 +1027,36 @@ public class Fuzzer{
     }
 
     public static List<String> rules;
-    public static final int DAFAULT_MAX_REP = 8;
+    public static final int DEFAULT_MAX_REP = 8;
+    public static SQLConnection connection = null;
+    public static Stages stages = null;
 
-    public static void init(){
+    public static void init() throws Exception{
         Fuzzer.rules = new ArrayList<>();
+        if ("<JDBC/>".length()>0){
+            Fuzzer.connection = new SQLConnection(DriverManager.getConnection("<JDBC/>")); 
+        }
+        else {
+            Fuzzer.connection = null;
+        }
+        Fuzzer.stages = new Stages();
         // EXAMPLE:
         // Fuzzer.rules.add("createTable");
         // Context.add_rule("createTable");
 <INIT_RULES/>
     }
 
+    public static String fuzz_next(){
+        return fuzz_next(Fuzzer.connection);
+    }
+
+    public static String fuzz_next(SQLConnection conn) throws Exception{
+        String rule = Fuzzer.stages.get_next_rule();
+        if (rule==null){
+            return null;
+        }
+        return fuzz(conn, rule);
+    }
     // at compile time, each standalone rule (without the fragment modifier)
     // will register itself here
     public static Buffer dispatch(Context ctx, String rule) throws Exception {
@@ -991,6 +1066,14 @@ public class Fuzzer{
         // }
 <DISPATCH_RULES/>        
         throw new Exception("Fuzzer::dispatch : there is no rule registered with name "+rule);
+    }
+
+    // this is the entry point
+    public static String fuzz(String rule) throws Exception{
+        if (Fuzzer.connection==null) {
+            throw new Exception("Fuzzer::fuzz : JDBC connection string not configured");
+        }
+        return fuzz(Fuzzer.connection, rule);
     }
 
     // this is the entry point

@@ -18,6 +18,9 @@ public class Node {
     public boolean is_rendered=false; //eaiser for the fuzzer renderer to follow
     public static List<String> rules;
 
+    protected int lines = -1;
+    protected String debugging = "// The following lines are generated from line ";
+
 
     protected int min_depth=-1;
 

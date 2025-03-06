@@ -64,11 +64,11 @@ public class UnparserRuleNode extends RuleNode{
     public String render(List<String> function_list, String padding, boolean print){
         String handle = this.get_identifier()+"(ctx)";
         if (print){
-            handle = padding +"buf.add(" + handle + ");\n";
+            handle = padding + this.debugging + this.lines + "\n" + padding +"buf.add(" + handle + ");\n";
         }
 
         String indent = "    ";
-        String code = indent + "public static Buffer " + this.get_identifier() + "(Context ctx) throws Exception{\n";
+        String code = indent + this.debugging + this.lines + "\n" + indent + "public static Buffer " + this.get_identifier() + "(Context ctx) throws Exception{\n";
         code = code + indent + indent + "Buffer buf = new Buffer();\n";
         if (!is_fragment){
             code = code + indent + indent + "ctx.push_frame();\n";

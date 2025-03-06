@@ -45,6 +45,7 @@ public class AlternativeNode extends Node{
                 graph.add_edge(node, QuantifierNode.build(graph, element.ebnf()));
             }
         }
+        node.lines = alter.getStart().getLine();
         return node;
     }
 
@@ -79,6 +80,7 @@ public class AlternativeNode extends Node{
             }
             
         }
+        node.lines = alter.getStart().getLine();
         return node;
     }
 
@@ -102,10 +104,10 @@ public class AlternativeNode extends Node{
         if (this.get_outward_edges().size()==1){
             return this.get_outward_edges().get(0).get_dest().render(function_list, padding, true);
         }
-        String handle = padding + "buf.add(node"+this.get_id()+"(ctx));\n";
+        String handle = padding + this.debugging + this.lines + "\n" + padding + "buf.add(node"+this.get_id()+"(ctx));\n";
 
         String indentation = "    ";
-        String code = indentation + "public static Buffer node"+this.get_id()+"(Context ctx) throws Exception{\n";
+        String code = indentation + this.debugging + this.lines + "\n" + indentation + "public static Buffer node"+this.get_id()+"(Context ctx) throws Exception{\n";
         code = code + indentation + indentation + "Buffer buf = new Buffer();\n";
         for (Edge e : this.get_outward_edges()){
             Node child = e.get_dest();

@@ -38,6 +38,7 @@ public class ExpressionNode extends Node {
                 expr.expr_op().DOLLAR()!=null
             );
             graph.add_node(node);
+            node.lines = expr.getStart().getLine();
             return node;
         }
         return ExpressionNode.build(graph, expr.mexpr().get(0));
@@ -60,6 +61,7 @@ public class ExpressionNode extends Node {
             root.set_rhs(ExpressionNode.build(graph, mexpr.lexpr().get(i+1)));
             root.set_operator(mexpr.mexpr_op().get(i).getText().strip());
             graph.add_node(root);
+            root.lines = mexpr.getStart().getLine();
         }
         return root;
     }
@@ -80,7 +82,7 @@ public class ExpressionNode extends Node {
             root.set_rhs(VariableNode.build(graph, lexpr.variable().get(i+1)));
             root.set_operator(lexpr.lexpr_op().get(i).getText().strip());
             graph.add_node(root);
-            
+            root.lines = lexpr.getStart().getLine();
         }
         return root;
     }
@@ -117,10 +119,10 @@ public class ExpressionNode extends Node {
     public String render(List<String> function_list, String padding, boolean print){
         String handle = "ctx.eval("+lhs.render(function_list, "", false)+", \""+operator+"\", "+rhs.render(function_list, "", false)+")";
         if (print && !suppressed){
-            handle = padding +"buf.add("+handle+");\n";
+            handle = padding + this.debugging + this.lines + "\n" + padding +"buf.add("+handle+");\n";
         }
         else if (print){
-            handle = padding + handle +";\n";
+            handle = padding + this.debugging + this.lines + "\n" + padding + handle +";\n";
         }
         return handle;
     }

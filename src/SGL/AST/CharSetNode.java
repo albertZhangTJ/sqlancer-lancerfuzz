@@ -43,6 +43,7 @@ public class CharSetNode extends Node {
             }
             CharSetNode node = new CharSetNode(char_set, is_negated);
             graph.add_node(node);
+            node.lines = atom.getStart().getLine();
             return node;
         }
         //terminal is removed as it can & should be processed by the expression branch (as a variable)
@@ -55,6 +56,7 @@ public class CharSetNode extends Node {
             }
             CharSetNode node = new CharSetNode(char_set, is_negated);
             graph.add_node(node);
+            node.lines = atom.getStart().getLine();
             return node;
         }
         Utils.panic("CharSetNode::build : internal error");
@@ -224,7 +226,7 @@ public class CharSetNode extends Node {
 
     @Override
     public String render(List<String> function_list, String padding, boolean print){
-        String func = "    public static Buffer node"+this.get_id()+"(Context ctx) throws Exception{\n" +
+        String func =  "    " + this.debugging + this.lines + "\n" + "    public static Buffer node"+this.get_id()+"(Context ctx) throws Exception{\n" +
         "        List<Integer> s = new ArrayList<>();\n";
         for(Integer i : this.char_set){
             func = func + "        s.add("+i.intValue()+");\n";
@@ -234,7 +236,7 @@ public class CharSetNode extends Node {
         function_list.add(func);
         String handle = "node"+this.get_id()+"(ctx)";
         if (print){
-            handle = padding + "buf.add(" + handle + ");\n";
+            handle = padding + this.debugging + this.lines + "\n" + padding + "buf.add(" + handle + ");\n";
         }
         return handle;
     }

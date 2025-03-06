@@ -25,6 +25,7 @@ public class ActionNode extends Node{
         }
         ActionNode node = new ActionNode(src);
         graph.add_node(node);
+        node.lines = act.getStart().getLine();
         return node;
     }
 
@@ -36,7 +37,7 @@ public class ActionNode extends Node{
     }
 
     public String render(List<String> function_list, List<String> args, String padding){
-        return padding + this.src + "\n";
+        return padding + this.debugging + this.lines + "\n" + padding + this.src + "\n";
     }
     
     public String toString(){

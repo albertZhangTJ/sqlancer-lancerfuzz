@@ -16,21 +16,25 @@ public class VariableNode extends ExpressionNode{
         if (var.compIdentifier()!=null){
             VariableNode node = new VariableNode(CompIdentifierNode.build(graph, var.compIdentifier(), true));
             graph.add_node(node);
+            node.lines = var.getStart().getLine();
             return node;
         }
         if (var.STRING_LITERAL()!=null){
             VariableNode node = new VariableNode(var.STRING_LITERAL().getText().substring(1, var.STRING_LITERAL().getText().length()-1));
             graph.add_node(node);
+            node.lines = var.getStart().getLine();
             return node;
         }
         if (var.INT_LITERAL()!=null){
             VariableNode node = new VariableNode(Integer.valueOf(var.INT_LITERAL().getText()));
             graph.add_node(node);
+            node.lines = var.getStart().getLine();
             return node;
         }
         if (var.BOOL_LITERAL()!=null){
             VariableNode node = new VariableNode(var.BOOL_LITERAL().getText().equals("true"));
             graph.add_node(node);
+            node.lines = var.getStart().getLine();
             return node;
         }
         Utils.panic("VariableNode::build : Internal error");
@@ -65,21 +69,21 @@ public class VariableNode extends ExpressionNode{
         if (this.type == 2){
             String res = "Variable.factory(\""+this.strLiteral+"\")";
             if (print){
-                res = padding+"buf.add(" + res + ");\n";
+                res = padding + this.debugging + this.lines + "\n" + padding +"buf.add(" + res + ");\n";
             }
             return res;
         }
         if (this.type == 3){
             String res = "Variable.factory("+this.intLiteral+")";
             if (print){
-                res = padding+"buf.add(" + res + ");\n";
+                res = padding + this.debugging + this.lines + "\n" + padding +"buf.add(" + res + ");\n";
             }
             return res;
         }
         if (this.type == 4){
             String res = "Variable.factory("+this.boolLiteral+ ")";
             if (print){
-                res = padding+"buf.add(" + res + ");\n";
+                res = padding + this.debugging + this.lines + "\n" + padding +"buf.add(" + res + ");\n";
             }
             return res;
         }

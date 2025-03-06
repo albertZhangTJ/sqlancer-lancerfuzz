@@ -25,11 +25,13 @@ public class PredicateNode extends Node {
         if (pred.arg()!=null){
             PredicateNode node = new PredicateNode(ArgNode.build(graph, pred.arg()), true);
             graph.add_node(node);
+            node.lines = pred.getStart().getLine();
             return node;
         }
         if (pred.actionBlock()!=null){
             PredicateNode node = new PredicateNode(ActionNode.build(graph, pred.actionBlock()));
             graph.add_node(node);
+            node.lines = pred.getStart().getLine();
             return node;
         }
         Utils.panic("PredicateNode::build : Internal error");
