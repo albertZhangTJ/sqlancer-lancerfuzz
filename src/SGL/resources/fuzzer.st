@@ -162,6 +162,19 @@ public class Fuzzer{
             }
         }
 
+        public void resetError(){
+            this.errors = new ArrayList<>();
+        }
+
+        public boolean isExpectedError(String msg){
+            for (String err: this.errors){
+                if (msg.contains(err)){
+                    return true;
+                }
+            }
+            return false;
+        }
+
         //the calling convention in SGL is:
         //The caller evaluates the arguments and pass its own buffer, the name of the callee, and the arguments here
         //This function will will push the passed arguments to this.args (think arguments passed using registers)
@@ -988,15 +1001,11 @@ public class Fuzzer{
             this.current_stage = 0;
             this.rules = new ArrayList<>();
             this.weights = new ArrayList<>();
-            for (int i=0; i<<STAGE_COUNT/>; i++){
-                List<String> rule = new ArrayList<>();
-                List<Integer> weight = new ArrayList<>();
-                List<Integer> count = new ArrayList<>();
+            this.counts = new ArrayList<>();
+            List<String> rule = new ArrayList<>();
+            List<Integer> weight = new ArrayList<>();
+            List<Integer> count = new ArrayList<>();
 <STAGES/>
-                rules.add(rule);
-                weights.add(weight);
-                counts.add(count);
-            }
         }
 
         public String get_next_rule() throws Exception{
@@ -1030,15 +1039,21 @@ public class Fuzzer{
     public static final int DEFAULT_MAX_REP = 8;
     public static SQLConnection connection = null;
     public static Stages stages = null;
+    public static Context context;
 
-    public static void init() throws Exception{
+    public static void init(SQLConnection conn) throws Exception{
         Fuzzer.rules = new ArrayList<>();
-        if ("<JDBC/>".length()>0){
+        if (conn != null){
+            Fuzzer.connection = conn;
+        }
+        else if ("<JDBC/>".length()>0){
+            <JDBC_CLASS/>
             Fuzzer.connection = new SQLConnection(DriverManager.getConnection("<JDBC/>")); 
         }
         else {
-            Fuzzer.connection = null;
+            throw new Exception("Fuzzer.init :: Fuzzer must be initialized with either compile-time set JDBC string or runtime set SQLConnection, none found");
         }
+        Fuzzer.context = new Context(Fuzzer.connection);
         Fuzzer.stages = new Stages();
         // EXAMPLE:
         // Fuzzer.rules.add("createTable");
@@ -1046,16 +1061,40 @@ public class Fuzzer{
 <INIT_RULES/>
     }
 
-    public static String fuzz_next(){
-        return fuzz_next(Fuzzer.connection);
+    public static String fuzz_next() throws Exception{
+        try {
+            String rule = Fuzzer.stages.get_next_rule();
+            if (rule==null){
+                return null;
+            }
+            return fuzz(rule);
+        }
+        catch (Exception e){
+            Fuzzer.context.resetError();
+            e.printStackTrace();
+            return "--[Internal Exception, moving on]\n" + e.getMessage();
+        }
     }
 
-    public static String fuzz_next(SQLConnection conn) throws Exception{
-        String rule = Fuzzer.stages.get_next_rule();
-        if (rule==null){
-            return null;
+    public static String fuzz_next_and_execute() throws Exception{
+        
+        String stmt = fuzz_next();
+        
+        if (stmt==null || stmt.contains("--[Internal Exception, moving on]")){
+            return stmt;
         }
-        return fuzz(conn, rule);
+        try {
+            Fuzzer.connection.createStatement().execute(stmt);
+            Fuzzer.context.resetError();
+            return stmt;
+        }
+        catch (SQLException se){
+            if (Fuzzer.context.isExpectedError(se.getMessage())){
+                Fuzzer.context.resetError();
+                return "--[Expected Error]:" + se.getMessage();
+            }
+            throw se;
+        }
     }
     // at compile time, each standalone rule (without the fragment modifier)
     // will register itself here
@@ -1070,16 +1109,7 @@ public class Fuzzer{
 
     // this is the entry point
     public static String fuzz(String rule) throws Exception{
-        if (Fuzzer.connection==null) {
-            throw new Exception("Fuzzer::fuzz : JDBC connection string not configured");
-        }
-        return fuzz(Fuzzer.connection, rule);
-    }
-
-    // this is the entry point
-    public static String fuzz(SQLConnection conn, String rule) throws Exception{
-        Context ctx = new Context(conn);
-        Buffer buf = dispatch(ctx, rule);
+        Buffer buf = dispatch(Fuzzer.context, rule);
         return buf.toString();
     }
 

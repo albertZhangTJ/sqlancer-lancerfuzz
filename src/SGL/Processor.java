@@ -123,7 +123,7 @@ public class Processor {
 
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter("Fuzzer.java"));
-            writer.write(graph.render(template).toCharArray());
+            writer.write(graph.render(template, stages, dbms_options).toCharArray());
             writer.close();
             Utils.log_stage("Fuzzer rendered");
         }

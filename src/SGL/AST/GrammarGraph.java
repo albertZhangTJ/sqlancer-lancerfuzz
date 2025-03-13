@@ -7,8 +7,9 @@ import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import SGL.DBMSOption;
 import SGL.Options;
-
+import SGL.Stage;
 import SGL.Utils;
 import SGL.parser.SGLParser.*;
 
@@ -253,7 +254,7 @@ public class GrammarGraph{
         return template;
     }
 
-    public String render(String template){
+    public String render(String template, List<Stage> stages, List<DBMSOption> options){
         //step 1: render all rules in the current graph
         //replace the <RULES/> tab in the template
         List<String> func_list = new ArrayList<>();
@@ -269,6 +270,17 @@ public class GrammarGraph{
         }
         for (String rule: func_list){
             template = render_tag(template, "RULES", rule);
+        }
+        for (Stage stage: stages){
+            template = render_tag(template, "STAGES", stage.render());
+        }
+        for (DBMSOption opt: options){
+            if (opt.get_name().equals("JDBC")){
+                template = render_tag(template, "JDBC", opt.get_default());
+            }
+            if (opt.get_name().equals("JDBC_CLASS")){
+                template = render_tag(template, "JDBC_CLASS", "Class.forName(\"" + opt.get_default() + "\");\n");
+            }
         }
         return strip_tags(template);
     }

@@ -1,0 +1,88 @@
+
+{   
+    "options" : [
+        {
+            "name" : "JDBC", 
+            "default" : "jdbc:mysql://localhost:3306/?user=sqlancer&password=sqlancer",
+            "description" : "JDBC URL to the target DBMS, replace with actual info" 
+        },
+        {
+            "name" : "JDBC_CLASS", 
+            "default" : "com.mysql.cj.jdbc.Driver"
+        }
+    ],
+    "stages" : [
+    	{
+            "name" : "dropDatabase",
+            "rules" : [
+                "dropDatabase"
+            ],
+            "min" : 1,
+            "max" : 1
+        },
+        {
+            "name" : "dropSchema",
+            "rules" : [
+                "dropSchema"
+            ],
+            "min" : 1,
+            "max" : 1
+        },
+        {
+            "name" : "createDatabase",
+            "rules" : [
+                "createDatabase"
+            ],
+            "min" : 1,
+            "max" : 1
+        },
+        {
+            "name" : "useDatabase",
+            "rules" : [
+                "useDatabase"
+            ],
+            "min" : 1,
+            "max" : 1
+        },
+    	{
+            "name" : "create",
+            "rules" : [
+                "createTable"
+            ],
+            "min" : 50,
+            "max" : 300
+        },
+   		{
+            "name" : "insert",
+            "rules" : [
+                "insertStatement"
+            ],
+            "min" : 500,
+            "max" : 1500
+        },
+        {
+            "name" : "update",
+            "rules" : [
+                "updateStatement"
+            ],
+            "min" : 100,
+            "max" : 500
+        },
+        {
+            "name" : "mix",
+            "rules" : [
+                "alterTable",
+                "createTable",
+                "insertStatement",
+                "updateStatement",
+                "truncateTable",
+                "createIndex"
+            ],
+            "weights" : [
+                1, 2, 5, 5, 1, 2
+            ],
+            "min" : 500,
+            "max" : 1500
+        }
+    ]
+}

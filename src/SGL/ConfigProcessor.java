@@ -53,14 +53,14 @@ public class ConfigProcessor {
                 Utils.oops("ConfigProcessor::get_stages : length of weights declaration found for stage "+stage.getString("name")+" does not match that of rules declaration, using uniform probability");
             }
             List<String> stmts = new ArrayList<>();
-            List<Double> wl = new ArrayList<>();
+            List<Integer> wl = new ArrayList<>();
             for (int j=0; j<rules.length(); j++){
                 stmts.add(rules.getString(j));
                 if (has_valid_weights){
-                    wl.add(weights.getDouble(j));
+                    wl.add(weights.getInt(j));
                 }
                 else {
-                    wl.add(1.0);
+                    wl.add(1);
                 }
             }
             ans.add(new Stage(stage.getString("name"), stmts, wl, stage.getInt("min"), stage.getInt("max")));

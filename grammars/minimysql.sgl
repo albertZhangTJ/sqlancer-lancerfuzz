@@ -31,11 +31,11 @@ alterTable
 
 fragment alterSpecification
     : 
-    ADD COLUMN? new[column] columnDefinition FIRST?    
-    | ADD COLUMN? '(' (column.new columnDefinition)**random[1, 3, ','] ')' 
+    ADD COLUMN? new['column'] columnDefinition FIRST?    
+    | ADD COLUMN? '(' (new['column'] columnDefinition)**random[1, 3, ','] ')' 
     | DROP COLUMN? column[t].unique_any error['delete all', 'has a partitioning function dependency']
     | DROP PRIMARY KEY error['primary']
-    | RENAME ( TO | AS ) new[table]
+    | RENAME ( TO | AS ) new['table']
     | RENAME COLUMN column[t].unique_any TO column.unique_any error['has a partitioning function dependency and cannot be dropped or renamed']
     ;
 
@@ -44,7 +44,7 @@ fragment columnDefinition
     ;
 
 dropDatabase
-    : DROP DATABASE ifExists DB = new[db] SC
+    : DROP DATABASE ifExists DB = new['database'] SC
     ;
 
 dropSchema
@@ -63,9 +63,9 @@ useDatabase
 createTable
     : CREATE error['A BLOB field is not allowed in partition function', 'is of a not allowed type for this type of partitioning'] 
       ( 90% ' '  | TEMPORARY error['Cannot create temporary table with partitions'] ) TABLE 
-        ifNotExists? table.new
+        ifNotExists? new['table']
         (
-            90% LB ( cn+=column.new columnDefinition)**random[1, 5, ',', 10] RB 
+            90% LB ( cn+=new['column'] columnDefinition)**random[1, 5, ',', 30] RB 
             ( 80% ' '  |
                     ' ENGINE ' EQ (' MyISAM ' | ' InnoDB ' ) |
                     PARTITION BY (LINEAR)? error['allowed type']
@@ -85,7 +85,7 @@ createIndex
         49% FULLTEXT error['cannot be part of',' support FULLTEXT indexes'] | 
         error['A SPATIAL index may only contain a geometrical type column']  SPATIAL
     ) )**random[0, 1, 90]
-    INDEX index.new
+    INDEX new['index']
     ON t=table.any c=$column[t] '(' ( c.unique_any )**random[1, 6] ')'
     (
         ALGORITHM EQ (DEFAULT | INPLACE | COPY)
@@ -104,17 +104,17 @@ insertStatement
     ;
 
 updateStatement
-    : UPDATE error['Duplicate'] LOW_PRIORITY? IGNORE? t=tableName 
+    : UPDATE error['Duplicate'] LOW_PRIORITY? IGNORE? t=table.any
     SET (cc=columnName[t].any '=' expression[cc])**random[1,6] (WHERE (NOT)? cc=columnName[t].any '=' expression[cc])? SC
     ;
 
-expression [type]
-    : int_expr <type=='INT'>
-    | text_expr <type=='TEXT'> 
-    | float_expr <type=='FLOAT'>
-    | least 
-    | greatest 
-    | if_func;
+expression [type='default']
+    : int_val <type=='INT'>
+    | text_val <type=='TEXT'> 
+    | float_val <type=='FLOAT'>;
+    //| least 
+    //| greatest 
+    //| if_func;
 
 selectStatement [rep=random[1,5,',']] returns [c] :
     @2
@@ -125,22 +125,22 @@ selectStatement [rep=random[1,5,',']] returns [c] :
         | ASTERISK
     ) 
     @1
-	FROM ( tt=table_name.any tt.c=$column_name[tt] t+=$tt | '(' cc=query_core ')' AS tt=table_name.new tt.c=$cc t+=$tt)
+	FROM ( tt=table.any tt.c=$column_name[tt] t+=$tt | '(' cc=selectStatement ')' AS tt=new['table'] tt.c=$cc t+=$tt)
 	//no separate needed since it is directly positioned after the FROM clause
     (
-		JOIN ( tt=table_name tt.c=$column_name[tt] t+=$tt | '(' cc=query_core ')' AS tt=table_name.new tt.c=$cc t+=$tt)
+		JOIN ( tt=table.any tt.c=$column_name[tt] t+=$tt | '(' cc=selectStatement ')' AS tt=new['table'] tt.c=$cc t+=$tt)
 	)?
     @3
     where_predicate?
 	( 
-		( UNION | INTERSECT ) query_core[random[c.len,',']]
+		( UNION | INTERSECT ) selectStatement[random[c.len,',']]
 	)?
 	;
 	
 where_predicate:
 	WHERE predicate
-	| WHERE c IN '(' query_core[random[1]] ')'
-	| WHERE NOT? EXISTS '(' query_core ')'
+	| WHERE c IN '(' selectStatement[1] ')'
+	| WHERE NOT? EXISTS '(' selectStatement ')'
 	;
 
 predicate : ( 50%'(' pivot=$t.any.c.any ( expression[pivot] | (tt=t DOT | tt=$t )  cc=tt.c.filter[type==pivot.type].any ) 
@@ -181,9 +181,9 @@ text_expr : ( 70% text_val | substr | substring | lcase | ucase | space | trim |
 text_val :  DQ ( (CH | DIGIT) )**random[1, 100] DQ ;
 
 db returns [d] : d=$query['SHOW DATABASES;', 'Database'] ;
-table returns [t] : t=$query['SHOW TABLES;', 'Tables_in_'+DB];
-column [table] returns [c] : c=$query['SHOW COLUMNS FROM '+table, 'Field'];
-index [table] returns [i] : i=$query['SHOW INDEX FROM '+table, 'Key_name'];
+table returns [t] : t=$query['SHOW TABLES;', 'Tables_in_'$+DB];
+column [t] returns [c] : c=$query['SHOW COLUMNS FROM '$+t, 'Field'];
+index [t] returns [i] : i=$query['SHOW INDEX FROM '$+t, 'Key_name'];
 
 
     
