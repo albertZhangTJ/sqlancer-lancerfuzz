@@ -488,10 +488,9 @@ public class Fuzzer{
             ResultSet rs = this.conn.createStatement().executeQuery(query);
             while (rs.next()){
                 Variable r = Variable.factory(rs.getString(col));
-                for (int i=2; i<args.size(); i++){
-                    Variable pair = args.get(i);
-                    String attrCol = pair.getEntry(0).getValue();
-                    String attr = pair.getEntry(1).getValue();
+                for (int i=2; i<args.size(); i=i+2){
+                    String attrCol = args.get(i).getValue();
+                    String attr = args.get(i+1).getValue();
                     r.setAttr(attr, Variable.factory(rs.getString(attrCol)));
                 }
                 v.addEntry(r);
@@ -1067,33 +1066,41 @@ public class Fuzzer{
             if (rule==null){
                 return null;
             }
+            //System.out.println("-- Generating for rule: " + rule);
             return fuzz(rule);
         }
         catch (Exception e){
             Fuzzer.context.resetError();
-            e.printStackTrace();
-            return "--[Internal Exception, moving on]\n" + e.getMessage();
+            throw e;
         }
     }
 
     public static String fuzz_next_and_execute() throws Exception{
         
-        String stmt = fuzz_next();
-        
-        if (stmt==null || stmt.contains("--[Internal Exception, moving on]")){
-            return stmt;
-        }
         try {
-            Fuzzer.connection.createStatement().execute(stmt);
-            Fuzzer.context.resetError();
-            return stmt;
-        }
-        catch (SQLException se){
-            if (Fuzzer.context.isExpectedError(se.getMessage())){
-                Fuzzer.context.resetError();
-                return "--[Expected Error]:" + se.getMessage();
+            String stmt = fuzz_next();
+            
+            if (stmt==null || stmt.contains("--[Internal Exception, moving on]")){
+                return stmt;
             }
-            throw se;
+            try {
+                Fuzzer.connection.createStatement().execute(stmt);
+                Fuzzer.context.resetError();
+                return stmt;
+            }
+            catch (SQLException se){
+                System.out.println(stmt + " -- ERROR!");
+                if (Fuzzer.context.isExpectedError(se.getMessage())){
+                    Fuzzer.context.resetError();
+                    return "--[Expected Error]:" + se.getMessage();
+                }
+                throw se;
+            }
+        }
+        catch (UnavailableException | DeadEndException ue){
+            Fuzzer.context.resetError();
+            //ue.printStackTrace();
+            return "--[Unavailable Error]: don't worry if you see this occasionally" + ue.getMessage();
         }
     }
     // at compile time, each standalone rule (without the fragment modifier)

@@ -488,10 +488,9 @@ public class Fuzzer{
             ResultSet rs = this.conn.createStatement().executeQuery(query);
             while (rs.next()){
                 Variable r = Variable.factory(rs.getString(col));
-                for (int i=2; i<args.size(); i++){
-                    Variable pair = args.get(i);
-                    String attrCol = pair.getEntry(0).getValue();
-                    String attr = pair.getEntry(1).getValue();
+                for (int i=2; i<args.size(); i=i+2){
+                    String attrCol = args.get(i).getValue();
+                    String attr = args.get(i+1).getValue();
                     r.setAttr(attr, Variable.factory(rs.getString(attrCol)));
                 }
                 v.addEntry(r);
@@ -1460,33 +1459,41 @@ public class Fuzzer{
             if (rule==null){
                 return null;
             }
+            //System.out.println("-- Generating for rule: " + rule);
             return fuzz(rule);
         }
         catch (Exception e){
             Fuzzer.context.resetError();
-            e.printStackTrace();
-            return "--[Internal Exception, moving on]\n" + e.getMessage();
+            throw e;
         }
     }
 
     public static String fuzz_next_and_execute() throws Exception{
         
-        String stmt = fuzz_next();
-        
-        if (stmt==null || stmt.contains("--[Internal Exception, moving on]")){
-            return stmt;
-        }
         try {
-            Fuzzer.connection.createStatement().execute(stmt);
-            Fuzzer.context.resetError();
-            return stmt;
-        }
-        catch (SQLException se){
-            if (Fuzzer.context.isExpectedError(se.getMessage())){
-                Fuzzer.context.resetError();
-                return "--[Expected Error]:" + se.getMessage();
+            String stmt = fuzz_next();
+            
+            if (stmt==null || stmt.contains("--[Internal Exception, moving on]")){
+                return stmt;
             }
-            throw se;
+            try {
+                Fuzzer.connection.createStatement().execute(stmt);
+                Fuzzer.context.resetError();
+                return stmt;
+            }
+            catch (SQLException se){
+                System.out.println(stmt + " -- ERROR!");
+                if (Fuzzer.context.isExpectedError(se.getMessage())){
+                    Fuzzer.context.resetError();
+                    return "--[Expected Error]:" + se.getMessage();
+                }
+                throw se;
+            }
+        }
+        catch (UnavailableException | DeadEndException ue){
+            Fuzzer.context.resetError();
+            //ue.printStackTrace();
+            return "--[Unavailable Error]: don't worry if you see this occasionally" + ue.getMessage();
         }
     }
     // at compile time, each standalone rule (without the fragment modifier)
@@ -1950,7 +1957,7 @@ public class Fuzzer{
     // The following lines are generated from line 29
     public static Buffer node16(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        Variable v = ctx.getSymbol(buf, "random", packList(Variable.factory(1),Variable.factory(6),Variable.factory(",")));
+        Variable v = ctx.getSymbol(buf, "random", packList(Variable.factory(1),Variable.factory(6),Variable.factory(","),Variable.factory(75)));
         int rep = v.getNumerical();
         String delimiter = v.getAttr("delimiter", null).isPlaceHolder() ? "" : v.getAttr("delimiter", null).getValue();
         for (int i=0; i<rep; i++){
@@ -1997,116 +2004,8 @@ public class Fuzzer{
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 34
-    public static Buffer node33(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        int rep = Rand.random(0, 1);
-        String delimiter = "";
-        for (int i=0; i<rep; i++){
-            if (i!=0){
-                buf.add(Variable.factory(delimiter));
-            }
-            // The following lines are generated from line 34
-            buf.add(ctx.getSymbol(buf, "COLUMN", new ArrayList<>()));
-        }
-        return buf;
-    }
-    // The following lines are generated from line 34
-    public static Buffer node41(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        int rep = Rand.random(0, 1);
-        String delimiter = "";
-        for (int i=0; i<rep; i++){
-            if (i!=0){
-                buf.add(Variable.factory(delimiter));
-            }
-            // The following lines are generated from line 34
-            buf.add(ctx.getSymbol(buf, "FIRST", new ArrayList<>()));
-        }
-        return buf;
-    }
-    // The following lines are generated from line 34
-    public static Buffer node30(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 34
-        buf.add(ctx.getSymbol(buf, "ADD", new ArrayList<>()));
-
-        // The following lines are generated from line 34
-        buf.add(node33(ctx));
-
-        // The following lines are generated from line 34
-        buf.add(ctx.getSymbol(buf, "new", packList(Variable.factory("column"))));
-
-        // The following lines are generated from line 34
-        buf.add(ctx.getSymbol(buf, "columnDefinition", new ArrayList<>()));
-
-        // The following lines are generated from line 34
-        buf.add(node41(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 35
-    public static Buffer node47(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        int rep = Rand.random(0, 1);
-        String delimiter = "";
-        for (int i=0; i<rep; i++){
-            if (i!=0){
-                buf.add(Variable.factory(delimiter));
-            }
-            // The following lines are generated from line 35
-            buf.add(ctx.getSymbol(buf, "COLUMN", new ArrayList<>()));
-        }
-        return buf;
-    }
-    // The following lines are generated from line 35
-    public static Buffer node53(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 35
-        buf.add(ctx.getSymbol(buf, "new", packList(Variable.factory("column"))));
-
-        // The following lines are generated from line 35
-        buf.add(ctx.getSymbol(buf, "columnDefinition", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 35
-    public static Buffer node51(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        Variable v = ctx.getSymbol(buf, "random", packList(Variable.factory(1),Variable.factory(3),Variable.factory(",")));
-        int rep = v.getNumerical();
-        String delimiter = v.getAttr("delimiter", null).isPlaceHolder() ? "" : v.getAttr("delimiter", null).getValue();
-        for (int i=0; i<rep; i++){
-            if (i!=0){
-                buf.add(Variable.factory(delimiter));
-            }
-            // The following lines are generated from line 35
-            buf.add(node53(ctx));
-        }
-        return buf;
-    }
-    // The following lines are generated from line 35
-    public static Buffer node44(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 35
-        buf.add(ctx.getSymbol(buf, "ADD", new ArrayList<>()));
-
-        // The following lines are generated from line 35
-        buf.add(node47(ctx));
-
-        // The following lines are generated from line 35
-        buf.add(Variable.factory("("));
-
-        // The following lines are generated from line 35
-        buf.add(node51(ctx));
-
-        // The following lines are generated from line 35
-        buf.add(Variable.factory(")"));
-
-        return buf;
-    }
     // The following lines are generated from line 36
-    public static Buffer node68(Context ctx) throws Exception{
+    public static Buffer node43(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         int rep = Rand.random(0, 1);
         String delimiter = "";
@@ -2120,95 +2019,203 @@ public class Fuzzer{
         return buf;
     }
     // The following lines are generated from line 36
-    public static Buffer node65(Context ctx) throws Exception{
+    public static Buffer node51(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        int rep = Rand.random(0, 1);
+        String delimiter = "";
+        for (int i=0; i<rep; i++){
+            if (i!=0){
+                buf.add(Variable.factory(delimiter));
+            }
+            // The following lines are generated from line 36
+            buf.add(ctx.getSymbol(buf, "FIRST", new ArrayList<>()));
+        }
+        return buf;
+    }
+    // The following lines are generated from line 36
+    public static Buffer node40(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 36
-        buf.add(ctx.getSymbol(buf, "DROP", new ArrayList<>()));
+        buf.add(ctx.getSymbol(buf, "ADD", new ArrayList<>()));
 
         // The following lines are generated from line 36
-        buf.add(node68(ctx));
+        buf.add(node43(ctx));
 
         // The following lines are generated from line 36
-        buf.add(ctx.getSymbol(buf, "column", packList(ctx.getSymbol(buf, "t", new ArrayList<>()))).getAttr("unique_any", new ArrayList<>()));
+        buf.add(ctx.getSymbol(buf, "new", packList(Variable.factory("column"))));
 
         // The following lines are generated from line 36
-        buf.add(ctx.getSymbol(buf, "error", packList(Variable.factory("delete all"),Variable.factory("has a partitioning function dependency"))));
+        buf.add(ctx.getSymbol(buf, "columnDefinition", new ArrayList<>()));
+
+        // The following lines are generated from line 36
+        buf.add(node51(ctx));
 
         return buf;
     }
     // The following lines are generated from line 37
-    public static Buffer node80(Context ctx) throws Exception{
+    public static Buffer node57(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        int rep = Rand.random(0, 1);
+        String delimiter = "";
+        for (int i=0; i<rep; i++){
+            if (i!=0){
+                buf.add(Variable.factory(delimiter));
+            }
+            // The following lines are generated from line 37
+            buf.add(ctx.getSymbol(buf, "COLUMN", new ArrayList<>()));
+        }
+        return buf;
+    }
+    // The following lines are generated from line 37
+    public static Buffer node63(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 37
-        buf.add(ctx.getSymbol(buf, "DROP", new ArrayList<>()));
+        buf.add(ctx.getSymbol(buf, "new", packList(Variable.factory("column"))));
 
         // The following lines are generated from line 37
-        buf.add(ctx.getSymbol(buf, "PRIMARY", new ArrayList<>()));
+        buf.add(ctx.getSymbol(buf, "columnDefinition", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 37
+    public static Buffer node61(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        Variable v = ctx.getSymbol(buf, "random", packList(Variable.factory(1),Variable.factory(3),Variable.factory(","),Variable.factory(75)));
+        int rep = v.getNumerical();
+        String delimiter = v.getAttr("delimiter", null).isPlaceHolder() ? "" : v.getAttr("delimiter", null).getValue();
+        for (int i=0; i<rep; i++){
+            if (i!=0){
+                buf.add(Variable.factory(delimiter));
+            }
+            // The following lines are generated from line 37
+            buf.add(node63(ctx));
+        }
+        return buf;
+    }
+    // The following lines are generated from line 37
+    public static Buffer node54(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 37
+        buf.add(ctx.getSymbol(buf, "ADD", new ArrayList<>()));
 
         // The following lines are generated from line 37
-        buf.add(ctx.getSymbol(buf, "KEY", new ArrayList<>()));
+        buf.add(node57(ctx));
 
         // The following lines are generated from line 37
-        buf.add(ctx.getSymbol(buf, "error", packList(Variable.factory("primary"))));
+        buf.add(Variable.factory("("));
+
+        // The following lines are generated from line 37
+        buf.add(node61(ctx));
+
+        // The following lines are generated from line 37
+        buf.add(Variable.factory(")"));
 
         return buf;
     }
     // The following lines are generated from line 38
-    public static Buffer node93(Context ctx) throws Exception{
+    public static Buffer node79(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        int rep = Rand.random(0, 1);
+        String delimiter = "";
+        for (int i=0; i<rep; i++){
+            if (i!=0){
+                buf.add(Variable.factory(delimiter));
+            }
+            // The following lines are generated from line 38
+            buf.add(ctx.getSymbol(buf, "COLUMN", new ArrayList<>()));
+        }
+        return buf;
+    }
+    // The following lines are generated from line 38
+    public static Buffer node76(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 38
+        buf.add(ctx.getSymbol(buf, "DROP", new ArrayList<>()));
+
+        // The following lines are generated from line 38
+        buf.add(node79(ctx));
+
+        // The following lines are generated from line 38
+        buf.add(ctx.getSymbol(buf, "c", new ArrayList<>()).getAttr("unique_any", new ArrayList<>()));
+
+        // The following lines are generated from line 38
+        buf.add(ctx.getSymbol(buf, "error", packList(Variable.factory("delete all"),Variable.factory("has a partitioning function dependency"))));
+
+        return buf;
+    }
+    // The following lines are generated from line 39
+    public static Buffer node89(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 39
+        buf.add(ctx.getSymbol(buf, "DROP", new ArrayList<>()));
+
+        // The following lines are generated from line 39
+        buf.add(ctx.getSymbol(buf, "PRIMARY", new ArrayList<>()));
+
+        // The following lines are generated from line 39
+        buf.add(ctx.getSymbol(buf, "KEY", new ArrayList<>()));
+
+        // The following lines are generated from line 39
+        buf.add(ctx.getSymbol(buf, "error", packList(Variable.factory("primary"))));
+
+        return buf;
+    }
+    // The following lines are generated from line 40
+    public static Buffer node102(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 50.0);
         opt.addOption(1, 50.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 38
+            // The following lines are generated from line 40
             buf.add(ctx.getSymbol(buf, "TO", new ArrayList<>()));
         }
         if(index==1){
-            // The following lines are generated from line 38
+            // The following lines are generated from line 40
             buf.add(ctx.getSymbol(buf, "AS", new ArrayList<>()));
         }
         return buf;
     }
-    // The following lines are generated from line 38
-    public static Buffer node90(Context ctx) throws Exception{
+    // The following lines are generated from line 40
+    public static Buffer node99(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 38
+        // The following lines are generated from line 40
         buf.add(ctx.getSymbol(buf, "RENAME", new ArrayList<>()));
 
-        // The following lines are generated from line 38
-        buf.add(node93(ctx));
+        // The following lines are generated from line 40
+        buf.add(node102(ctx));
 
-        // The following lines are generated from line 38
+        // The following lines are generated from line 40
         buf.add(ctx.getSymbol(buf, "new", packList(Variable.factory("table"))));
 
         return buf;
     }
-    // The following lines are generated from line 39
-    public static Buffer node103(Context ctx) throws Exception{
+    // The following lines are generated from line 41
+    public static Buffer node112(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 39
+        // The following lines are generated from line 41
         buf.add(ctx.getSymbol(buf, "RENAME", new ArrayList<>()));
 
-        // The following lines are generated from line 39
+        // The following lines are generated from line 41
         buf.add(ctx.getSymbol(buf, "COLUMN", new ArrayList<>()));
 
-        // The following lines are generated from line 39
-        buf.add(ctx.getSymbol(buf, "column", packList(ctx.getSymbol(buf, "t", new ArrayList<>()))).getAttr("unique_any", new ArrayList<>()));
+        // The following lines are generated from line 41
+        buf.add(ctx.getSymbol(buf, "c", new ArrayList<>()).getAttr("unique_any", new ArrayList<>()));
 
-        // The following lines are generated from line 39
+        // The following lines are generated from line 41
         buf.add(ctx.getSymbol(buf, "TO", new ArrayList<>()));
 
-        // The following lines are generated from line 39
-        buf.add(ctx.getSymbol(buf, "column", new ArrayList<>()).getAttr("unique_any", new ArrayList<>()));
+        // The following lines are generated from line 41
+        buf.add(ctx.getSymbol(buf, "new", packList(Variable.factory("column"))));
 
-        // The following lines are generated from line 39
+        // The following lines are generated from line 41
         buf.add(ctx.getSymbol(buf, "error", packList(Variable.factory("has a partitioning function dependency and cannot be dropped or renamed"))));
 
         return buf;
     }
-    // The following lines are generated from line 34
-    public static Buffer node29(Context ctx) throws Exception{
+    // The following lines are generated from line 36
+    public static Buffer node39(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 16.666666666666668);
@@ -2219,41 +2226,52 @@ public class Fuzzer{
         opt.addOption(5, 16.666666666666668);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 34
-            buf.add(node30(ctx));
+            // The following lines are generated from line 36
+            buf.add(node40(ctx));
         }
         if(index==1){
-            // The following lines are generated from line 35
-            buf.add(node44(ctx));
+            // The following lines are generated from line 37
+            buf.add(node54(ctx));
         }
         if(index==2){
-            // The following lines are generated from line 36
-            buf.add(node65(ctx));
+            // The following lines are generated from line 38
+            buf.add(node76(ctx));
         }
         if(index==3){
-            // The following lines are generated from line 37
-            buf.add(node80(ctx));
+            // The following lines are generated from line 39
+            buf.add(node89(ctx));
         }
         if(index==4){
-            // The following lines are generated from line 38
-            buf.add(node90(ctx));
+            // The following lines are generated from line 40
+            buf.add(node99(ctx));
         }
         if(index==5){
-            // The following lines are generated from line 39
-            buf.add(node103(ctx));
+            // The following lines are generated from line 41
+            buf.add(node112(ctx));
         }
+        return buf;
+    }
+    // The following lines are generated from line 34
+    public static Buffer node31(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 34
+        ctx.eval(ctx.getSymbol(buf, "c", new ArrayList<>()), "=", ctx.getSymbol(buf, "column", packList(ctx.getSymbol(buf, "t", new ArrayList<>()))));
+
+        // The following lines are generated from line 36
+        buf.add(node39(ctx));
+
         return buf;
     }
     // The following lines are generated from line -1
     public static Buffer alterSpecification(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 34
-        buf.add(node29(ctx));
+        buf.add(node31(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 43
-    public static Buffer node122(Context ctx) throws Exception{
+    // The following lines are generated from line 46
+    public static Buffer node129(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 33.333333333333336);
@@ -2261,15 +2279,15 @@ public class Fuzzer{
         opt.addOption(2, 33.333333333333336);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 43
+            // The following lines are generated from line 46
             buf.add(Variable.factory(" FLOAT "));
         }
         if(index==1){
-            // The following lines are generated from line 43
+            // The following lines are generated from line 46
             buf.add(Variable.factory(" INT "));
         }
         if(index==2){
-            // The following lines are generated from line 43
+            // The following lines are generated from line 46
             buf.add(Variable.factory(" TEXT "));
         }
         return buf;
@@ -2277,27 +2295,27 @@ public class Fuzzer{
     // The following lines are generated from line -1
     public static Buffer columnDefinition(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 43
-        buf.add(node122(ctx));
+        // The following lines are generated from line 46
+        buf.add(node129(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 47
-    public static Buffer node131(Context ctx) throws Exception{
+    // The following lines are generated from line 50
+    public static Buffer node138(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 47
+        // The following lines are generated from line 50
         buf.add(ctx.getSymbol(buf, "DROP", new ArrayList<>()));
 
-        // The following lines are generated from line 47
+        // The following lines are generated from line 50
         buf.add(ctx.getSymbol(buf, "DATABASE", new ArrayList<>()));
 
-        // The following lines are generated from line 47
+        // The following lines are generated from line 50
         buf.add(ctx.getSymbol(buf, "ifExists", new ArrayList<>()));
 
-        // The following lines are generated from line 47
+        // The following lines are generated from line 50
         buf.add(ctx.eval(ctx.getSymbol(buf, "DB", new ArrayList<>()), "=", ctx.getSymbol(buf, "new", packList(Variable.factory("database")))));
 
-        // The following lines are generated from line 47
+        // The following lines are generated from line 50
         buf.add(ctx.getSymbol(buf, "SC", new ArrayList<>()));
 
         return buf;
@@ -2308,28 +2326,28 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 47
-        buf.add(node131(ctx));
+        // The following lines are generated from line 50
+        buf.add(node138(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 51
-    public static Buffer node148(Context ctx) throws Exception{
+    // The following lines are generated from line 54
+    public static Buffer node155(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 51
+        // The following lines are generated from line 54
         buf.add(ctx.getSymbol(buf, "DROP", new ArrayList<>()));
 
-        // The following lines are generated from line 51
+        // The following lines are generated from line 54
         buf.add(ctx.getSymbol(buf, "SCHEMA", new ArrayList<>()));
 
-        // The following lines are generated from line 51
+        // The following lines are generated from line 54
         buf.add(ctx.getSymbol(buf, "ifExists", new ArrayList<>()));
 
-        // The following lines are generated from line 51
+        // The following lines are generated from line 54
         buf.add(ctx.getSymbol(buf, "DB", new ArrayList<>()));
 
-        // The following lines are generated from line 51
+        // The following lines are generated from line 54
         buf.add(ctx.getSymbol(buf, "SC", new ArrayList<>()));
 
         return buf;
@@ -2340,31 +2358,31 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 51
-        buf.add(node148(ctx));
+        // The following lines are generated from line 54
+        buf.add(node155(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 56
-    public static Buffer node164(Context ctx) throws Exception{
+    // The following lines are generated from line 59
+    public static Buffer node171(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 50.0);
         opt.addOption(1, 50.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 56
+            // The following lines are generated from line 59
             buf.add(ctx.getSymbol(buf, "DATABASE", new ArrayList<>()));
         }
         if(index==1){
-            // The following lines are generated from line 56
+            // The following lines are generated from line 59
             buf.add(ctx.getSymbol(buf, "SCHEMA", new ArrayList<>()));
         }
         return buf;
     }
-    // The following lines are generated from line 56
-    public static Buffer node171(Context ctx) throws Exception{
+    // The following lines are generated from line 59
+    public static Buffer node178(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         int rep = Rand.random(0, 1);
         String delimiter = "";
@@ -2372,27 +2390,27 @@ public class Fuzzer{
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 56
+            // The following lines are generated from line 59
             buf.add(ctx.getSymbol(buf, "ifNotExists", new ArrayList<>()));
         }
         return buf;
     }
-    // The following lines are generated from line 56
-    public static Buffer node161(Context ctx) throws Exception{
+    // The following lines are generated from line 59
+    public static Buffer node168(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 56
+        // The following lines are generated from line 59
         buf.add(ctx.getSymbol(buf, "CREATE", new ArrayList<>()));
 
-        // The following lines are generated from line 56
-        buf.add(node164(ctx));
-
-        // The following lines are generated from line 56
+        // The following lines are generated from line 59
         buf.add(node171(ctx));
 
-        // The following lines are generated from line 56
+        // The following lines are generated from line 59
+        buf.add(node178(ctx));
+
+        // The following lines are generated from line 59
         buf.add(ctx.getSymbol(buf, "DB", new ArrayList<>()));
 
-        // The following lines are generated from line 56
+        // The following lines are generated from line 59
         buf.add(ctx.getSymbol(buf, "SC", new ArrayList<>()));
 
         return buf;
@@ -2403,22 +2421,22 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 56
-        buf.add(node161(ctx));
+        // The following lines are generated from line 59
+        buf.add(node168(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 60
-    public static Buffer node180(Context ctx) throws Exception{
+    // The following lines are generated from line 63
+    public static Buffer node187(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 60
+        // The following lines are generated from line 63
         buf.add(ctx.getSymbol(buf, "USE", new ArrayList<>()));
 
-        // The following lines are generated from line 60
+        // The following lines are generated from line 63
         buf.add(ctx.getSymbol(buf, "DB", new ArrayList<>()));
 
-        // The following lines are generated from line 60
+        // The following lines are generated from line 63
         buf.add(ctx.getSymbol(buf, "SC", new ArrayList<>()));
 
         return buf;
@@ -2429,42 +2447,42 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 60
-        buf.add(node180(ctx));
+        // The following lines are generated from line 63
+        buf.add(node187(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 65
-    public static Buffer node199(Context ctx) throws Exception{
+    // The following lines are generated from line 68
+    public static Buffer node206(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 65
+        // The following lines are generated from line 68
         buf.add(ctx.getSymbol(buf, "TEMPORARY", new ArrayList<>()));
 
-        // The following lines are generated from line 65
+        // The following lines are generated from line 68
         buf.add(ctx.getSymbol(buf, "error", packList(Variable.factory("Cannot create temporary table with partitions"))));
 
         return buf;
     }
-    // The following lines are generated from line 65
-    public static Buffer node196(Context ctx) throws Exception{
+    // The following lines are generated from line 68
+    public static Buffer node203(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 90.0);
         opt.addOption(1, 10.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 65
+            // The following lines are generated from line 68
             buf.add(Variable.factory(" "));
         }
         if(index==1){
-            // The following lines are generated from line 65
-            buf.add(node199(ctx));
+            // The following lines are generated from line 68
+            buf.add(node206(ctx));
         }
         return buf;
     }
-    // The following lines are generated from line 66
-    public static Buffer node207(Context ctx) throws Exception{
+    // The following lines are generated from line 69
+    public static Buffer node214(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         int rep = Rand.random(0, 1);
         String delimiter = "";
@@ -2472,24 +2490,24 @@ public class Fuzzer{
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 66
+            // The following lines are generated from line 69
             buf.add(ctx.getSymbol(buf, "ifNotExists", new ArrayList<>()));
         }
         return buf;
     }
-    // The following lines are generated from line 68
-    public static Buffer node219(Context ctx) throws Exception{
+    // The following lines are generated from line 71
+    public static Buffer node226(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 68
+        // The following lines are generated from line 71
         buf.add(ctx.eval(ctx.getSymbol(buf, "cn", new ArrayList<>()), "+=", ctx.getSymbol(buf, "new", packList(Variable.factory("column")))));
 
-        // The following lines are generated from line 68
+        // The following lines are generated from line 71
         buf.add(ctx.getSymbol(buf, "columnDefinition", new ArrayList<>()));
 
         return buf;
     }
-    // The following lines are generated from line 68
-    public static Buffer node217(Context ctx) throws Exception{
+    // The following lines are generated from line 71
+    public static Buffer node224(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Variable v = ctx.getSymbol(buf, "random", packList(Variable.factory(1),Variable.factory(5),Variable.factory(","),Variable.factory(30)));
         int rep = v.getNumerical();
@@ -2498,134 +2516,13 @@ public class Fuzzer{
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 68
-            buf.add(node219(ctx));
-        }
-        return buf;
-    }
-    // The following lines are generated from line 70
-    public static Buffer node243(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        Options opt = new Options();
-        opt.addOption(0, 50.0);
-        opt.addOption(1, 50.0);
-        int index = opt.randomly();
-        if(index==0){
-            // The following lines are generated from line 70
-            buf.add(Variable.factory(" MyISAM "));
-        }
-        if(index==1){
-            // The following lines are generated from line 70
-            buf.add(Variable.factory(" InnoDB "));
-        }
-        return buf;
-    }
-    // The following lines are generated from line 70
-    public static Buffer node239(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 70
-        buf.add(Variable.factory(" ENGINE "));
-
-        // The following lines are generated from line 70
-        buf.add(ctx.getSymbol(buf, "EQ", new ArrayList<>()));
-
-        // The following lines are generated from line 70
-        buf.add(node243(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 71
-    public static Buffer node253(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        int rep = Rand.random(0, 1);
-        String delimiter = "";
-        for (int i=0; i<rep; i++){
-            if (i!=0){
-                buf.add(Variable.factory(delimiter));
-            }
             // The following lines are generated from line 71
-            buf.add(ctx.getSymbol(buf, "LINEAR", new ArrayList<>()));
+            buf.add(node226(ctx));
         }
         return buf;
     }
     // The following lines are generated from line 73
-    public static Buffer node262(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 73
-        buf.add(Variable.factory("HASH("));
-
-        // The following lines are generated from line 73
-        buf.add(ctx.getSymbol(buf, "cn", new ArrayList<>()).getAttr("any", new ArrayList<>()));
-
-        // The following lines are generated from line 73
-        buf.add(Variable.factory(")"));
-
-        return buf;
-    }
-    // The following lines are generated from line 74
-    public static Buffer node274(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        Options opt = new Options();
-        opt.addOption(0, 50.0);
-        opt.addOption(1, 50.0);
-        int index = opt.randomly();
-        if(index==0){
-            // The following lines are generated from line 74
-            buf.add(Variable.factory("1"));
-        }
-        if(index==1){
-            // The following lines are generated from line 74
-            buf.add(Variable.factory("2"));
-        }
-        return buf;
-    }
-    // The following lines are generated from line 74
-    public static Buffer node272(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 74
-        buf.add(Variable.factory("ALGORITHM="));
-
-        // The following lines are generated from line 74
-        buf.add(node274(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 74
-    public static Buffer node270(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        int rep = Rand.random(0, 1);
-        String delimiter = "";
-        for (int i=0; i<rep; i++){
-            if (i!=0){
-                buf.add(Variable.factory(delimiter));
-            }
-            // The following lines are generated from line 74
-            buf.add(node272(ctx));
-        }
-        return buf;
-    }
-    // The following lines are generated from line 74
-    public static Buffer node268(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 74
-        buf.add(Variable.factory(" KEY "));
-
-        // The following lines are generated from line 74
-        buf.add(node270(ctx));
-
-        // The following lines are generated from line 74
-        buf.add(Variable.factory("("));
-
-        // The following lines are generated from line 74
-        buf.add(ctx.getSymbol(buf, "cn", new ArrayList<>()).getAttr("any", new ArrayList<>()));
-
-        // The following lines are generated from line 74
-        buf.add(Variable.factory(")"));
-
-        return buf;
-    }
-    // The following lines are generated from line 73
-    public static Buffer node261(Context ctx) throws Exception{
+    public static Buffer node250(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 50.0);
@@ -2633,36 +2530,157 @@ public class Fuzzer{
         int index = opt.randomly();
         if(index==0){
             // The following lines are generated from line 73
-            buf.add(node262(ctx));
+            buf.add(Variable.factory(" MyISAM "));
         }
         if(index==1){
-            // The following lines are generated from line 74
-            buf.add(node268(ctx));
+            // The following lines are generated from line 73
+            buf.add(Variable.factory(" InnoDB "));
         }
         return buf;
     }
-    // The following lines are generated from line 71
-    public static Buffer node248(Context ctx) throws Exception{
+    // The following lines are generated from line 73
+    public static Buffer node246(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 71
-        buf.add(ctx.getSymbol(buf, "PARTITION", new ArrayList<>()));
-
-        // The following lines are generated from line 71
-        buf.add(ctx.getSymbol(buf, "BY", new ArrayList<>()));
-
-        // The following lines are generated from line 71
-        buf.add(node253(ctx));
-
-        // The following lines are generated from line 71
-        buf.add(ctx.getSymbol(buf, "error", packList(Variable.factory("allowed type"))));
+        // The following lines are generated from line 73
+        buf.add(Variable.factory(" ENGINE "));
 
         // The following lines are generated from line 73
-        buf.add(node261(ctx));
+        buf.add(ctx.getSymbol(buf, "EQ", new ArrayList<>()));
+
+        // The following lines are generated from line 73
+        buf.add(node250(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 69
-    public static Buffer node236(Context ctx) throws Exception{
+    // The following lines are generated from line 74
+    public static Buffer node260(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        int rep = Rand.random(0, 1);
+        String delimiter = "";
+        for (int i=0; i<rep; i++){
+            if (i!=0){
+                buf.add(Variable.factory(delimiter));
+            }
+            // The following lines are generated from line 74
+            buf.add(ctx.getSymbol(buf, "LINEAR", new ArrayList<>()));
+        }
+        return buf;
+    }
+    // The following lines are generated from line 76
+    public static Buffer node269(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 76
+        buf.add(Variable.factory("HASH("));
+
+        // The following lines are generated from line 76
+        buf.add(ctx.getSymbol(buf, "cn", new ArrayList<>()).getAttr("any", new ArrayList<>()));
+
+        // The following lines are generated from line 76
+        buf.add(Variable.factory(")"));
+
+        return buf;
+    }
+    // The following lines are generated from line 77
+    public static Buffer node281(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        Options opt = new Options();
+        opt.addOption(0, 50.0);
+        opt.addOption(1, 50.0);
+        int index = opt.randomly();
+        if(index==0){
+            // The following lines are generated from line 77
+            buf.add(Variable.factory("1"));
+        }
+        if(index==1){
+            // The following lines are generated from line 77
+            buf.add(Variable.factory("2"));
+        }
+        return buf;
+    }
+    // The following lines are generated from line 77
+    public static Buffer node279(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 77
+        buf.add(Variable.factory("ALGORITHM="));
+
+        // The following lines are generated from line 77
+        buf.add(node281(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 77
+    public static Buffer node277(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        int rep = Rand.random(0, 1);
+        String delimiter = "";
+        for (int i=0; i<rep; i++){
+            if (i!=0){
+                buf.add(Variable.factory(delimiter));
+            }
+            // The following lines are generated from line 77
+            buf.add(node279(ctx));
+        }
+        return buf;
+    }
+    // The following lines are generated from line 77
+    public static Buffer node275(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 77
+        buf.add(Variable.factory(" KEY "));
+
+        // The following lines are generated from line 77
+        buf.add(node277(ctx));
+
+        // The following lines are generated from line 77
+        buf.add(Variable.factory("("));
+
+        // The following lines are generated from line 77
+        buf.add(ctx.getSymbol(buf, "cn", new ArrayList<>()).getAttr("any", new ArrayList<>()));
+
+        // The following lines are generated from line 77
+        buf.add(Variable.factory(")"));
+
+        return buf;
+    }
+    // The following lines are generated from line 76
+    public static Buffer node268(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        Options opt = new Options();
+        opt.addOption(0, 50.0);
+        opt.addOption(1, 50.0);
+        int index = opt.randomly();
+        if(index==0){
+            // The following lines are generated from line 76
+            buf.add(node269(ctx));
+        }
+        if(index==1){
+            // The following lines are generated from line 77
+            buf.add(node275(ctx));
+        }
+        return buf;
+    }
+    // The following lines are generated from line 74
+    public static Buffer node255(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 74
+        buf.add(ctx.getSymbol(buf, "PARTITION", new ArrayList<>()));
+
+        // The following lines are generated from line 74
+        buf.add(ctx.getSymbol(buf, "BY", new ArrayList<>()));
+
+        // The following lines are generated from line 74
+        buf.add(node260(ctx));
+
+        // The following lines are generated from line 74
+        buf.add(ctx.getSymbol(buf, "error", packList(Variable.factory("allowed type"))));
+
+        // The following lines are generated from line 76
+        buf.add(node268(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 72
+    public static Buffer node243(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 80.0);
@@ -2670,89 +2688,89 @@ public class Fuzzer{
         opt.addOption(2, 10.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 69
+            // The following lines are generated from line 72
             buf.add(Variable.factory(" "));
         }
         if(index==1){
-            // The following lines are generated from line 70
-            buf.add(node239(ctx));
+            // The following lines are generated from line 73
+            buf.add(node246(ctx));
         }
         if(index==2){
-            // The following lines are generated from line 71
-            buf.add(node248(ctx));
+            // The following lines are generated from line 74
+            buf.add(node255(ctx));
         }
         return buf;
     }
-    // The following lines are generated from line 68
-    public static Buffer node214(Context ctx) throws Exception{
+    // The following lines are generated from line 71
+    public static Buffer node221(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 68
+        // The following lines are generated from line 71
         buf.add(ctx.getSymbol(buf, "LB", new ArrayList<>()));
 
-        // The following lines are generated from line 68
-        buf.add(node217(ctx));
+        // The following lines are generated from line 71
+        buf.add(node224(ctx));
 
-        // The following lines are generated from line 68
+        // The following lines are generated from line 71
         buf.add(ctx.getSymbol(buf, "RB", new ArrayList<>()));
 
-        // The following lines are generated from line 69
-        buf.add(node236(ctx));
+        // The following lines are generated from line 72
+        buf.add(node243(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 77
-    public static Buffer node284(Context ctx) throws Exception{
+    // The following lines are generated from line 80
+    public static Buffer node291(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 77
+        // The following lines are generated from line 80
         buf.add(ctx.getSymbol(buf, "LIKE", new ArrayList<>()));
 
-        // The following lines are generated from line 77
+        // The following lines are generated from line 80
         buf.add(ctx.getSymbol(buf, "table", new ArrayList<>()).getAttr("any", new ArrayList<>()));
 
         return buf;
     }
-    // The following lines are generated from line 68
-    public static Buffer node213(Context ctx) throws Exception{
+    // The following lines are generated from line 71
+    public static Buffer node220(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 90.0);
         opt.addOption(1, 10.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 68
-            buf.add(node214(ctx));
+            // The following lines are generated from line 71
+            buf.add(node221(ctx));
         }
         if(index==1){
-            // The following lines are generated from line 77
-            buf.add(node284(ctx));
+            // The following lines are generated from line 80
+            buf.add(node291(ctx));
         }
         return buf;
     }
-    // The following lines are generated from line 64
-    public static Buffer node189(Context ctx) throws Exception{
+    // The following lines are generated from line 67
+    public static Buffer node196(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 64
+        // The following lines are generated from line 67
         buf.add(ctx.getSymbol(buf, "CREATE", new ArrayList<>()));
 
-        // The following lines are generated from line 64
+        // The following lines are generated from line 67
         buf.add(ctx.getSymbol(buf, "error", packList(Variable.factory("A BLOB field is not allowed in partition function"),Variable.factory("is of a not allowed type for this type of partitioning"))));
 
-        // The following lines are generated from line 65
-        buf.add(node196(ctx));
-
-        // The following lines are generated from line 65
-        buf.add(ctx.getSymbol(buf, "TABLE", new ArrayList<>()));
-
-        // The following lines are generated from line 66
-        buf.add(node207(ctx));
-
-        // The following lines are generated from line 66
-        buf.add(ctx.getSymbol(buf, "new", packList(Variable.factory("table"))));
+        // The following lines are generated from line 68
+        buf.add(node203(ctx));
 
         // The following lines are generated from line 68
-        buf.add(node213(ctx));
+        buf.add(ctx.getSymbol(buf, "TABLE", new ArrayList<>()));
 
-        // The following lines are generated from line 78
+        // The following lines are generated from line 69
+        buf.add(node214(ctx));
+
+        // The following lines are generated from line 69
+        buf.add(ctx.getSymbol(buf, "new", packList(Variable.factory("table"))));
+
+        // The following lines are generated from line 71
+        buf.add(node220(ctx));
+
+        // The following lines are generated from line 81
         buf.add(ctx.getSymbol(buf, "SC", new ArrayList<>()));
 
         return buf;
@@ -2763,47 +2781,47 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 64
-        buf.add(node189(ctx));
+        // The following lines are generated from line 67
+        buf.add(node196(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 84
-    public static Buffer node304(Context ctx) throws Exception{
+    // The following lines are generated from line 87
+    public static Buffer node311(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 84
+        // The following lines are generated from line 87
         buf.add(ctx.getSymbol(buf, "UNIQUE", new ArrayList<>()));
 
-        // The following lines are generated from line 84
+        // The following lines are generated from line 87
         buf.add(ctx.getSymbol(buf, "error", packList(Variable.factory("Duplicate"),Variable.factory("A UNIQUE INDEX must include all columns in the "))));
 
         return buf;
     }
-    // The following lines are generated from line 85
-    public static Buffer node311(Context ctx) throws Exception{
+    // The following lines are generated from line 88
+    public static Buffer node318(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 85
+        // The following lines are generated from line 88
         buf.add(ctx.getSymbol(buf, "FULLTEXT", new ArrayList<>()));
 
-        // The following lines are generated from line 85
+        // The following lines are generated from line 88
         buf.add(ctx.getSymbol(buf, "error", packList(Variable.factory("cannot be part of"),Variable.factory(" support FULLTEXT indexes"))));
 
         return buf;
     }
-    // The following lines are generated from line 86
-    public static Buffer node318(Context ctx) throws Exception{
+    // The following lines are generated from line 89
+    public static Buffer node325(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 86
+        // The following lines are generated from line 89
         buf.add(ctx.getSymbol(buf, "error", packList(Variable.factory("A SPATIAL index may only contain a geometrical type column"))));
 
-        // The following lines are generated from line 86
+        // The following lines are generated from line 89
         buf.add(ctx.getSymbol(buf, "SPATIAL", new ArrayList<>()));
 
         return buf;
     }
-    // The following lines are generated from line 84
-    public static Buffer node303(Context ctx) throws Exception{
+    // The following lines are generated from line 87
+    public static Buffer node310(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 49.0);
@@ -2811,21 +2829,21 @@ public class Fuzzer{
         opt.addOption(2, 2.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 84
-            buf.add(node304(ctx));
-        }
-        if(index==1){
-            // The following lines are generated from line 85
+            // The following lines are generated from line 87
             buf.add(node311(ctx));
         }
-        if(index==2){
-            // The following lines are generated from line 86
+        if(index==1){
+            // The following lines are generated from line 88
             buf.add(node318(ctx));
+        }
+        if(index==2){
+            // The following lines are generated from line 89
+            buf.add(node325(ctx));
         }
         return buf;
     }
-    // The following lines are generated from line 83
-    public static Buffer node300(Context ctx) throws Exception{
+    // The following lines are generated from line 86
+    public static Buffer node307(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Variable v = ctx.getSymbol(buf, "random", packList(Variable.factory(0),Variable.factory(1),Variable.factory(90)));
         int rep = v.getNumerical();
@@ -2834,28 +2852,28 @@ public class Fuzzer{
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 84
-            buf.add(node303(ctx));
+            // The following lines are generated from line 87
+            buf.add(node310(ctx));
         }
         return buf;
     }
-    // The following lines are generated from line 89
-    public static Buffer node350(Context ctx) throws Exception{
+    // The following lines are generated from line 92
+    public static Buffer node357(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        Variable v = ctx.getSymbol(buf, "random", packList(Variable.factory(1),Variable.factory(6)));
+        Variable v = ctx.getSymbol(buf, "random", packList(Variable.factory(1),Variable.factory(6),Variable.factory(","),Variable.factory(90)));
         int rep = v.getNumerical();
         String delimiter = v.getAttr("delimiter", null).isPlaceHolder() ? "" : v.getAttr("delimiter", null).getValue();
         for (int i=0; i<rep; i++){
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 89
+            // The following lines are generated from line 92
             buf.add(ctx.getSymbol(buf, "c", new ArrayList<>()).getAttr("unique_any", new ArrayList<>()));
         }
         return buf;
     }
-    // The following lines are generated from line 91
-    public static Buffer node367(Context ctx) throws Exception{
+    // The following lines are generated from line 94
+    public static Buffer node376(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 33.333333333333336);
@@ -2863,35 +2881,35 @@ public class Fuzzer{
         opt.addOption(2, 33.333333333333336);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 91
+            // The following lines are generated from line 94
             buf.add(ctx.getSymbol(buf, "DEFAULT", new ArrayList<>()));
         }
         if(index==1){
-            // The following lines are generated from line 91
+            // The following lines are generated from line 94
             buf.add(ctx.getSymbol(buf, "INPLACE", new ArrayList<>()));
         }
         if(index==2){
-            // The following lines are generated from line 91
+            // The following lines are generated from line 94
             buf.add(ctx.getSymbol(buf, "COPY", new ArrayList<>()));
         }
         return buf;
     }
-    // The following lines are generated from line 91
-    public static Buffer node362(Context ctx) throws Exception{
+    // The following lines are generated from line 94
+    public static Buffer node371(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 91
+        // The following lines are generated from line 94
         buf.add(ctx.getSymbol(buf, "ALGORITHM", new ArrayList<>()));
 
-        // The following lines are generated from line 91
+        // The following lines are generated from line 94
         buf.add(ctx.getSymbol(buf, "EQ", new ArrayList<>()));
 
-        // The following lines are generated from line 91
-        buf.add(node367(ctx));
+        // The following lines are generated from line 94
+        buf.add(node376(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 92
-    public static Buffer node382(Context ctx) throws Exception{
+    // The following lines are generated from line 95
+    public static Buffer node391(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 25.0);
@@ -2900,97 +2918,97 @@ public class Fuzzer{
         opt.addOption(3, 25.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 92
+            // The following lines are generated from line 95
             buf.add(ctx.getSymbol(buf, "DEFAULT", new ArrayList<>()));
         }
         if(index==1){
-            // The following lines are generated from line 92
+            // The following lines are generated from line 95
             buf.add(ctx.getSymbol(buf, "NONE", new ArrayList<>()));
         }
         if(index==2){
-            // The following lines are generated from line 92
+            // The following lines are generated from line 95
             buf.add(ctx.getSymbol(buf, "SHARED", new ArrayList<>()));
         }
         if(index==3){
-            // The following lines are generated from line 92
+            // The following lines are generated from line 95
             buf.add(ctx.getSymbol(buf, "EXCLUSIVE", new ArrayList<>()));
         }
         return buf;
     }
-    // The following lines are generated from line 92
-    public static Buffer node377(Context ctx) throws Exception{
+    // The following lines are generated from line 95
+    public static Buffer node386(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 92
+        // The following lines are generated from line 95
         buf.add(ctx.getSymbol(buf, "LOCK", new ArrayList<>()));
 
-        // The following lines are generated from line 92
+        // The following lines are generated from line 95
         buf.add(ctx.getSymbol(buf, "EQ", new ArrayList<>()));
 
-        // The following lines are generated from line 92
-        buf.add(node382(ctx));
+        // The following lines are generated from line 95
+        buf.add(node391(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 91
-    public static Buffer node361(Context ctx) throws Exception{
+    // The following lines are generated from line 94
+    public static Buffer node370(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 50.0);
         opt.addOption(1, 50.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 91
-            buf.add(node362(ctx));
+            // The following lines are generated from line 94
+            buf.add(node371(ctx));
         }
         if(index==1){
-            // The following lines are generated from line 92
-            buf.add(node377(ctx));
+            // The following lines are generated from line 95
+            buf.add(node386(ctx));
         }
         return buf;
     }
-    // The following lines are generated from line 82
-    public static Buffer node294(Context ctx) throws Exception{
+    // The following lines are generated from line 85
+    public static Buffer node301(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 82
+        // The following lines are generated from line 85
         buf.add(ctx.getSymbol(buf, "error", packList(Variable.factory("used in key specification without a key length"))));
 
-        // The following lines are generated from line 82
+        // The following lines are generated from line 85
         buf.add(ctx.getSymbol(buf, "CREATE", new ArrayList<>()));
 
-        // The following lines are generated from line 83
-        buf.add(node300(ctx));
-
-        // The following lines are generated from line 88
-        buf.add(ctx.getSymbol(buf, "INDEX", new ArrayList<>()));
-
-        // The following lines are generated from line 88
-        buf.add(ctx.getSymbol(buf, "new", packList(Variable.factory("index"))));
-
-        // The following lines are generated from line 89
-        buf.add(ctx.getSymbol(buf, "ON", new ArrayList<>()));
-
-        // The following lines are generated from line 89
-        buf.add(ctx.eval(ctx.getSymbol(buf, "t", new ArrayList<>()), "=", ctx.getSymbol(buf, "table", new ArrayList<>()).getAttr("any", new ArrayList<>())));
-
-        // The following lines are generated from line 89
-        ctx.eval(ctx.getSymbol(buf, "c", new ArrayList<>()), "=", ctx.getSymbol(buf, "column", packList(ctx.getSymbol(buf, "t", new ArrayList<>()))));
-
-        // The following lines are generated from line 89
-        buf.add(Variable.factory("("));
-
-        // The following lines are generated from line 89
-        buf.add(node350(ctx));
-
-        // The following lines are generated from line 89
-        buf.add(Variable.factory(")"));
+        // The following lines are generated from line 86
+        buf.add(node307(ctx));
 
         // The following lines are generated from line 91
-        buf.add(node361(ctx));
+        buf.add(ctx.getSymbol(buf, "INDEX", new ArrayList<>()));
 
-        // The following lines are generated from line 93
-        buf.add(ctx.getSymbol(buf, "error", packList(Variable.factory("is not supported"))));
+        // The following lines are generated from line 91
+        buf.add(ctx.getSymbol(buf, "new", packList(Variable.factory("index"))));
+
+        // The following lines are generated from line 92
+        buf.add(ctx.getSymbol(buf, "ON", new ArrayList<>()));
+
+        // The following lines are generated from line 92
+        buf.add(ctx.eval(ctx.getSymbol(buf, "t", new ArrayList<>()), "=", ctx.getSymbol(buf, "table", new ArrayList<>()).getAttr("any", new ArrayList<>())));
+
+        // The following lines are generated from line 92
+        ctx.eval(ctx.getSymbol(buf, "c", new ArrayList<>()), "=", ctx.getSymbol(buf, "column", packList(ctx.getSymbol(buf, "t", new ArrayList<>()))));
+
+        // The following lines are generated from line 92
+        buf.add(Variable.factory("("));
+
+        // The following lines are generated from line 92
+        buf.add(node357(ctx));
+
+        // The following lines are generated from line 92
+        buf.add(Variable.factory(")"));
 
         // The following lines are generated from line 94
+        buf.add(node370(ctx));
+
+        // The following lines are generated from line 96
+        buf.add(ctx.getSymbol(buf, "error", packList(Variable.factory("is not supported"))));
+
+        // The following lines are generated from line 97
         buf.add(ctx.getSymbol(buf, "SC", new ArrayList<>()));
 
         return buf;
@@ -3001,25 +3019,25 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 82
-        buf.add(node294(ctx));
+        // The following lines are generated from line 85
+        buf.add(node301(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 97
-    public static Buffer node402(Context ctx) throws Exception{
+    // The following lines are generated from line 100
+    public static Buffer node411(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 97
+        // The following lines are generated from line 100
         buf.add(ctx.getSymbol(buf, "TRUNCATE", new ArrayList<>()));
 
-        // The following lines are generated from line 97
+        // The following lines are generated from line 100
         buf.add(ctx.getSymbol(buf, "TABLE", new ArrayList<>()));
 
-        // The following lines are generated from line 97
+        // The following lines are generated from line 100
         buf.add(ctx.getSymbol(buf, "table", new ArrayList<>()).getAttr("any", new ArrayList<>()));
 
-        // The following lines are generated from line 97
+        // The following lines are generated from line 100
         buf.add(ctx.getSymbol(buf, "SC", new ArrayList<>()));
 
         return buf;
@@ -3030,14 +3048,14 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 97
-        buf.add(node402(ctx));
+        // The following lines are generated from line 100
+        buf.add(node411(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 100
-    public static Buffer node425(Context ctx) throws Exception{
+    // The following lines are generated from line 103
+    public static Buffer node434(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 33.333333333333336);
@@ -3045,21 +3063,21 @@ public class Fuzzer{
         opt.addOption(2, 33.333333333333336);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 100
+            // The following lines are generated from line 103
             buf.add(ctx.getSymbol(buf, "LOW_PRIORITY", new ArrayList<>()));
         }
         if(index==1){
-            // The following lines are generated from line 100
+            // The following lines are generated from line 103
             buf.add(ctx.getSymbol(buf, "DELAYED", new ArrayList<>()));
         }
         if(index==2){
-            // The following lines are generated from line 100
+            // The following lines are generated from line 103
             buf.add(ctx.getSymbol(buf, "HIGH_PRIORITY", new ArrayList<>()));
         }
         return buf;
     }
-    // The following lines are generated from line 100
-    public static Buffer node422(Context ctx) throws Exception{
+    // The following lines are generated from line 103
+    public static Buffer node431(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         int rep = Rand.random(0, 1);
         String delimiter = "";
@@ -3067,13 +3085,13 @@ public class Fuzzer{
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 100
-            buf.add(node425(ctx));
+            // The following lines are generated from line 103
+            buf.add(node434(ctx));
         }
         return buf;
     }
-    // The following lines are generated from line 100
-    public static Buffer node435(Context ctx) throws Exception{
+    // The following lines are generated from line 103
+    public static Buffer node444(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         int rep = Rand.random(0, 1);
         String delimiter = "";
@@ -3081,44 +3099,44 @@ public class Fuzzer{
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 100
+            // The following lines are generated from line 103
             buf.add(ctx.getSymbol(buf, "IGNORE", new ArrayList<>()));
         }
         return buf;
     }
-    // The following lines are generated from line 100
-    public static Buffer node419(Context ctx) throws Exception{
+    // The following lines are generated from line 103
+    public static Buffer node428(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 100
+        // The following lines are generated from line 103
         buf.add(ctx.getSymbol(buf, "INSERT", new ArrayList<>()));
 
-        // The following lines are generated from line 100
-        buf.add(node422(ctx));
+        // The following lines are generated from line 103
+        buf.add(node431(ctx));
 
-        // The following lines are generated from line 100
-        buf.add(node435(ctx));
+        // The following lines are generated from line 103
+        buf.add(node444(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 100
-    public static Buffer node415(Context ctx) throws Exception{
+    // The following lines are generated from line 103
+    public static Buffer node424(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 50.0);
         opt.addOption(1, 50.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 100
+            // The following lines are generated from line 103
             buf.add(ctx.getSymbol(buf, "REPLACE", new ArrayList<>()));
         }
         if(index==1){
-            // The following lines are generated from line 100
-            buf.add(node419(ctx));
+            // The following lines are generated from line 103
+            buf.add(node428(ctx));
         }
         return buf;
     }
-    // The following lines are generated from line 100
-    public static Buffer node438(Context ctx) throws Exception{
+    // The following lines are generated from line 103
+    public static Buffer node447(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         int rep = Rand.random(0, 1);
         String delimiter = "";
@@ -3126,13 +3144,13 @@ public class Fuzzer{
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 100
+            // The following lines are generated from line 103
             buf.add(ctx.getSymbol(buf, "INTO", new ArrayList<>()));
         }
         return buf;
     }
-    // The following lines are generated from line 101
-    public static Buffer node451(Context ctx) throws Exception{
+    // The following lines are generated from line 104
+    public static Buffer node467(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Variable v = ctx.getSymbol(buf, "random", packList(Variable.factory(1),Variable.factory(6),Variable.factory(","),Variable.factory(75)));
         int rep = v.getNumerical();
@@ -3141,13 +3159,13 @@ public class Fuzzer{
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 101
-            buf.add(ctx.eval(ctx.getSymbol(buf, "c", new ArrayList<>()), "+=", ctx.getSymbol(buf, "column", packList(ctx.getSymbol(buf, "t", new ArrayList<>())))));
+            // The following lines are generated from line 104
+            buf.add(ctx.eval(ctx.getSymbol(buf, "c", new ArrayList<>()), "+=", ctx.getSymbol(buf, "cl", new ArrayList<>()).getAttr("unique_any", new ArrayList<>())));
         }
         return buf;
     }
-    // The following lines are generated from line 102
-    public static Buffer node471(Context ctx) throws Exception{
+    // The following lines are generated from line 105
+    public static Buffer node486(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Variable v = ctx.getSymbol(buf, "random", packList(ctx.getSymbol(buf, "c", new ArrayList<>()).getAttr("len", new ArrayList<>()),Variable.factory(",")));
         int rep = v.getNumerical();
@@ -3156,48 +3174,51 @@ public class Fuzzer{
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 102
-            buf.add(ctx.getSymbol(buf, "expression", packList(ctx.getSymbol(buf, "c", new ArrayList<>()).getAttr("next", new ArrayList<>()))));
+            // The following lines are generated from line 105
+            buf.add(ctx.getSymbol(buf, "expression", packList(ctx.getSymbol(buf, "c", new ArrayList<>()).getAttr("next", new ArrayList<>()).getAttr("type", new ArrayList<>()))));
         }
         return buf;
     }
-    // The following lines are generated from line 100
-    public static Buffer node414(Context ctx) throws Exception{
+    // The following lines are generated from line 103
+    public static Buffer node423(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 100
-        buf.add(node415(ctx));
-
-        // The following lines are generated from line 100
-        buf.add(node438(ctx));
-
-        // The following lines are generated from line 100
-        buf.add(ctx.getSymbol(buf, "error", packList(Variable.factory("Duplicate"))));
-
-        // The following lines are generated from line 100
-        buf.add(ctx.eval(ctx.getSymbol(buf, "t", new ArrayList<>()), "=", ctx.getSymbol(buf, "table", new ArrayList<>()).getAttr("any", new ArrayList<>())));
-
-        // The following lines are generated from line 101
-        buf.add(Variable.factory("("));
-
-        // The following lines are generated from line 101
-        buf.add(node451(ctx));
-
-        // The following lines are generated from line 101
-        buf.add(Variable.factory(")"));
-
-        // The following lines are generated from line 102
-        buf.add(ctx.getSymbol(buf, "VALUES", new ArrayList<>()));
-
-        // The following lines are generated from line 102
-        buf.add(Variable.factory("("));
-
-        // The following lines are generated from line 102
-        buf.add(node471(ctx));
-
-        // The following lines are generated from line 102
-        buf.add(Variable.factory(")"));
+        // The following lines are generated from line 103
+        buf.add(node424(ctx));
 
         // The following lines are generated from line 103
+        buf.add(node447(ctx));
+
+        // The following lines are generated from line 103
+        buf.add(ctx.getSymbol(buf, "error", packList(Variable.factory("Duplicate"))));
+
+        // The following lines are generated from line 103
+        buf.add(ctx.eval(ctx.getSymbol(buf, "t", new ArrayList<>()), "=", ctx.getSymbol(buf, "table", new ArrayList<>()).getAttr("any", new ArrayList<>())));
+
+        // The following lines are generated from line 104
+        buf.add(Variable.factory("("));
+
+        // The following lines are generated from line 104
+        ctx.eval(ctx.getSymbol(buf, "cl", new ArrayList<>()), "=", ctx.getSymbol(buf, "column", packList(ctx.getSymbol(buf, "t", new ArrayList<>()))));
+
+        // The following lines are generated from line 104
+        buf.add(node467(ctx));
+
+        // The following lines are generated from line 104
+        buf.add(Variable.factory(")"));
+
+        // The following lines are generated from line 105
+        buf.add(ctx.getSymbol(buf, "VALUES", new ArrayList<>()));
+
+        // The following lines are generated from line 105
+        buf.add(Variable.factory("("));
+
+        // The following lines are generated from line 105
+        buf.add(node486(ctx));
+
+        // The following lines are generated from line 105
+        buf.add(Variable.factory(")"));
+
+        // The following lines are generated from line 106
         buf.add(ctx.getSymbol(buf, "SC", new ArrayList<>()));
 
         return buf;
@@ -3208,14 +3229,14 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 100
-        buf.add(node414(ctx));
+        // The following lines are generated from line 103
+        buf.add(node423(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 107
-    public static Buffer node496(Context ctx) throws Exception{
+    // The following lines are generated from line 110
+    public static Buffer node512(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         int rep = Rand.random(0, 1);
         String delimiter = "";
@@ -3223,13 +3244,13 @@ public class Fuzzer{
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 107
+            // The following lines are generated from line 110
             buf.add(ctx.getSymbol(buf, "LOW_PRIORITY", new ArrayList<>()));
         }
         return buf;
     }
-    // The following lines are generated from line 107
-    public static Buffer node499(Context ctx) throws Exception{
+    // The following lines are generated from line 110
+    public static Buffer node515(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         int rep = Rand.random(0, 1);
         String delimiter = "";
@@ -3237,42 +3258,42 @@ public class Fuzzer{
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 107
+            // The following lines are generated from line 110
             buf.add(ctx.getSymbol(buf, "IGNORE", new ArrayList<>()));
         }
         return buf;
     }
-    // The following lines are generated from line 108
-    public static Buffer node512(Context ctx) throws Exception{
+    // The following lines are generated from line 111
+    public static Buffer node528(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 108
-        buf.add(ctx.eval(ctx.getSymbol(buf, "cc", new ArrayList<>()), "=", ctx.getSymbol(buf, "columnName", packList(ctx.getSymbol(buf, "t", new ArrayList<>()))).getAttr("any", new ArrayList<>())));
+        // The following lines are generated from line 111
+        buf.add(ctx.eval(ctx.getSymbol(buf, "cc", new ArrayList<>()), "=", ctx.getSymbol(buf, "column", packList(ctx.getSymbol(buf, "t", new ArrayList<>()))).getAttr("any", new ArrayList<>())));
 
-        // The following lines are generated from line 108
+        // The following lines are generated from line 111
         buf.add(Variable.factory("="));
 
-        // The following lines are generated from line 108
-        buf.add(ctx.getSymbol(buf, "expression", packList(ctx.getSymbol(buf, "cc", new ArrayList<>()))));
+        // The following lines are generated from line 111
+        buf.add(ctx.getSymbol(buf, "expression", packList(ctx.getSymbol(buf, "cc", new ArrayList<>()).getAttr("type", new ArrayList<>()))));
 
         return buf;
     }
-    // The following lines are generated from line 108
-    public static Buffer node510(Context ctx) throws Exception{
+    // The following lines are generated from line 111
+    public static Buffer node526(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        Variable v = ctx.getSymbol(buf, "random", packList(Variable.factory(1),Variable.factory(6)));
+        Variable v = ctx.getSymbol(buf, "random", packList(Variable.factory(1),Variable.factory(6),Variable.factory(","),Variable.factory(75)));
         int rep = v.getNumerical();
         String delimiter = v.getAttr("delimiter", null).isPlaceHolder() ? "" : v.getAttr("delimiter", null).getValue();
         for (int i=0; i<rep; i++){
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 108
-            buf.add(node512(ctx));
+            // The following lines are generated from line 111
+            buf.add(node528(ctx));
         }
         return buf;
     }
-    // The following lines are generated from line 108
-    public static Buffer node535(Context ctx) throws Exception{
+    // The following lines are generated from line 111
+    public static Buffer node554(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         int rep = Rand.random(0, 1);
         String delimiter = "";
@@ -3280,33 +3301,33 @@ public class Fuzzer{
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 108
+            // The following lines are generated from line 111
             buf.add(ctx.getSymbol(buf, "NOT", new ArrayList<>()));
         }
         return buf;
     }
-    // The following lines are generated from line 108
-    public static Buffer node532(Context ctx) throws Exception{
+    // The following lines are generated from line 111
+    public static Buffer node551(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 108
+        // The following lines are generated from line 111
         buf.add(ctx.getSymbol(buf, "WHERE", new ArrayList<>()));
 
-        // The following lines are generated from line 108
-        buf.add(node535(ctx));
+        // The following lines are generated from line 111
+        buf.add(node554(ctx));
 
-        // The following lines are generated from line 108
-        buf.add(ctx.eval(ctx.getSymbol(buf, "cc", new ArrayList<>()), "=", ctx.getSymbol(buf, "columnName", packList(ctx.getSymbol(buf, "t", new ArrayList<>()))).getAttr("any", new ArrayList<>())));
+        // The following lines are generated from line 111
+        buf.add(ctx.eval(ctx.getSymbol(buf, "cc", new ArrayList<>()), "=", ctx.getSymbol(buf, "column", packList(ctx.getSymbol(buf, "t", new ArrayList<>()))).getAttr("any", new ArrayList<>())));
 
-        // The following lines are generated from line 108
+        // The following lines are generated from line 111
         buf.add(Variable.factory("="));
 
-        // The following lines are generated from line 108
-        buf.add(ctx.getSymbol(buf, "expression", packList(ctx.getSymbol(buf, "cc", new ArrayList<>()))));
+        // The following lines are generated from line 111
+        buf.add(ctx.getSymbol(buf, "expression", packList(ctx.getSymbol(buf, "cc", new ArrayList<>()).getAttr("type", new ArrayList<>()))));
 
         return buf;
     }
-    // The following lines are generated from line 108
-    public static Buffer node530(Context ctx) throws Exception{
+    // The following lines are generated from line 111
+    public static Buffer node549(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         int rep = Rand.random(0, 1);
         String delimiter = "";
@@ -3314,39 +3335,39 @@ public class Fuzzer{
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 108
-            buf.add(node532(ctx));
+            // The following lines are generated from line 111
+            buf.add(node551(ctx));
         }
         return buf;
     }
-    // The following lines are generated from line 107
-    public static Buffer node490(Context ctx) throws Exception{
+    // The following lines are generated from line 110
+    public static Buffer node506(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 107
+        // The following lines are generated from line 110
         buf.add(ctx.getSymbol(buf, "UPDATE", new ArrayList<>()));
 
-        // The following lines are generated from line 107
+        // The following lines are generated from line 110
         buf.add(ctx.getSymbol(buf, "error", packList(Variable.factory("Duplicate"))));
 
-        // The following lines are generated from line 107
-        buf.add(node496(ctx));
+        // The following lines are generated from line 110
+        buf.add(node512(ctx));
 
-        // The following lines are generated from line 107
-        buf.add(node499(ctx));
+        // The following lines are generated from line 110
+        buf.add(node515(ctx));
 
-        // The following lines are generated from line 107
+        // The following lines are generated from line 110
         buf.add(ctx.eval(ctx.getSymbol(buf, "t", new ArrayList<>()), "=", ctx.getSymbol(buf, "table", new ArrayList<>()).getAttr("any", new ArrayList<>())));
 
-        // The following lines are generated from line 108
+        // The following lines are generated from line 111
         buf.add(ctx.getSymbol(buf, "SET", new ArrayList<>()));
 
-        // The following lines are generated from line 108
-        buf.add(node510(ctx));
+        // The following lines are generated from line 111
+        buf.add(node526(ctx));
 
-        // The following lines are generated from line 108
-        buf.add(node530(ctx));
+        // The following lines are generated from line 111
+        buf.add(node549(ctx));
 
-        // The following lines are generated from line 108
+        // The following lines are generated from line 111
         buf.add(ctx.getSymbol(buf, "SC", new ArrayList<>()));
 
         return buf;
@@ -3357,37 +3378,66 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 107
-        buf.add(node490(ctx));
+        // The following lines are generated from line 110
+        buf.add(node506(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 112
-    public static Buffer node556(Context ctx) throws Exception{
+    // The following lines are generated from line 119
+    public static Buffer node607(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
-        if(ctx.eval(ctx.getSymbol(buf, "type", new ArrayList<>()), "==", Variable.factory("INT")).getBoolean()){
-            opt.addOption(0, 33.333333333333336);
+        opt.addOption(0, 33.333333333333336);
+        opt.addOption(1, 33.333333333333336);
+        opt.addOption(2, 33.333333333333336);
+        int index = opt.randomly();
+        if(index==0){
+            // The following lines are generated from line 119
+            buf.add(ctx.getSymbol(buf, "least", packList(ctx.getSymbol(buf, "type", new ArrayList<>()),ctx.eval(ctx.getSymbol(buf, "depth", new ArrayList<>()), "$-", Variable.factory(1)))));
         }
-        if(ctx.eval(ctx.getSymbol(buf, "type", new ArrayList<>()), "==", Variable.factory("TEXT")).getBoolean()){
-            opt.addOption(1, 33.333333333333336);
+        if(index==1){
+            // The following lines are generated from line 120
+            buf.add(ctx.getSymbol(buf, "greatest", packList(ctx.getSymbol(buf, "type", new ArrayList<>()),ctx.eval(ctx.getSymbol(buf, "depth", new ArrayList<>()), "$-", Variable.factory(1)))));
         }
-        if(ctx.eval(ctx.getSymbol(buf, "type", new ArrayList<>()), "==", Variable.factory("FLOAT")).getBoolean()){
-            opt.addOption(2, 33.333333333333336);
+        if(index==2){
+            // The following lines are generated from line 121
+            buf.add(ctx.getSymbol(buf, "if_func", packList(ctx.getSymbol(buf, "type", new ArrayList<>()),ctx.eval(ctx.getSymbol(buf, "depth", new ArrayList<>()), "$-", Variable.factory(1)))));
+        }
+        return buf;
+    }
+    // The following lines are generated from line 115
+    public static Buffer node576(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        Options opt = new Options();
+        if(ctx.eval(ctx.getSymbol(buf, "type", new ArrayList<>()), "==", Variable.factory("int")).getBoolean()){
+            opt.addOption(0, 25.0);
+        }
+        if(ctx.eval(ctx.getSymbol(buf, "type", new ArrayList<>()), "==", Variable.factory("text")).getBoolean()){
+            opt.addOption(1, 25.0);
+        }
+        if(ctx.eval(ctx.getSymbol(buf, "type", new ArrayList<>()), "==", Variable.factory("float")).getBoolean()){
+            opt.addOption(2, 25.0);
+        }
+        if(ctx.eval(ctx.getSymbol(buf, "depth", new ArrayList<>()), ">", Variable.factory(0)).getBoolean()){
+            opt.addOption(3, 25.0);
         }
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 112
-            buf.add(ctx.getSymbol(buf, "int_val", new ArrayList<>()));
+            // The following lines are generated from line 115
+            buf.add(ctx.getSymbol(buf, "int_expr", new ArrayList<>()));
         }
         if(index==1){
-            // The following lines are generated from line 113
-            buf.add(ctx.getSymbol(buf, "text_val", new ArrayList<>()));
+            // The following lines are generated from line 116
+            buf.add(ctx.getSymbol(buf, "text_expr", new ArrayList<>()));
         }
         if(index==2){
-            // The following lines are generated from line 114
-            buf.add(ctx.getSymbol(buf, "float_val", new ArrayList<>()));
+            // The following lines are generated from line 117
+            buf.add(ctx.getSymbol(buf, "float_expr", new ArrayList<>()));
+        }
+        if(index==3){
+            // The following lines are generated from line 119
+            buf.add(node607(ctx));
         }
         return buf;
     }
@@ -3396,141 +3446,142 @@ public class Fuzzer{
         Buffer buf = new Buffer();
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
-        arg_decls.add(ctx.eval(ctx.getSymbol(buf, "type", new ArrayList<>()), "=", Variable.factory("default")));
+        arg_decls.add(ctx.getSymbol(buf, "type", new ArrayList<>()));
+        arg_decls.add(ctx.eval(ctx.getSymbol(buf, "depth", new ArrayList<>()), "=", Variable.factory(3)));
         ctx.enter(arg_decls);
-        // The following lines are generated from line 112
-        buf.add(node556(ctx));
+        // The following lines are generated from line 115
+        buf.add(node576(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 128
-    public static Buffer node632(Context ctx) throws Exception{
+    // The following lines are generated from line 134
+    public static Buffer node688(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 128
+        // The following lines are generated from line 134
         buf.add(ctx.eval(ctx.getSymbol(buf, "tt", new ArrayList<>()), "=", ctx.getSymbol(buf, "table", new ArrayList<>()).getAttr("any", new ArrayList<>())));
 
-        // The following lines are generated from line 128
+        // The following lines are generated from line 134
         ctx.eval(ctx.getSymbol(buf, "tt", new ArrayList<>()).getAttr("c", new ArrayList<>()), "=", ctx.getSymbol(buf, "column_name", packList(ctx.getSymbol(buf, "tt", new ArrayList<>()))));
 
-        // The following lines are generated from line 128
+        // The following lines are generated from line 134
         ctx.eval(ctx.getSymbol(buf, "t", new ArrayList<>()), "+=", ctx.getSymbol(buf, "tt", new ArrayList<>()));
 
         return buf;
     }
-    // The following lines are generated from line 128
-    public static Buffer node652(Context ctx) throws Exception{
+    // The following lines are generated from line 134
+    public static Buffer node708(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 128
+        // The following lines are generated from line 134
         buf.add(Variable.factory("("));
 
-        // The following lines are generated from line 128
+        // The following lines are generated from line 134
         buf.add(ctx.eval(ctx.getSymbol(buf, "cc", new ArrayList<>()), "=", ctx.getSymbol(buf, "selectStatement", new ArrayList<>())));
 
-        // The following lines are generated from line 128
+        // The following lines are generated from line 134
         buf.add(Variable.factory(")"));
 
-        // The following lines are generated from line 128
+        // The following lines are generated from line 134
         buf.add(ctx.getSymbol(buf, "AS", new ArrayList<>()));
 
-        // The following lines are generated from line 128
+        // The following lines are generated from line 134
         buf.add(ctx.eval(ctx.getSymbol(buf, "tt", new ArrayList<>()), "=", ctx.getSymbol(buf, "new", packList(Variable.factory("table")))));
 
-        // The following lines are generated from line 128
+        // The following lines are generated from line 134
         ctx.eval(ctx.getSymbol(buf, "tt", new ArrayList<>()).getAttr("c", new ArrayList<>()), "=", ctx.getSymbol(buf, "cc", new ArrayList<>()));
 
-        // The following lines are generated from line 128
+        // The following lines are generated from line 134
         ctx.eval(ctx.getSymbol(buf, "t", new ArrayList<>()), "+=", ctx.getSymbol(buf, "tt", new ArrayList<>()));
 
         return buf;
     }
-    // The following lines are generated from line 128
-    public static Buffer node631(Context ctx) throws Exception{
+    // The following lines are generated from line 134
+    public static Buffer node687(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 50.0);
         opt.addOption(1, 50.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 128
-            buf.add(node632(ctx));
+            // The following lines are generated from line 134
+            buf.add(node688(ctx));
         }
         if(index==1){
-            // The following lines are generated from line 128
-            buf.add(node652(ctx));
+            // The following lines are generated from line 134
+            buf.add(node708(ctx));
         }
         return buf;
     }
-    // The following lines are generated from line 131
-    public static Buffer node685(Context ctx) throws Exception{
+    // The following lines are generated from line 137
+    public static Buffer node741(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 131
+        // The following lines are generated from line 137
         buf.add(ctx.eval(ctx.getSymbol(buf, "tt", new ArrayList<>()), "=", ctx.getSymbol(buf, "table", new ArrayList<>()).getAttr("any", new ArrayList<>())));
 
-        // The following lines are generated from line 131
+        // The following lines are generated from line 137
         ctx.eval(ctx.getSymbol(buf, "tt", new ArrayList<>()).getAttr("c", new ArrayList<>()), "=", ctx.getSymbol(buf, "column_name", packList(ctx.getSymbol(buf, "tt", new ArrayList<>()))));
 
-        // The following lines are generated from line 131
+        // The following lines are generated from line 137
         ctx.eval(ctx.getSymbol(buf, "t", new ArrayList<>()), "+=", ctx.getSymbol(buf, "tt", new ArrayList<>()));
 
         return buf;
     }
-    // The following lines are generated from line 131
-    public static Buffer node705(Context ctx) throws Exception{
+    // The following lines are generated from line 137
+    public static Buffer node761(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 131
+        // The following lines are generated from line 137
         buf.add(Variable.factory("("));
 
-        // The following lines are generated from line 131
+        // The following lines are generated from line 137
         buf.add(ctx.eval(ctx.getSymbol(buf, "cc", new ArrayList<>()), "=", ctx.getSymbol(buf, "selectStatement", new ArrayList<>())));
 
-        // The following lines are generated from line 131
+        // The following lines are generated from line 137
         buf.add(Variable.factory(")"));
 
-        // The following lines are generated from line 131
+        // The following lines are generated from line 137
         buf.add(ctx.getSymbol(buf, "AS", new ArrayList<>()));
 
-        // The following lines are generated from line 131
+        // The following lines are generated from line 137
         buf.add(ctx.eval(ctx.getSymbol(buf, "tt", new ArrayList<>()), "=", ctx.getSymbol(buf, "new", packList(Variable.factory("table")))));
 
-        // The following lines are generated from line 131
+        // The following lines are generated from line 137
         ctx.eval(ctx.getSymbol(buf, "tt", new ArrayList<>()).getAttr("c", new ArrayList<>()), "=", ctx.getSymbol(buf, "cc", new ArrayList<>()));
 
-        // The following lines are generated from line 131
+        // The following lines are generated from line 137
         ctx.eval(ctx.getSymbol(buf, "t", new ArrayList<>()), "+=", ctx.getSymbol(buf, "tt", new ArrayList<>()));
 
         return buf;
     }
-    // The following lines are generated from line 131
-    public static Buffer node684(Context ctx) throws Exception{
+    // The following lines are generated from line 137
+    public static Buffer node740(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 50.0);
         opt.addOption(1, 50.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 131
-            buf.add(node685(ctx));
+            // The following lines are generated from line 137
+            buf.add(node741(ctx));
         }
         if(index==1){
-            // The following lines are generated from line 131
-            buf.add(node705(ctx));
+            // The following lines are generated from line 137
+            buf.add(node761(ctx));
         }
         return buf;
     }
-    // The following lines are generated from line 131
-    public static Buffer node681(Context ctx) throws Exception{
+    // The following lines are generated from line 137
+    public static Buffer node737(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 131
+        // The following lines are generated from line 137
         buf.add(ctx.getSymbol(buf, "JOIN", new ArrayList<>()));
 
-        // The following lines are generated from line 131
-        buf.add(node684(ctx));
+        // The following lines are generated from line 137
+        buf.add(node740(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 130
-    public static Buffer node679(Context ctx) throws Exception{
+    // The following lines are generated from line 136
+    public static Buffer node735(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         int rep = Rand.random(0, 1);
         String delimiter = "";
@@ -3538,80 +3589,80 @@ public class Fuzzer{
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 131
-            buf.add(node681(ctx));
+            // The following lines are generated from line 137
+            buf.add(node737(ctx));
         }
         return buf;
     }
-    // The following lines are generated from line 127
-    public static Buffer node628(Context ctx) throws Exception{
+    // The following lines are generated from line 133
+    public static Buffer node684(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 128
+        // The following lines are generated from line 134
         buf.add(ctx.getSymbol(buf, "FROM", new ArrayList<>()));
-        // The following lines are generated from line 128
-        buf.add(node631(ctx));
-        // The following lines are generated from line 130
-        buf.add(node679(ctx));
+        // The following lines are generated from line 134
+        buf.add(node687(ctx));
+        // The following lines are generated from line 136
+        buf.add(node735(ctx));
         return buf;
     }
-    // The following lines are generated from line 122
-    public static Buffer node597(Context ctx) throws Exception{
+    // The following lines are generated from line 128
+    public static Buffer node653(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 122
+        // The following lines are generated from line 128
         buf.add(ctx.eval(ctx.getSymbol(buf, "tt", new ArrayList<>()), "=", ctx.getSymbol(buf, "t", new ArrayList<>()).getAttr("any", new ArrayList<>())));
 
-        // The following lines are generated from line 122
+        // The following lines are generated from line 128
         buf.add(ctx.getSymbol(buf, "DOT", new ArrayList<>()));
 
         return buf;
     }
-    // The following lines are generated from line 122
-    public static Buffer node596(Context ctx) throws Exception{
+    // The following lines are generated from line 128
+    public static Buffer node652(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 50.0);
         opt.addOption(1, 50.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 122
-            buf.add(node597(ctx));
+            // The following lines are generated from line 128
+            buf.add(node653(ctx));
         }
         if(index==1){
-            // The following lines are generated from line 122
+            // The following lines are generated from line 128
             ctx.eval(ctx.getSymbol(buf, "tt", new ArrayList<>()), "=", ctx.getSymbol(buf, "t", new ArrayList<>()).getAttr("any", new ArrayList<>()));
         }
         return buf;
     }
-    // The following lines are generated from line 122
-    public static Buffer node595(Context ctx) throws Exception{
+    // The following lines are generated from line 128
+    public static Buffer node651(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 122
-        buf.add(node596(ctx));
+        // The following lines are generated from line 128
+        buf.add(node652(ctx));
 
-        // The following lines are generated from line 122
+        // The following lines are generated from line 128
         buf.add(ctx.eval(ctx.getSymbol(buf, "c", new ArrayList<>()), "+=", ctx.getSymbol(buf, "tt", new ArrayList<>()).getAttr("c", new ArrayList<>()).getAttr("unique_any", new ArrayList<>())));
 
         return buf;
     }
-    // The following lines are generated from line 122
-    public static Buffer node594(Context ctx) throws Exception{
+    // The following lines are generated from line 128
+    public static Buffer node650(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 50.0);
         opt.addOption(1, 50.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 122
-            buf.add(node595(ctx));
+            // The following lines are generated from line 128
+            buf.add(node651(ctx));
         }
         if(index==1){
-            // The following lines are generated from line 123
+            // The following lines are generated from line 129
             buf.add(ctx.getSymbol(buf, "columnerrorxpression", new ArrayList<>()));
         }
         return buf;
     }
-    // The following lines are generated from line 122
-    public static Buffer node593(Context ctx) throws Exception{
+    // The following lines are generated from line 128
+    public static Buffer node649(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Variable v = ctx.getSymbol(buf, "rep", new ArrayList<>());
         int rep = v.getNumerical();
@@ -3620,39 +3671,39 @@ public class Fuzzer{
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 122
-            buf.add(node594(ctx));
+            // The following lines are generated from line 128
+            buf.add(node650(ctx));
         }
         return buf;
     }
-    // The following lines are generated from line 122
-    public static Buffer node591(Context ctx) throws Exception{
+    // The following lines are generated from line 128
+    public static Buffer node647(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 90.0);
         opt.addOption(1, 10.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 122
-            buf.add(node593(ctx));
+            // The following lines are generated from line 128
+            buf.add(node649(ctx));
         }
         if(index==1){
-            // The following lines are generated from line 125
+            // The following lines are generated from line 131
             buf.add(ctx.getSymbol(buf, "ASTERISK", new ArrayList<>()));
         }
         return buf;
     }
-    // The following lines are generated from line 120
-    public static Buffer node588(Context ctx) throws Exception{
+    // The following lines are generated from line 126
+    public static Buffer node644(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 121
+        // The following lines are generated from line 127
         buf.add(ctx.getSymbol(buf, "SELECT", new ArrayList<>()));
-        // The following lines are generated from line 122
-        buf.add(node591(ctx));
+        // The following lines are generated from line 128
+        buf.add(node647(ctx));
         return buf;
     }
-    // The following lines are generated from line 134
-    public static Buffer node733(Context ctx) throws Exception{
+    // The following lines are generated from line 140
+    public static Buffer node789(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         int rep = Rand.random(0, 1);
         String delimiter = "";
@@ -3660,41 +3711,41 @@ public class Fuzzer{
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 134
+            // The following lines are generated from line 140
             buf.add(ctx.getSymbol(buf, "where_predicate", new ArrayList<>()));
         }
         return buf;
     }
-    // The following lines are generated from line 136
-    public static Buffer node739(Context ctx) throws Exception{
+    // The following lines are generated from line 142
+    public static Buffer node795(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 50.0);
         opt.addOption(1, 50.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 136
+            // The following lines are generated from line 142
             buf.add(ctx.getSymbol(buf, "UNION", new ArrayList<>()));
         }
         if(index==1){
-            // The following lines are generated from line 136
+            // The following lines are generated from line 142
             buf.add(ctx.getSymbol(buf, "INTERSECT", new ArrayList<>()));
         }
         return buf;
     }
-    // The following lines are generated from line 136
-    public static Buffer node738(Context ctx) throws Exception{
+    // The following lines are generated from line 142
+    public static Buffer node794(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 136
-        buf.add(node739(ctx));
+        // The following lines are generated from line 142
+        buf.add(node795(ctx));
 
-        // The following lines are generated from line 136
+        // The following lines are generated from line 142
         buf.add(ctx.getSymbol(buf, "selectStatement", packList(ctx.getSymbol(buf, "random", packList(ctx.getSymbol(buf, "c", new ArrayList<>()).getAttr("len", new ArrayList<>()),Variable.factory(","))))));
 
         return buf;
     }
-    // The following lines are generated from line 135
-    public static Buffer node736(Context ctx) throws Exception{
+    // The following lines are generated from line 141
+    public static Buffer node792(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         int rep = Rand.random(0, 1);
         String delimiter = "";
@@ -3702,31 +3753,31 @@ public class Fuzzer{
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 136
-            buf.add(node738(ctx));
+            // The following lines are generated from line 142
+            buf.add(node794(ctx));
         }
         return buf;
     }
-    // The following lines are generated from line 133
-    public static Buffer node732(Context ctx) throws Exception{
+    // The following lines are generated from line 139
+    public static Buffer node788(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 134
-        buf.add(node733(ctx));
-        // The following lines are generated from line 135
-        buf.add(node736(ctx));
+        // The following lines are generated from line 140
+        buf.add(node789(ctx));
+        // The following lines are generated from line 141
+        buf.add(node792(ctx));
         return buf;
     }
-    // The following lines are generated from line 120
-    public static Buffer node587(Context ctx) throws Exception{
+    // The following lines are generated from line 126
+    public static Buffer node643(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 127
-        buf.set(1, node628(ctx));
-
-        // The following lines are generated from line 120
-        buf.set(0, node588(ctx));
-
         // The following lines are generated from line 133
-        buf.set(2, node732(ctx));
+        buf.set(1, node684(ctx));
+
+        // The following lines are generated from line 126
+        buf.set(0, node644(ctx));
+
+        // The following lines are generated from line 139
+        buf.set(2, node788(ctx));
 
         return buf;
     }
@@ -3737,48 +3788,48 @@ public class Fuzzer{
         List<Variable> arg_decls = new ArrayList<>();
         arg_decls.add(ctx.eval(ctx.getSymbol(buf, "rep", new ArrayList<>()), "=", ctx.getSymbol(buf, "random", packList(Variable.factory(1),Variable.factory(5),Variable.factory(",")))));
         ctx.enter(arg_decls);
-        // The following lines are generated from line 120
-        buf.add(node587(ctx));
+        // The following lines are generated from line 126
+        buf.add(node643(ctx));
 
         ctx.ret(ctx.getSymbol(buf, "c", new ArrayList<>()));
         return buf;
     }
-    // The following lines are generated from line 141
-    public static Buffer node766(Context ctx) throws Exception{
+    // The following lines are generated from line 147
+    public static Buffer node822(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 141
+        // The following lines are generated from line 147
         buf.add(ctx.getSymbol(buf, "WHERE", new ArrayList<>()));
 
-        // The following lines are generated from line 141
+        // The following lines are generated from line 147
         buf.add(ctx.getSymbol(buf, "predicate", new ArrayList<>()));
 
         return buf;
     }
-    // The following lines are generated from line 142
-    public static Buffer node771(Context ctx) throws Exception{
+    // The following lines are generated from line 148
+    public static Buffer node827(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 142
+        // The following lines are generated from line 148
         buf.add(ctx.getSymbol(buf, "WHERE", new ArrayList<>()));
 
-        // The following lines are generated from line 142
+        // The following lines are generated from line 148
         buf.add(ctx.getSymbol(buf, "c", new ArrayList<>()));
 
-        // The following lines are generated from line 142
+        // The following lines are generated from line 148
         buf.add(ctx.getSymbol(buf, "IN", new ArrayList<>()));
 
-        // The following lines are generated from line 142
+        // The following lines are generated from line 148
         buf.add(Variable.factory("("));
 
-        // The following lines are generated from line 142
+        // The following lines are generated from line 148
         buf.add(ctx.getSymbol(buf, "selectStatement", packList(Variable.factory(1))));
 
-        // The following lines are generated from line 142
+        // The following lines are generated from line 148
         buf.add(Variable.factory(")"));
 
         return buf;
     }
-    // The following lines are generated from line 143
-    public static Buffer node786(Context ctx) throws Exception{
+    // The following lines are generated from line 149
+    public static Buffer node842(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         int rep = Rand.random(0, 1);
         String delimiter = "";
@@ -3786,36 +3837,36 @@ public class Fuzzer{
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 143
+            // The following lines are generated from line 149
             buf.add(ctx.getSymbol(buf, "NOT", new ArrayList<>()));
         }
         return buf;
     }
-    // The following lines are generated from line 143
-    public static Buffer node783(Context ctx) throws Exception{
+    // The following lines are generated from line 149
+    public static Buffer node839(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 143
+        // The following lines are generated from line 149
         buf.add(ctx.getSymbol(buf, "WHERE", new ArrayList<>()));
 
-        // The following lines are generated from line 143
-        buf.add(node786(ctx));
+        // The following lines are generated from line 149
+        buf.add(node842(ctx));
 
-        // The following lines are generated from line 143
+        // The following lines are generated from line 149
         buf.add(ctx.getSymbol(buf, "EXISTS", new ArrayList<>()));
 
-        // The following lines are generated from line 143
+        // The following lines are generated from line 149
         buf.add(Variable.factory("("));
 
-        // The following lines are generated from line 143
+        // The following lines are generated from line 149
         buf.add(ctx.getSymbol(buf, "selectStatement", new ArrayList<>()));
 
-        // The following lines are generated from line 143
+        // The following lines are generated from line 149
         buf.add(Variable.factory(")"));
 
         return buf;
     }
-    // The following lines are generated from line 141
-    public static Buffer node765(Context ctx) throws Exception{
+    // The following lines are generated from line 147
+    public static Buffer node821(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 33.333333333333336);
@@ -3823,16 +3874,16 @@ public class Fuzzer{
         opt.addOption(2, 33.333333333333336);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 141
-            buf.add(node766(ctx));
+            // The following lines are generated from line 147
+            buf.add(node822(ctx));
         }
         if(index==1){
-            // The following lines are generated from line 142
-            buf.add(node771(ctx));
+            // The following lines are generated from line 148
+            buf.add(node827(ctx));
         }
         if(index==2){
-            // The following lines are generated from line 143
-            buf.add(node783(ctx));
+            // The following lines are generated from line 149
+            buf.add(node839(ctx));
         }
         return buf;
     }
@@ -3842,149 +3893,149 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 141
-        buf.add(node765(ctx));
+        // The following lines are generated from line 147
+        buf.add(node821(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 146
-    public static Buffer node817(Context ctx) throws Exception{
+    // The following lines are generated from line 152
+    public static Buffer node873(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 146
+        // The following lines are generated from line 152
         buf.add(ctx.eval(ctx.getSymbol(buf, "tt", new ArrayList<>()), "=", ctx.getSymbol(buf, "t", new ArrayList<>())));
 
-        // The following lines are generated from line 146
+        // The following lines are generated from line 152
         buf.add(ctx.getSymbol(buf, "DOT", new ArrayList<>()));
 
         return buf;
     }
-    // The following lines are generated from line 146
-    public static Buffer node816(Context ctx) throws Exception{
+    // The following lines are generated from line 152
+    public static Buffer node872(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 50.0);
         opt.addOption(1, 50.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 146
-            buf.add(node817(ctx));
+            // The following lines are generated from line 152
+            buf.add(node873(ctx));
         }
         if(index==1){
-            // The following lines are generated from line 146
+            // The following lines are generated from line 152
             ctx.eval(ctx.getSymbol(buf, "tt", new ArrayList<>()), "=", ctx.getSymbol(buf, "t", new ArrayList<>()));
         }
         return buf;
     }
-    // The following lines are generated from line 146
-    public static Buffer node815(Context ctx) throws Exception{
+    // The following lines are generated from line 152
+    public static Buffer node871(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 146
-        buf.add(node816(ctx));
+        // The following lines are generated from line 152
+        buf.add(node872(ctx));
 
-        // The following lines are generated from line 146
+        // The following lines are generated from line 152
         buf.add(ctx.eval(ctx.getSymbol(buf, "cc", new ArrayList<>()), "=", ctx.getSymbol(buf, "tt", new ArrayList<>()).getAttr("c", new ArrayList<>()).getAttr("filter", packList(ctx.eval(ctx.getSymbol(buf, "type", new ArrayList<>()), "==", ctx.getSymbol(buf, "pivot", new ArrayList<>()).getAttr("type", new ArrayList<>())))).getAttr("any", new ArrayList<>())));
 
         return buf;
     }
-    // The following lines are generated from line 146
-    public static Buffer node809(Context ctx) throws Exception{
+    // The following lines are generated from line 152
+    public static Buffer node865(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 50.0);
         opt.addOption(1, 50.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 146
+            // The following lines are generated from line 152
             buf.add(ctx.getSymbol(buf, "expression", packList(ctx.getSymbol(buf, "pivot", new ArrayList<>()))));
         }
         if(index==1){
-            // The following lines are generated from line 146
-            buf.add(node815(ctx));
+            // The following lines are generated from line 152
+            buf.add(node871(ctx));
         }
         return buf;
     }
-    // The following lines are generated from line 148
-    public static Buffer node855(Context ctx) throws Exception{
+    // The following lines are generated from line 154
+    public static Buffer node911(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 148
+        // The following lines are generated from line 154
         buf.add(ctx.eval(ctx.getSymbol(buf, "tt", new ArrayList<>()), "=", ctx.getSymbol(buf, "t", new ArrayList<>())));
 
-        // The following lines are generated from line 148
+        // The following lines are generated from line 154
         buf.add(ctx.getSymbol(buf, "DOT", new ArrayList<>()));
 
         return buf;
     }
-    // The following lines are generated from line 148
-    public static Buffer node854(Context ctx) throws Exception{
+    // The following lines are generated from line 154
+    public static Buffer node910(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 50.0);
         opt.addOption(1, 50.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 148
-            buf.add(node855(ctx));
+            // The following lines are generated from line 154
+            buf.add(node911(ctx));
         }
         if(index==1){
-            // The following lines are generated from line 148
+            // The following lines are generated from line 154
             ctx.eval(ctx.getSymbol(buf, "tt", new ArrayList<>()), "=", ctx.getSymbol(buf, "t", new ArrayList<>()));
         }
         return buf;
     }
-    // The following lines are generated from line 148
-    public static Buffer node853(Context ctx) throws Exception{
+    // The following lines are generated from line 154
+    public static Buffer node909(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 148
-        buf.add(node854(ctx));
+        // The following lines are generated from line 154
+        buf.add(node910(ctx));
 
-        // The following lines are generated from line 148
-        buf.add(ctx.eval(ctx.getSymbol(buf, "cc", new ArrayList<>()), "=", ctx.getSymbol(buf, "tt", new ArrayList<>()).getAttr("c", new ArrayList<>()).getAttr("filter", packList(ctx.eval(ctx.getSymbol(buf, "type", new ArrayList<>()), "=", ctx.getSymbol(buf, "pivot", new ArrayList<>()).getAttr("type", new ArrayList<>())))).getAttr("any", new ArrayList<>())));
+        // The following lines are generated from line 154
+        buf.add(ctx.eval(ctx.getSymbol(buf, "cc", new ArrayList<>()), "=", ctx.getSymbol(buf, "tt", new ArrayList<>()).getAttr("c", new ArrayList<>()).getAttr("filter", packList(ctx.eval(ctx.getSymbol(buf, "type", new ArrayList<>()), "==", ctx.getSymbol(buf, "pivot", new ArrayList<>()).getAttr("type", new ArrayList<>())))).getAttr("any", new ArrayList<>())));
 
         return buf;
     }
-    // The following lines are generated from line 148
-    public static Buffer node847(Context ctx) throws Exception{
+    // The following lines are generated from line 154
+    public static Buffer node903(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 50.0);
         opt.addOption(1, 50.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 148
+            // The following lines are generated from line 154
             buf.add(ctx.getSymbol(buf, "expression", packList(ctx.getSymbol(buf, "cc", new ArrayList<>()))));
         }
         if(index==1){
-            // The following lines are generated from line 148
-            buf.add(node853(ctx));
+            // The following lines are generated from line 154
+            buf.add(node909(ctx));
         }
         return buf;
     }
-    // The following lines are generated from line 146
-    public static Buffer node799(Context ctx) throws Exception{
+    // The following lines are generated from line 152
+    public static Buffer node855(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 146
+        // The following lines are generated from line 152
         buf.add(Variable.factory("("));
 
-        // The following lines are generated from line 146
+        // The following lines are generated from line 152
         ctx.eval(ctx.getSymbol(buf, "pivot", new ArrayList<>()), "=", ctx.getSymbol(buf, "t", new ArrayList<>()).getAttr("any", new ArrayList<>()).getAttr("c", new ArrayList<>()).getAttr("any", new ArrayList<>()));
 
-        // The following lines are generated from line 146
-        buf.add(node809(ctx));
+        // The following lines are generated from line 152
+        buf.add(node865(ctx));
 
-        // The following lines are generated from line 147
+        // The following lines are generated from line 153
         buf.add(ctx.getSymbol(buf, "comparison", new ArrayList<>()));
 
-        // The following lines are generated from line 148
-        buf.add(node847(ctx));
+        // The following lines are generated from line 154
+        buf.add(node903(ctx));
 
-        // The following lines are generated from line 148
+        // The following lines are generated from line 154
         buf.add(Variable.factory(")"));
 
         return buf;
     }
-    // The following lines are generated from line 146
-    public static Buffer node798(Context ctx) throws Exception{
+    // The following lines are generated from line 152
+    public static Buffer node854(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 50.0);
@@ -3992,15 +4043,15 @@ public class Fuzzer{
         opt.addOption(2, 20.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 146
-            buf.add(node799(ctx));
+            // The following lines are generated from line 152
+            buf.add(node855(ctx));
         }
         if(index==1){
-            // The following lines are generated from line 149
+            // The following lines are generated from line 155
             buf.add(ctx.getSymbol(buf, "ifnull", new ArrayList<>()));
         }
         if(index==2){
-            // The following lines are generated from line 150
+            // The following lines are generated from line 156
             buf.add(ctx.getSymbol(buf, "if_func", new ArrayList<>()));
         }
         return buf;
@@ -4011,36 +4062,36 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 146
-        buf.add(node798(ctx));
+        // The following lines are generated from line 152
+        buf.add(node854(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 153
-    public static Buffer node903(Context ctx) throws Exception{
+    // The following lines are generated from line 159
+    public static Buffer node959(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 153
+        // The following lines are generated from line 159
         buf.add(ctx.getSymbol(buf, "LT", new ArrayList<>()));
 
-        // The following lines are generated from line 153
+        // The following lines are generated from line 159
         buf.add(ctx.getSymbol(buf, "EQ", new ArrayList<>()));
 
         return buf;
     }
-    // The following lines are generated from line 153
-    public static Buffer node908(Context ctx) throws Exception{
+    // The following lines are generated from line 159
+    public static Buffer node964(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 153
+        // The following lines are generated from line 159
         buf.add(ctx.getSymbol(buf, "GT", new ArrayList<>()));
 
-        // The following lines are generated from line 153
+        // The following lines are generated from line 159
         buf.add(ctx.getSymbol(buf, "EQ", new ArrayList<>()));
 
         return buf;
     }
-    // The following lines are generated from line 153
-    public static Buffer node893(Context ctx) throws Exception{
+    // The following lines are generated from line 159
+    public static Buffer node949(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 20.0);
@@ -4050,24 +4101,24 @@ public class Fuzzer{
         opt.addOption(4, 20.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 153
+            // The following lines are generated from line 159
             buf.add(ctx.getSymbol(buf, "LT", new ArrayList<>()));
         }
         if(index==1){
-            // The following lines are generated from line 153
+            // The following lines are generated from line 159
             buf.add(ctx.getSymbol(buf, "GT", new ArrayList<>()));
         }
         if(index==2){
-            // The following lines are generated from line 153
+            // The following lines are generated from line 159
             buf.add(ctx.getSymbol(buf, "EQ", new ArrayList<>()));
         }
         if(index==3){
-            // The following lines are generated from line 153
-            buf.add(node903(ctx));
+            // The following lines are generated from line 159
+            buf.add(node959(ctx));
         }
         if(index==4){
-            // The following lines are generated from line 153
-            buf.add(node908(ctx));
+            // The following lines are generated from line 159
+            buf.add(node964(ctx));
         }
         return buf;
     }
@@ -4077,36 +4128,36 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 153
-        buf.add(node893(ctx));
+        // The following lines are generated from line 159
+        buf.add(node949(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 156
-    public static Buffer node915(Context ctx) throws Exception{
+    // The following lines are generated from line 162
+    public static Buffer node971(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 156
+        // The following lines are generated from line 162
         buf.add(ctx.getSymbol(buf, "WAIT", new ArrayList<>()));
 
-        // The following lines are generated from line 156
+        // The following lines are generated from line 162
         buf.add(ctx.getSymbol(buf, "float_val", new ArrayList<>()));
 
         return buf;
     }
-    // The following lines are generated from line 156
-    public static Buffer node914(Context ctx) throws Exception{
+    // The following lines are generated from line 162
+    public static Buffer node970(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 50.0);
         opt.addOption(1, 50.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 156
-            buf.add(node915(ctx));
+            // The following lines are generated from line 162
+            buf.add(node971(ctx));
         }
         if(index==1){
-            // The following lines are generated from line 157
+            // The following lines are generated from line 163
             buf.add(ctx.getSymbol(buf, "NOWAIT", new ArrayList<>()));
         }
         return buf;
@@ -4117,39 +4168,39 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 156
-        buf.add(node914(ctx));
+        // The following lines are generated from line 162
+        buf.add(node970(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 160
-    public static Buffer node927(Context ctx) throws Exception{
+    // The following lines are generated from line 166
+    public static Buffer node983(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 50.0);
         opt.addOption(1, 50.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 160
+            // The following lines are generated from line 166
             buf.add(ctx.getSymbol(buf, "float_expr", new ArrayList<>()));
         }
         if(index==1){
-            // The following lines are generated from line 160
+            // The following lines are generated from line 166
             buf.add(ctx.getSymbol(buf, "int_expr", new ArrayList<>()));
         }
         return buf;
     }
-    // The following lines are generated from line 160
-    public static Buffer node925(Context ctx) throws Exception{
+    // The following lines are generated from line 166
+    public static Buffer node981(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 160
+        // The following lines are generated from line 166
         buf.add(Variable.factory(" ABS("));
 
-        // The following lines are generated from line 160
-        buf.add(node927(ctx));
+        // The following lines are generated from line 166
+        buf.add(node983(ctx));
 
-        // The following lines are generated from line 160
+        // The following lines are generated from line 166
         buf.add(Variable.factory(")"));
 
         return buf;
@@ -4160,22 +4211,22 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 160
-        buf.add(node925(ctx));
+        // The following lines are generated from line 166
+        buf.add(node981(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 161
-    public static Buffer node937(Context ctx) throws Exception{
+    // The following lines are generated from line 167
+    public static Buffer node993(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 161
+        // The following lines are generated from line 167
         buf.add(Variable.factory(" BIT_COUNT("));
 
-        // The following lines are generated from line 161
+        // The following lines are generated from line 167
         buf.add(ctx.getSymbol(buf, "int_expr", new ArrayList<>()));
 
-        // The following lines are generated from line 161
+        // The following lines are generated from line 167
         buf.add(Variable.factory(")"));
 
         return buf;
@@ -4186,25 +4237,25 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 161
-        buf.add(node937(ctx));
+        // The following lines are generated from line 167
+        buf.add(node993(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 162
-    public static Buffer node950(Context ctx) throws Exception{
+    // The following lines are generated from line 168
+    public static Buffer node1006(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 162
+        // The following lines are generated from line 168
         buf.add(Variable.factory(","));
 
-        // The following lines are generated from line 162
+        // The following lines are generated from line 168
         buf.add(ctx.getSymbol(buf, "expression", new ArrayList<>()));
 
         return buf;
     }
-    // The following lines are generated from line 162
-    public static Buffer node948(Context ctx) throws Exception{
+    // The following lines are generated from line 168
+    public static Buffer node1004(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         int rep = Rand.random(0, Fuzzer.DEFAULT_MAX_REP);
         String delimiter = "";
@@ -4212,24 +4263,24 @@ public class Fuzzer{
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 162
-            buf.add(node950(ctx));
+            // The following lines are generated from line 168
+            buf.add(node1006(ctx));
         }
         return buf;
     }
-    // The following lines are generated from line 162
-    public static Buffer node944(Context ctx) throws Exception{
+    // The following lines are generated from line 168
+    public static Buffer node1000(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 162
+        // The following lines are generated from line 168
         buf.add(Variable.factory(" COALESCE("));
 
-        // The following lines are generated from line 162
+        // The following lines are generated from line 168
         buf.add(ctx.getSymbol(buf, "expression", new ArrayList<>()));
 
-        // The following lines are generated from line 162
-        buf.add(node948(ctx));
+        // The following lines are generated from line 168
+        buf.add(node1004(ctx));
 
-        // The following lines are generated from line 162
+        // The following lines are generated from line 168
         buf.add(Variable.factory(")"));
 
         return buf;
@@ -4240,65 +4291,65 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 162
-        buf.add(node944(ctx));
+        // The following lines are generated from line 168
+        buf.add(node1000(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 163
-    public static Buffer node960(Context ctx) throws Exception{
+    // The following lines are generated from line 169
+    public static Buffer node1016(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 163
-        buf.add(ctx.getSymbol(buf, "expression", new ArrayList<>()));
+        // The following lines are generated from line 169
+        buf.add(ctx.getSymbol(buf, "expression", packList(ctx.getSymbol(buf, "type", new ArrayList<>()),ctx.getSymbol(buf, "depth", new ArrayList<>()))));
 
-        // The following lines are generated from line 163
+        // The following lines are generated from line 169
         buf.add(ctx.getSymbol(buf, "comparison", new ArrayList<>()));
 
-        // The following lines are generated from line 163
-        buf.add(ctx.getSymbol(buf, "expression", new ArrayList<>()));
+        // The following lines are generated from line 169
+        buf.add(ctx.getSymbol(buf, "expression", packList(ctx.getSymbol(buf, "type", new ArrayList<>()),ctx.getSymbol(buf, "depth", new ArrayList<>()))));
 
         return buf;
     }
-    // The following lines are generated from line 163
-    public static Buffer node959(Context ctx) throws Exception{
+    // The following lines are generated from line 169
+    public static Buffer node1015(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 50.0);
         opt.addOption(1, 50.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 163
-            buf.add(node960(ctx));
+            // The following lines are generated from line 169
+            buf.add(node1016(ctx));
         }
         if(index==1){
-            // The following lines are generated from line 163
-            buf.add(ctx.getSymbol(buf, "ifnull", new ArrayList<>()));
+            // The following lines are generated from line 169
+            buf.add(ctx.getSymbol(buf, "ifnull", packList(ctx.getSymbol(buf, "type", new ArrayList<>()),ctx.getSymbol(buf, "depth", new ArrayList<>()))));
         }
         return buf;
     }
-    // The following lines are generated from line 163
-    public static Buffer node957(Context ctx) throws Exception{
+    // The following lines are generated from line 169
+    public static Buffer node1013(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 163
+        // The following lines are generated from line 169
         buf.add(Variable.factory(" IF("));
 
-        // The following lines are generated from line 163
-        buf.add(node959(ctx));
+        // The following lines are generated from line 169
+        buf.add(node1015(ctx));
 
-        // The following lines are generated from line 163
+        // The following lines are generated from line 169
         buf.add(Variable.factory(", "));
 
-        // The following lines are generated from line 163
-        buf.add(ctx.getSymbol(buf, "expression", new ArrayList<>()));
+        // The following lines are generated from line 169
+        buf.add(ctx.getSymbol(buf, "expression", packList(ctx.getSymbol(buf, "type", new ArrayList<>()),ctx.getSymbol(buf, "depth", new ArrayList<>()))));
 
-        // The following lines are generated from line 163
+        // The following lines are generated from line 169
         buf.add(Variable.factory(", "));
 
-        // The following lines are generated from line 163
-        buf.add(ctx.getSymbol(buf, "expression", new ArrayList<>()));
+        // The following lines are generated from line 169
+        buf.add(ctx.getSymbol(buf, "expression", packList(ctx.getSymbol(buf, "type", new ArrayList<>()),ctx.getSymbol(buf, "depth", new ArrayList<>()))));
 
-        // The following lines are generated from line 163
+        // The following lines are generated from line 169
         buf.add(Variable.factory(") "));
 
         return buf;
@@ -4308,29 +4359,31 @@ public class Fuzzer{
         Buffer buf = new Buffer();
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
+        arg_decls.add(ctx.getSymbol(buf, "type", new ArrayList<>()));
+        arg_decls.add(ctx.getSymbol(buf, "depth", new ArrayList<>()));
         ctx.enter(arg_decls);
-        // The following lines are generated from line 163
-        buf.add(node957(ctx));
+        // The following lines are generated from line 169
+        buf.add(node1013(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 164
-    public static Buffer node979(Context ctx) throws Exception{
+    // The following lines are generated from line 170
+    public static Buffer node1059(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 164
+        // The following lines are generated from line 170
         buf.add(Variable.factory(" IFNULL("));
 
-        // The following lines are generated from line 164
-        buf.add(ctx.getSymbol(buf, "expression", new ArrayList<>()));
+        // The following lines are generated from line 170
+        buf.add(ctx.getSymbol(buf, "expression", packList(ctx.getSymbol(buf, "type", new ArrayList<>()),ctx.getSymbol(buf, "depth", new ArrayList<>()))));
 
-        // The following lines are generated from line 164
+        // The following lines are generated from line 170
         buf.add(Variable.factory(", "));
 
-        // The following lines are generated from line 164
-        buf.add(ctx.getSymbol(buf, "expression", new ArrayList<>()));
+        // The following lines are generated from line 170
+        buf.add(ctx.getSymbol(buf, "expression", packList(ctx.getSymbol(buf, "type", new ArrayList<>()),ctx.getSymbol(buf, "depth", new ArrayList<>()))));
 
-        // The following lines are generated from line 164
+        // The following lines are generated from line 170
         buf.add(Variable.factory(") "));
 
         return buf;
@@ -4340,26 +4393,28 @@ public class Fuzzer{
         Buffer buf = new Buffer();
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
+        arg_decls.add(ctx.getSymbol(buf, "type", new ArrayList<>()));
+        arg_decls.add(ctx.getSymbol(buf, "depth", new ArrayList<>()));
         ctx.enter(arg_decls);
-        // The following lines are generated from line 164
-        buf.add(node979(ctx));
+        // The following lines are generated from line 170
+        buf.add(node1059(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 165
-    public static Buffer node995(Context ctx) throws Exception{
+    // The following lines are generated from line 171
+    public static Buffer node1091(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 165
+        // The following lines are generated from line 171
         buf.add(Variable.factory(", "));
 
-        // The following lines are generated from line 165
-        buf.add(ctx.getSymbol(buf, "expression", new ArrayList<>()));
+        // The following lines are generated from line 171
+        buf.add(ctx.getSymbol(buf, "expression", packList(ctx.getSymbol(buf, "type", new ArrayList<>()),ctx.getSymbol(buf, "depth", new ArrayList<>()))));
 
         return buf;
     }
-    // The following lines are generated from line 165
-    public static Buffer node993(Context ctx) throws Exception{
+    // The following lines are generated from line 171
+    public static Buffer node1089(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         int rep = Rand.random(1, Fuzzer.DEFAULT_MAX_REP);
         String delimiter = "";
@@ -4367,24 +4422,24 @@ public class Fuzzer{
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 165
-            buf.add(node995(ctx));
+            // The following lines are generated from line 171
+            buf.add(node1091(ctx));
         }
         return buf;
     }
-    // The following lines are generated from line 165
-    public static Buffer node989(Context ctx) throws Exception{
+    // The following lines are generated from line 171
+    public static Buffer node1081(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 165
+        // The following lines are generated from line 171
         buf.add(Variable.factory(" GREATEST("));
 
-        // The following lines are generated from line 165
-        buf.add(ctx.getSymbol(buf, "expression", new ArrayList<>()));
+        // The following lines are generated from line 171
+        buf.add(ctx.getSymbol(buf, "expression", packList(ctx.getSymbol(buf, "type", new ArrayList<>()),ctx.getSymbol(buf, "depth", new ArrayList<>()))));
 
-        // The following lines are generated from line 165
-        buf.add(node993(ctx));
+        // The following lines are generated from line 171
+        buf.add(node1089(ctx));
 
-        // The following lines are generated from line 165
+        // The following lines are generated from line 171
         buf.add(Variable.factory(") "));
 
         return buf;
@@ -4394,26 +4449,28 @@ public class Fuzzer{
         Buffer buf = new Buffer();
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
+        arg_decls.add(ctx.getSymbol(buf, "type", new ArrayList<>()));
+        arg_decls.add(ctx.getSymbol(buf, "depth", new ArrayList<>()));
         ctx.enter(arg_decls);
-        // The following lines are generated from line 165
-        buf.add(node989(ctx));
+        // The following lines are generated from line 171
+        buf.add(node1081(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 166
-    public static Buffer node1008(Context ctx) throws Exception{
+    // The following lines are generated from line 172
+    public static Buffer node1116(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 166
+        // The following lines are generated from line 172
         buf.add(Variable.factory(", "));
 
-        // The following lines are generated from line 166
-        buf.add(ctx.getSymbol(buf, "expression", new ArrayList<>()));
+        // The following lines are generated from line 172
+        buf.add(ctx.getSymbol(buf, "expression", packList(ctx.getSymbol(buf, "type", new ArrayList<>()),ctx.getSymbol(buf, "depth", new ArrayList<>()))));
 
         return buf;
     }
-    // The following lines are generated from line 166
-    public static Buffer node1006(Context ctx) throws Exception{
+    // The following lines are generated from line 172
+    public static Buffer node1114(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         int rep = Rand.random(1, Fuzzer.DEFAULT_MAX_REP);
         String delimiter = "";
@@ -4421,24 +4478,24 @@ public class Fuzzer{
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 166
-            buf.add(node1008(ctx));
+            // The following lines are generated from line 172
+            buf.add(node1116(ctx));
         }
         return buf;
     }
-    // The following lines are generated from line 166
-    public static Buffer node1002(Context ctx) throws Exception{
+    // The following lines are generated from line 172
+    public static Buffer node1106(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 166
+        // The following lines are generated from line 172
         buf.add(Variable.factory(" LEAST("));
 
-        // The following lines are generated from line 166
-        buf.add(ctx.getSymbol(buf, "expression", new ArrayList<>()));
+        // The following lines are generated from line 172
+        buf.add(ctx.getSymbol(buf, "expression", packList(ctx.getSymbol(buf, "type", new ArrayList<>()),ctx.getSymbol(buf, "depth", new ArrayList<>()))));
 
-        // The following lines are generated from line 166
-        buf.add(node1006(ctx));
+        // The following lines are generated from line 172
+        buf.add(node1114(ctx));
 
-        // The following lines are generated from line 166
+        // The following lines are generated from line 172
         buf.add(Variable.factory(") "));
 
         return buf;
@@ -4448,29 +4505,31 @@ public class Fuzzer{
         Buffer buf = new Buffer();
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
+        arg_decls.add(ctx.getSymbol(buf, "type", new ArrayList<>()));
+        arg_decls.add(ctx.getSymbol(buf, "depth", new ArrayList<>()));
         ctx.enter(arg_decls);
-        // The following lines are generated from line 166
-        buf.add(node1002(ctx));
+        // The following lines are generated from line 172
+        buf.add(node1106(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 167
-    public static Buffer node1015(Context ctx) throws Exception{
+    // The following lines are generated from line 173
+    public static Buffer node1131(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 167
+        // The following lines are generated from line 173
         buf.add(Variable.factory(" STRCMP("));
 
-        // The following lines are generated from line 167
+        // The following lines are generated from line 173
         buf.add(ctx.getSymbol(buf, "text_expr", new ArrayList<>()));
 
-        // The following lines are generated from line 167
+        // The following lines are generated from line 173
         buf.add(Variable.factory(", "));
 
-        // The following lines are generated from line 167
+        // The following lines are generated from line 173
         buf.add(ctx.getSymbol(buf, "text_expr", new ArrayList<>()));
 
-        // The following lines are generated from line 167
+        // The following lines are generated from line 173
         buf.add(Variable.factory(") "));
 
         return buf;
@@ -4481,34 +4540,34 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 167
-        buf.add(node1015(ctx));
+        // The following lines are generated from line 173
+        buf.add(node1131(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 168
-    public static Buffer node1025(Context ctx) throws Exception{
+    // The following lines are generated from line 174
+    public static Buffer node1141(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 168
+        // The following lines are generated from line 174
         buf.add(Variable.factory(" SUBSTR("));
 
-        // The following lines are generated from line 168
+        // The following lines are generated from line 174
         buf.add(ctx.getSymbol(buf, "text_expr", new ArrayList<>()));
 
-        // The following lines are generated from line 168
+        // The following lines are generated from line 174
         buf.add(Variable.factory(", "));
 
-        // The following lines are generated from line 168
+        // The following lines are generated from line 174
         buf.add(ctx.getSymbol(buf, "int_expr", new ArrayList<>()));
 
-        // The following lines are generated from line 168
+        // The following lines are generated from line 174
         buf.add(Variable.factory(", "));
 
-        // The following lines are generated from line 168
+        // The following lines are generated from line 174
         buf.add(ctx.getSymbol(buf, "int_expr", new ArrayList<>()));
 
-        // The following lines are generated from line 168
+        // The following lines are generated from line 174
         buf.add(Variable.factory(") "));
 
         return buf;
@@ -4519,34 +4578,34 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 168
-        buf.add(node1025(ctx));
+        // The following lines are generated from line 174
+        buf.add(node1141(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 169
-    public static Buffer node1038(Context ctx) throws Exception{
+    // The following lines are generated from line 175
+    public static Buffer node1154(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 169
+        // The following lines are generated from line 175
         buf.add(Variable.factory(" SUBSTRING("));
 
-        // The following lines are generated from line 169
+        // The following lines are generated from line 175
         buf.add(ctx.getSymbol(buf, "text_expr", new ArrayList<>()));
 
-        // The following lines are generated from line 169
+        // The following lines are generated from line 175
         buf.add(Variable.factory(", "));
 
-        // The following lines are generated from line 169
+        // The following lines are generated from line 175
         buf.add(ctx.getSymbol(buf, "int_expr", new ArrayList<>()));
 
-        // The following lines are generated from line 169
+        // The following lines are generated from line 175
         buf.add(Variable.factory(", "));
 
-        // The following lines are generated from line 169
+        // The following lines are generated from line 175
         buf.add(ctx.getSymbol(buf, "int_expr", new ArrayList<>()));
 
-        // The following lines are generated from line 169
+        // The following lines are generated from line 175
         buf.add(Variable.factory(") "));
 
         return buf;
@@ -4557,22 +4616,22 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 169
-        buf.add(node1038(ctx));
+        // The following lines are generated from line 175
+        buf.add(node1154(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 170
-    public static Buffer node1051(Context ctx) throws Exception{
+    // The following lines are generated from line 176
+    public static Buffer node1167(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 170
+        // The following lines are generated from line 176
         buf.add(Variable.factory(" TRIM("));
 
-        // The following lines are generated from line 170
+        // The following lines are generated from line 176
         buf.add(ctx.getSymbol(buf, "text_expr", new ArrayList<>()));
 
-        // The following lines are generated from line 170
+        // The following lines are generated from line 176
         buf.add(Variable.factory(") "));
 
         return buf;
@@ -4583,22 +4642,22 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 170
-        buf.add(node1051(ctx));
+        // The following lines are generated from line 176
+        buf.add(node1167(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 171
-    public static Buffer node1058(Context ctx) throws Exception{
+    // The following lines are generated from line 177
+    public static Buffer node1174(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 171
+        // The following lines are generated from line 177
         buf.add(Variable.factory(" LCASE("));
 
-        // The following lines are generated from line 171
+        // The following lines are generated from line 177
         buf.add(ctx.getSymbol(buf, "text_expr", new ArrayList<>()));
 
-        // The following lines are generated from line 171
+        // The following lines are generated from line 177
         buf.add(Variable.factory(") "));
 
         return buf;
@@ -4609,22 +4668,22 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 171
-        buf.add(node1058(ctx));
+        // The following lines are generated from line 177
+        buf.add(node1174(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 172
-    public static Buffer node1065(Context ctx) throws Exception{
+    // The following lines are generated from line 178
+    public static Buffer node1181(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 172
+        // The following lines are generated from line 178
         buf.add(Variable.factory(" UCASE("));
 
-        // The following lines are generated from line 172
+        // The following lines are generated from line 178
         buf.add(ctx.getSymbol(buf, "text_expr", new ArrayList<>()));
 
-        // The following lines are generated from line 172
+        // The following lines are generated from line 178
         buf.add(Variable.factory(") "));
 
         return buf;
@@ -4635,22 +4694,22 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 172
-        buf.add(node1065(ctx));
+        // The following lines are generated from line 178
+        buf.add(node1181(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 173
-    public static Buffer node1072(Context ctx) throws Exception{
+    // The following lines are generated from line 179
+    public static Buffer node1188(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 173
+        // The following lines are generated from line 179
         buf.add(Variable.factory(" SPACE("));
 
-        // The following lines are generated from line 173
+        // The following lines are generated from line 179
         buf.add(ctx.getSymbol(buf, "int_expr", new ArrayList<>()));
 
-        // The following lines are generated from line 173
+        // The following lines are generated from line 179
         buf.add(Variable.factory(") "));
 
         return buf;
@@ -4661,8 +4720,8 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 173
-        buf.add(node1072(ctx));
+        // The following lines are generated from line 179
+        buf.add(node1188(ctx));
 
         ctx.ret(null);
         return buf;
@@ -4673,14 +4732,14 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 174
+        // The following lines are generated from line 180
         buf.add(Variable.factory(" LAST_INSERT_ID() "));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 176
-    public static Buffer node1084(Context ctx) throws Exception{
+    // The following lines are generated from line 182
+    public static Buffer node1200(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 50.0);
@@ -4688,15 +4747,15 @@ public class Fuzzer{
         opt.addOption(2, 25.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 176
+            // The following lines are generated from line 182
             buf.add(ctx.getSymbol(buf, "float_val", new ArrayList<>()));
         }
         if(index==1){
-            // The following lines are generated from line 176
+            // The following lines are generated from line 182
             buf.add(ctx.getSymbol(buf, "abs", new ArrayList<>()));
         }
         if(index==2){
-            // The following lines are generated from line 176
+            // The following lines are generated from line 182
             buf.add(ctx.getSymbol(buf, "NULL", new ArrayList<>()));
         }
         return buf;
@@ -4707,25 +4766,25 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 176
-        buf.add(node1084(ctx));
+        // The following lines are generated from line 182
+        buf.add(node1200(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 177
-    public static Buffer node1101(Context ctx) throws Exception{
+    // The following lines are generated from line 183
+    public static Buffer node1217(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 177
+        // The following lines are generated from line 183
         buf.add(Variable.factory("."));
 
-        // The following lines are generated from line 177
+        // The following lines are generated from line 183
         buf.add(ctx.getSymbol(buf, "int_val", new ArrayList<>()));
 
         return buf;
     }
-    // The following lines are generated from line 177
-    public static Buffer node1099(Context ctx) throws Exception{
+    // The following lines are generated from line 183
+    public static Buffer node1215(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         int rep = Rand.random(0, 1);
         String delimiter = "";
@@ -4733,19 +4792,19 @@ public class Fuzzer{
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 177
-            buf.add(node1101(ctx));
+            // The following lines are generated from line 183
+            buf.add(node1217(ctx));
         }
         return buf;
     }
-    // The following lines are generated from line 177
-    public static Buffer node1096(Context ctx) throws Exception{
+    // The following lines are generated from line 183
+    public static Buffer node1212(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 177
+        // The following lines are generated from line 183
         buf.add(ctx.getSymbol(buf, "int_val", new ArrayList<>()));
 
-        // The following lines are generated from line 177
-        buf.add(node1099(ctx));
+        // The following lines are generated from line 183
+        buf.add(node1215(ctx));
 
         return buf;
     }
@@ -4755,14 +4814,14 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 177
-        buf.add(node1096(ctx));
+        // The following lines are generated from line 183
+        buf.add(node1212(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 178
-    public static Buffer node1110(Context ctx) throws Exception{
+    // The following lines are generated from line 184
+    public static Buffer node1226(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Variable v = ctx.getSymbol(buf, "random", packList(Variable.factory(0),Variable.factory(1)));
         int rep = v.getNumerical();
@@ -4771,24 +4830,24 @@ public class Fuzzer{
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 178
+            // The following lines are generated from line 184
             buf.add(ctx.getSymbol(buf, "DS", new ArrayList<>()));
         }
         return buf;
     }
-    // The following lines are generated from line 178
-    public static Buffer node1109(Context ctx) throws Exception{
+    // The following lines are generated from line 184
+    public static Buffer node1225(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 178
-        buf.add(node1110(ctx));
+        // The following lines are generated from line 184
+        buf.add(node1226(ctx));
 
-        // The following lines are generated from line 178
+        // The following lines are generated from line 184
         buf.add(ctx.getSymbol(buf, "int_val", new ArrayList<>()));
 
         return buf;
     }
-    // The following lines are generated from line 178
-    public static Buffer node1108(Context ctx) throws Exception{
+    // The following lines are generated from line 184
+    public static Buffer node1224(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 50.0);
@@ -4798,23 +4857,23 @@ public class Fuzzer{
         opt.addOption(4, 12.5);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 178
-            buf.add(node1109(ctx));
+            // The following lines are generated from line 184
+            buf.add(node1225(ctx));
         }
         if(index==1){
-            // The following lines are generated from line 178
+            // The following lines are generated from line 184
             buf.add(ctx.getSymbol(buf, "bit_count", new ArrayList<>()));
         }
         if(index==2){
-            // The following lines are generated from line 178
+            // The following lines are generated from line 184
             buf.add(ctx.getSymbol(buf, "strcmp", new ArrayList<>()));
         }
         if(index==3){
-            // The following lines are generated from line 178
+            // The following lines are generated from line 184
             buf.add(ctx.getSymbol(buf, "last_insert_id", new ArrayList<>()));
         }
         if(index==4){
-            // The following lines are generated from line 178
+            // The following lines are generated from line 184
             buf.add(ctx.getSymbol(buf, "NULL", new ArrayList<>()));
         }
         return buf;
@@ -4825,23 +4884,23 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 178
-        buf.add(node1108(ctx));
+        // The following lines are generated from line 184
+        buf.add(node1224(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 179
-    public static Buffer node1136(Context ctx) throws Exception{
+    // The following lines are generated from line 185
+    public static Buffer node1252(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        Variable v = ctx.getSymbol(buf, "random", packList(Variable.factory(1),Variable.factory(5),Variable.factory(0)));
+        Variable v = ctx.getSymbol(buf, "random", packList(Variable.factory(1),Variable.factory(5)));
         int rep = v.getNumerical();
         String delimiter = v.getAttr("delimiter", null).isPlaceHolder() ? "" : v.getAttr("delimiter", null).getValue();
         for (int i=0; i<rep; i++){
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 179
+            // The following lines are generated from line 185
             buf.add(ctx.getSymbol(buf, "DIGIT", new ArrayList<>()));
         }
         return buf;
@@ -4852,14 +4911,14 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 179
-        buf.add(node1136(ctx));
+        // The following lines are generated from line 185
+        buf.add(node1252(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 180
-    public static Buffer node1149(Context ctx) throws Exception{
+    // The following lines are generated from line 186
+    public static Buffer node1264(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 70.0);
@@ -4872,35 +4931,35 @@ public class Fuzzer{
         opt.addOption(7, 4.285714285714286);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 180
+            // The following lines are generated from line 186
             buf.add(ctx.getSymbol(buf, "text_val", new ArrayList<>()));
         }
         if(index==1){
-            // The following lines are generated from line 180
+            // The following lines are generated from line 186
             buf.add(ctx.getSymbol(buf, "substr", new ArrayList<>()));
         }
         if(index==2){
-            // The following lines are generated from line 180
+            // The following lines are generated from line 186
             buf.add(ctx.getSymbol(buf, "substring", new ArrayList<>()));
         }
         if(index==3){
-            // The following lines are generated from line 180
+            // The following lines are generated from line 186
             buf.add(ctx.getSymbol(buf, "lcase", new ArrayList<>()));
         }
         if(index==4){
-            // The following lines are generated from line 180
+            // The following lines are generated from line 186
             buf.add(ctx.getSymbol(buf, "ucase", new ArrayList<>()));
         }
         if(index==5){
-            // The following lines are generated from line 180
+            // The following lines are generated from line 186
             buf.add(ctx.getSymbol(buf, "space", new ArrayList<>()));
         }
         if(index==6){
-            // The following lines are generated from line 180
+            // The following lines are generated from line 186
             buf.add(ctx.getSymbol(buf, "trim", new ArrayList<>()));
         }
         if(index==7){
-            // The following lines are generated from line 180
+            // The following lines are generated from line 186
             buf.add(ctx.getSymbol(buf, "NULL", new ArrayList<>()));
         }
         return buf;
@@ -4911,31 +4970,31 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 180
-        buf.add(node1149(ctx));
+        // The following lines are generated from line 186
+        buf.add(node1264(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 181
-    public static Buffer node1182(Context ctx) throws Exception{
+    // The following lines are generated from line 187
+    public static Buffer node1297(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Options opt = new Options();
         opt.addOption(0, 50.0);
         opt.addOption(1, 50.0);
         int index = opt.randomly();
         if(index==0){
-            // The following lines are generated from line 181
+            // The following lines are generated from line 187
             buf.add(ctx.getSymbol(buf, "CH", new ArrayList<>()));
         }
         if(index==1){
-            // The following lines are generated from line 181
+            // The following lines are generated from line 187
             buf.add(ctx.getSymbol(buf, "DIGIT", new ArrayList<>()));
         }
         return buf;
     }
-    // The following lines are generated from line 181
-    public static Buffer node1179(Context ctx) throws Exception{
+    // The following lines are generated from line 187
+    public static Buffer node1294(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         Variable v = ctx.getSymbol(buf, "random", packList(Variable.factory(1),Variable.factory(100)));
         int rep = v.getNumerical();
@@ -4944,21 +5003,21 @@ public class Fuzzer{
             if (i!=0){
                 buf.add(Variable.factory(delimiter));
             }
-            // The following lines are generated from line 181
-            buf.add(node1182(ctx));
+            // The following lines are generated from line 187
+            buf.add(node1297(ctx));
         }
         return buf;
     }
-    // The following lines are generated from line 181
-    public static Buffer node1176(Context ctx) throws Exception{
+    // The following lines are generated from line 187
+    public static Buffer node1291(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 181
+        // The following lines are generated from line 187
         buf.add(ctx.getSymbol(buf, "DQ", new ArrayList<>()));
 
-        // The following lines are generated from line 181
-        buf.add(node1179(ctx));
+        // The following lines are generated from line 187
+        buf.add(node1294(ctx));
 
-        // The following lines are generated from line 181
+        // The following lines are generated from line 187
         buf.add(ctx.getSymbol(buf, "DQ", new ArrayList<>()));
 
         return buf;
@@ -4969,8 +5028,8 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 181
-        buf.add(node1176(ctx));
+        // The following lines are generated from line 187
+        buf.add(node1291(ctx));
 
         ctx.ret(null);
         return buf;
@@ -4981,7 +5040,7 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 183
+        // The following lines are generated from line 189
         ctx.eval(ctx.getSymbol(buf, "d", new ArrayList<>()), "=", ctx.getSymbol(buf, "query", packList(Variable.factory("SHOW DATABASES;"),Variable.factory("Database"))));
 
         ctx.ret(ctx.getSymbol(buf, "d", new ArrayList<>()));
@@ -4993,7 +5052,7 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 184
+        // The following lines are generated from line 190
         ctx.eval(ctx.getSymbol(buf, "t", new ArrayList<>()), "=", ctx.getSymbol(buf, "query", packList(Variable.factory("SHOW TABLES;"),ctx.eval(Variable.factory("Tables_in_"), "$+", ctx.getSymbol(buf, "DB", new ArrayList<>())))));
 
         ctx.ret(ctx.getSymbol(buf, "t", new ArrayList<>()));
@@ -5006,8 +5065,8 @@ public class Fuzzer{
         List<Variable> arg_decls = new ArrayList<>();
         arg_decls.add(ctx.getSymbol(buf, "t", new ArrayList<>()));
         ctx.enter(arg_decls);
-        // The following lines are generated from line 185
-        ctx.eval(ctx.getSymbol(buf, "c", new ArrayList<>()), "=", ctx.getSymbol(buf, "query", packList(ctx.eval(Variable.factory("SHOW COLUMNS FROM "), "$+", ctx.getSymbol(buf, "t", new ArrayList<>())),Variable.factory("Field"))));
+        // The following lines are generated from line 191
+        ctx.eval(ctx.getSymbol(buf, "c", new ArrayList<>()), "=", ctx.getSymbol(buf, "query", packList(ctx.eval(Variable.factory("SHOW COLUMNS FROM "), "$+", ctx.getSymbol(buf, "t", new ArrayList<>())),Variable.factory("Field"),Variable.factory("Type"),Variable.factory("type"))));
 
         ctx.ret(ctx.getSymbol(buf, "c", new ArrayList<>()));
         return buf;
@@ -5019,22 +5078,22 @@ public class Fuzzer{
         List<Variable> arg_decls = new ArrayList<>();
         arg_decls.add(ctx.getSymbol(buf, "t", new ArrayList<>()));
         ctx.enter(arg_decls);
-        // The following lines are generated from line 186
+        // The following lines are generated from line 192
         ctx.eval(ctx.getSymbol(buf, "i", new ArrayList<>()), "=", ctx.getSymbol(buf, "query", packList(ctx.eval(Variable.factory("SHOW INDEX FROM "), "$+", ctx.getSymbol(buf, "t", new ArrayList<>())),Variable.factory("Key_name"))));
 
         ctx.ret(ctx.getSymbol(buf, "i", new ArrayList<>()));
         return buf;
     }
-    // The following lines are generated from line 190
-    public static Buffer node1258(Context ctx) throws Exception{
+    // The following lines are generated from line 196
+    public static Buffer node1375(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 190
+        // The following lines are generated from line 196
         buf.add(ctx.getSymbol(buf, "IF", new ArrayList<>()));
 
-        // The following lines are generated from line 190
+        // The following lines are generated from line 196
         buf.add(ctx.getSymbol(buf, "NOT", new ArrayList<>()));
 
-        // The following lines are generated from line 190
+        // The following lines are generated from line 196
         buf.add(ctx.getSymbol(buf, "EXISTS", new ArrayList<>()));
 
         return buf;
@@ -5045,19 +5104,19 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 190
-        buf.add(node1258(ctx));
+        // The following lines are generated from line 196
+        buf.add(node1375(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 191
-    public static Buffer node1267(Context ctx) throws Exception{
+    // The following lines are generated from line 197
+    public static Buffer node1384(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 191
+        // The following lines are generated from line 197
         buf.add(ctx.getSymbol(buf, "IF", new ArrayList<>()));
 
-        // The following lines are generated from line 191
+        // The following lines are generated from line 197
         buf.add(ctx.getSymbol(buf, "EXISTS", new ArrayList<>()));
 
         return buf;
@@ -5068,344 +5127,131 @@ public class Fuzzer{
         ctx.push_frame();
         List<Variable> arg_decls = new ArrayList<>();
         ctx.enter(arg_decls);
-        // The following lines are generated from line 191
-        buf.add(node1267(ctx));
+        // The following lines are generated from line 197
+        buf.add(node1384(ctx));
 
         ctx.ret(null);
         return buf;
     }
-    // The following lines are generated from line 193
-    public static Buffer node1274(Context ctx) throws Exception{
+    // The following lines are generated from line 199
+    public static Buffer node1391(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 193
+        // The following lines are generated from line 199
         buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
 
-        // The following lines are generated from line 193
+        // The following lines are generated from line 199
         buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
 
-        // The following lines are generated from line 193
+        // The following lines are generated from line 199
         buf.add(ctx.getSymbol(buf, "D", new ArrayList<>()));
 
-        // The following lines are generated from line 193
+        // The following lines are generated from line 199
         buf.add(ctx.getSymbol(buf, "D", new ArrayList<>()));
 
-        // The following lines are generated from line 193
+        // The following lines are generated from line 199
         buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
 
         return buf;
     }
-    // The following lines are generated from line 193
+    // The following lines are generated from line 199
     public static Buffer ADD(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 193
-        buf.add(node1274(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 194
-    public static Buffer node1287(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 194
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 194
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
-
-        // The following lines are generated from line 194
-        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
-
-        // The following lines are generated from line 194
-        buf.add(ctx.getSymbol(buf, "G", new ArrayList<>()));
-
-        // The following lines are generated from line 194
-        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
-
-        // The following lines are generated from line 194
-        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
-
-        // The following lines are generated from line 194
-        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
-
-        // The following lines are generated from line 194
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 194
-        buf.add(ctx.getSymbol(buf, "H", new ArrayList<>()));
-
-        // The following lines are generated from line 194
-        buf.add(ctx.getSymbol(buf, "M", new ArrayList<>()));
-
-        // The following lines are generated from line 194
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 194
-    public static Buffer ALGORITHM(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 194
-        buf.add(node1287(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 195
-    public static Buffer node1312(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 195
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 195
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
-
-        // The following lines are generated from line 195
-        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
-
-        // The following lines are generated from line 195
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 195
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 195
-        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
-
-        // The following lines are generated from line 195
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 195
-    public static Buffer ALTER(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 195
-        buf.add(node1312(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 196
-    public static Buffer node1329(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 196
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 196
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
-
-        // The following lines are generated from line 196
-        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
-
-        // The following lines are generated from line 196
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 196
-    public static Buffer AS(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 196
-        buf.add(node1329(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 197
-    public static Buffer node1340(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 197
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 197
-        buf.add(ctx.getSymbol(buf, "B", new ArrayList<>()));
-
-        // The following lines are generated from line 197
-        buf.add(ctx.getSymbol(buf, "Y", new ArrayList<>()));
-
-        // The following lines are generated from line 197
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 197
-    public static Buffer BY(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 197
-        buf.add(node1340(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 198
-    public static Buffer node1351(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 198
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 198
-        buf.add(ctx.getSymbol(buf, "C", new ArrayList<>()));
-
-        // The following lines are generated from line 198
-        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
-
-        // The following lines are generated from line 198
-        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
-
-        // The following lines are generated from line 198
-        buf.add(ctx.getSymbol(buf, "U", new ArrayList<>()));
-
-        // The following lines are generated from line 198
-        buf.add(ctx.getSymbol(buf, "M", new ArrayList<>()));
-
-        // The following lines are generated from line 198
-        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
-
-        // The following lines are generated from line 198
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 198
-    public static Buffer COLUMN(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 198
-        buf.add(node1351(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 199
-    public static Buffer node1370(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
         // The following lines are generated from line 199
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 199
-        buf.add(ctx.getSymbol(buf, "C", new ArrayList<>()));
-
-        // The following lines are generated from line 199
-        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
-
-        // The following lines are generated from line 199
-        buf.add(ctx.getSymbol(buf, "P", new ArrayList<>()));
-
-        // The following lines are generated from line 199
-        buf.add(ctx.getSymbol(buf, "Y", new ArrayList<>()));
-
-        // The following lines are generated from line 199
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 199
-    public static Buffer COPY(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 199
-        buf.add(node1370(ctx));
+        buf.add(node1391(ctx));
 
         return buf;
     }
     // The following lines are generated from line 200
-    public static Buffer node1385(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 200
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 200
-        buf.add(ctx.getSymbol(buf, "C", new ArrayList<>()));
-
-        // The following lines are generated from line 200
-        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
-
-        // The following lines are generated from line 200
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 200
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
-
-        // The following lines are generated from line 200
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 200
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 200
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 200
-    public static Buffer CREATE(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 200
-        buf.add(node1385(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 201
     public static Buffer node1404(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 201
+        // The following lines are generated from line 200
         buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
 
-        // The following lines are generated from line 201
-        buf.add(ctx.getSymbol(buf, "D", new ArrayList<>()));
-
-        // The following lines are generated from line 201
+        // The following lines are generated from line 200
         buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
 
-        // The following lines are generated from line 201
+        // The following lines are generated from line 200
+        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
+
+        // The following lines are generated from line 200
+        buf.add(ctx.getSymbol(buf, "G", new ArrayList<>()));
+
+        // The following lines are generated from line 200
+        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
+
+        // The following lines are generated from line 200
+        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
+
+        // The following lines are generated from line 200
+        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+
+        // The following lines are generated from line 200
         buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
 
-        // The following lines are generated from line 201
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+        // The following lines are generated from line 200
+        buf.add(ctx.getSymbol(buf, "H", new ArrayList<>()));
 
-        // The following lines are generated from line 201
-        buf.add(ctx.getSymbol(buf, "B", new ArrayList<>()));
+        // The following lines are generated from line 200
+        buf.add(ctx.getSymbol(buf, "M", new ArrayList<>()));
 
-        // The following lines are generated from line 201
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
-
-        // The following lines are generated from line 201
-        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
-
-        // The following lines are generated from line 201
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 201
+        // The following lines are generated from line 200
         buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
 
         return buf;
     }
-    // The following lines are generated from line 201
-    public static Buffer DATABASE(Context ctx) throws Exception{
+    // The following lines are generated from line 200
+    public static Buffer ALGORITHM(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 201
+        // The following lines are generated from line 200
         buf.add(node1404(ctx));
 
         return buf;
     }
+    // The following lines are generated from line 201
+    public static Buffer node1429(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 201
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 201
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 201
+        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
+
+        // The following lines are generated from line 201
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 201
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 201
+        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
+
+        // The following lines are generated from line 201
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 201
+    public static Buffer ALTER(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 201
+        buf.add(node1429(ctx));
+
+        return buf;
+    }
     // The following lines are generated from line 202
-    public static Buffer node1427(Context ctx) throws Exception{
+    public static Buffer node1446(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 202
         buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
 
         // The following lines are generated from line 202
-        buf.add(ctx.getSymbol(buf, "D", new ArrayList<>()));
-
-        // The following lines are generated from line 202
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 202
-        buf.add(ctx.getSymbol(buf, "F", new ArrayList<>()));
-
-        // The following lines are generated from line 202
         buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
 
         // The following lines are generated from line 202
-        buf.add(ctx.getSymbol(buf, "U", new ArrayList<>()));
-
-        // The following lines are generated from line 202
-        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
-
-        // The following lines are generated from line 202
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
 
         // The following lines are generated from line 202
         buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
@@ -5413,480 +5259,465 @@ public class Fuzzer{
         return buf;
     }
     // The following lines are generated from line 202
-    public static Buffer DEFAULT(Context ctx) throws Exception{
+    public static Buffer AS(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 202
-        buf.add(node1427(ctx));
+        buf.add(node1446(ctx));
 
         return buf;
     }
     // The following lines are generated from line 203
-    public static Buffer node1448(Context ctx) throws Exception{
+    public static Buffer node1457(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 203
         buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
 
         // The following lines are generated from line 203
-        buf.add(ctx.getSymbol(buf, "D", new ArrayList<>()));
-
-        // The following lines are generated from line 203
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 203
-        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
-
-        // The following lines are generated from line 203
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+        buf.add(ctx.getSymbol(buf, "B", new ArrayList<>()));
 
         // The following lines are generated from line 203
         buf.add(ctx.getSymbol(buf, "Y", new ArrayList<>()));
 
         // The following lines are generated from line 203
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 203
-        buf.add(ctx.getSymbol(buf, "D", new ArrayList<>()));
-
-        // The following lines are generated from line 203
         buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
 
         return buf;
     }
     // The following lines are generated from line 203
-    public static Buffer DELAYED(Context ctx) throws Exception{
+    public static Buffer BY(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 203
-        buf.add(node1448(ctx));
+        buf.add(node1457(ctx));
 
         return buf;
     }
     // The following lines are generated from line 204
-    public static Buffer node1469(Context ctx) throws Exception{
+    public static Buffer node1468(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 204
         buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
 
         // The following lines are generated from line 204
-        buf.add(ctx.getSymbol(buf, "D", new ArrayList<>()));
-
-        // The following lines are generated from line 204
-        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
-
-        // The following lines are generated from line 204
-        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
-
-        // The following lines are generated from line 204
-        buf.add(ctx.getSymbol(buf, "P", new ArrayList<>()));
-
-        // The following lines are generated from line 204
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 204
-    public static Buffer DROP(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 204
-        buf.add(node1469(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 205
-    public static Buffer node1484(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 205
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 205
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 205
-        buf.add(ctx.getSymbol(buf, "X", new ArrayList<>()));
-
-        // The following lines are generated from line 205
         buf.add(ctx.getSymbol(buf, "C", new ArrayList<>()));
 
-        // The following lines are generated from line 205
+        // The following lines are generated from line 204
+        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
+
+        // The following lines are generated from line 204
         buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
 
-        // The following lines are generated from line 205
+        // The following lines are generated from line 204
         buf.add(ctx.getSymbol(buf, "U", new ArrayList<>()));
 
-        // The following lines are generated from line 205
-        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
-
-        // The following lines are generated from line 205
-        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
-
-        // The following lines are generated from line 205
-        buf.add(ctx.getSymbol(buf, "V", new ArrayList<>()));
-
-        // The following lines are generated from line 205
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 205
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 205
-    public static Buffer EXCLUSIVE(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 205
-        buf.add(node1484(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 206
-    public static Buffer node1509(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 206
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 206
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 206
-        buf.add(ctx.getSymbol(buf, "X", new ArrayList<>()));
-
-        // The following lines are generated from line 206
-        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
-
-        // The following lines are generated from line 206
-        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
-
-        // The following lines are generated from line 206
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 206
-        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
-
-        // The following lines are generated from line 206
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 206
-    public static Buffer EXISTS(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 206
-        buf.add(node1509(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 207
-    public static Buffer node1528(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 207
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 207
-        buf.add(ctx.getSymbol(buf, "F", new ArrayList<>()));
-
-        // The following lines are generated from line 207
-        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
-
-        // The following lines are generated from line 207
-        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
-
-        // The following lines are generated from line 207
-        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
-
-        // The following lines are generated from line 207
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 207
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 207
-    public static Buffer FIRST(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 207
-        buf.add(node1528(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 208
-    public static Buffer node1545(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 208
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 208
-        buf.add(ctx.getSymbol(buf, "F", new ArrayList<>()));
-
-        // The following lines are generated from line 208
-        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
-
-        // The following lines are generated from line 208
-        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
-
-        // The following lines are generated from line 208
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
-
-        // The following lines are generated from line 208
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 208
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 208
-    public static Buffer FLOAT(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 208
-        buf.add(node1545(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 209
-    public static Buffer node1562(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 209
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 209
-        buf.add(ctx.getSymbol(buf, "F", new ArrayList<>()));
-
-        // The following lines are generated from line 209
-        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
-
-        // The following lines are generated from line 209
-        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
-
-        // The following lines are generated from line 209
+        // The following lines are generated from line 204
         buf.add(ctx.getSymbol(buf, "M", new ArrayList<>()));
 
+        // The following lines are generated from line 204
+        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
+
+        // The following lines are generated from line 204
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 204
+    public static Buffer COLUMN(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 204
+        buf.add(node1468(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 205
+    public static Buffer node1487(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 205
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 205
+        buf.add(ctx.getSymbol(buf, "C", new ArrayList<>()));
+
+        // The following lines are generated from line 205
+        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
+
+        // The following lines are generated from line 205
+        buf.add(ctx.getSymbol(buf, "P", new ArrayList<>()));
+
+        // The following lines are generated from line 205
+        buf.add(ctx.getSymbol(buf, "Y", new ArrayList<>()));
+
+        // The following lines are generated from line 205
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 205
+    public static Buffer COPY(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 205
+        buf.add(node1487(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 206
+    public static Buffer node1502(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 206
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 206
+        buf.add(ctx.getSymbol(buf, "C", new ArrayList<>()));
+
+        // The following lines are generated from line 206
+        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
+
+        // The following lines are generated from line 206
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 206
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 206
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 206
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 206
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 206
+    public static Buffer CREATE(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 206
+        buf.add(node1502(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 207
+    public static Buffer node1521(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 207
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 207
+        buf.add(ctx.getSymbol(buf, "D", new ArrayList<>()));
+
+        // The following lines are generated from line 207
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 207
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 207
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 207
+        buf.add(ctx.getSymbol(buf, "B", new ArrayList<>()));
+
+        // The following lines are generated from line 207
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 207
+        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
+
+        // The following lines are generated from line 207
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 207
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 207
+    public static Buffer DATABASE(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 207
+        buf.add(node1521(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 208
+    public static Buffer node1544(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 208
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 208
+        buf.add(ctx.getSymbol(buf, "D", new ArrayList<>()));
+
+        // The following lines are generated from line 208
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 208
+        buf.add(ctx.getSymbol(buf, "F", new ArrayList<>()));
+
+        // The following lines are generated from line 208
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 208
+        buf.add(ctx.getSymbol(buf, "U", new ArrayList<>()));
+
+        // The following lines are generated from line 208
+        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
+
+        // The following lines are generated from line 208
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 208
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 208
+    public static Buffer DEFAULT(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 208
+        buf.add(node1544(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 209
+    public static Buffer node1565(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 209
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 209
+        buf.add(ctx.getSymbol(buf, "D", new ArrayList<>()));
+
+        // The following lines are generated from line 209
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 209
+        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
+
+        // The following lines are generated from line 209
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 209
+        buf.add(ctx.getSymbol(buf, "Y", new ArrayList<>()));
+
+        // The following lines are generated from line 209
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 209
+        buf.add(ctx.getSymbol(buf, "D", new ArrayList<>()));
+
         // The following lines are generated from line 209
         buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
 
         return buf;
     }
     // The following lines are generated from line 209
-    public static Buffer FROM(Context ctx) throws Exception{
+    public static Buffer DELAYED(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 209
-        buf.add(node1562(ctx));
+        buf.add(node1565(ctx));
 
         return buf;
     }
     // The following lines are generated from line 210
-    public static Buffer node1577(Context ctx) throws Exception{
+    public static Buffer node1586(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 210
         buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
 
         // The following lines are generated from line 210
-        buf.add(ctx.getSymbol(buf, "F", new ArrayList<>()));
-
-        // The following lines are generated from line 210
-        buf.add(ctx.getSymbol(buf, "U", new ArrayList<>()));
-
-        // The following lines are generated from line 210
-        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
-
-        // The following lines are generated from line 210
-        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
-
-        // The following lines are generated from line 210
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 210
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 210
-        buf.add(ctx.getSymbol(buf, "X", new ArrayList<>()));
-
-        // The following lines are generated from line 210
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 210
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 210
-    public static Buffer FULLTEXT(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 210
-        buf.add(node1577(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 211
-    public static Buffer node1600(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 211
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 211
-        buf.add(ctx.getSymbol(buf, "H", new ArrayList<>()));
-
-        // The following lines are generated from line 211
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
-
-        // The following lines are generated from line 211
-        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
-
-        // The following lines are generated from line 211
-        buf.add(ctx.getSymbol(buf, "H", new ArrayList<>()));
-
-        // The following lines are generated from line 211
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 211
-    public static Buffer HASH(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 211
-        buf.add(node1600(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 212
-    public static Buffer node1615(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 212
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 212
-        buf.add(ctx.getSymbol(buf, "H", new ArrayList<>()));
-
-        // The following lines are generated from line 212
-        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
-
-        // The following lines are generated from line 212
-        buf.add(ctx.getSymbol(buf, "G", new ArrayList<>()));
-
-        // The following lines are generated from line 212
-        buf.add(ctx.getSymbol(buf, "H", new ArrayList<>()));
-
-        // The following lines are generated from line 212
-        buf.add(ctx.getSymbol(buf, "US", new ArrayList<>()));
-
-        // The following lines are generated from line 212
-        buf.add(ctx.getSymbol(buf, "P", new ArrayList<>()));
-
-        // The following lines are generated from line 212
-        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
-
-        // The following lines are generated from line 212
-        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
-
-        // The following lines are generated from line 212
-        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
-
-        // The following lines are generated from line 212
-        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
-
-        // The following lines are generated from line 212
-        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
-
-        // The following lines are generated from line 212
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 212
-        buf.add(ctx.getSymbol(buf, "Y", new ArrayList<>()));
-
-        // The following lines are generated from line 212
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 212
-    public static Buffer HIGH_PRIORITY(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 212
-        buf.add(node1615(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 213
-    public static Buffer node1648(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 213
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 213
-        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
-
-        // The following lines are generated from line 213
-        buf.add(ctx.getSymbol(buf, "F", new ArrayList<>()));
-
-        // The following lines are generated from line 213
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 213
-    public static Buffer IF(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 213
-        buf.add(node1648(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 214
-    public static Buffer node1659(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 214
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 214
-        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
-
-        // The following lines are generated from line 214
-        buf.add(ctx.getSymbol(buf, "G", new ArrayList<>()));
-
-        // The following lines are generated from line 214
-        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
-
-        // The following lines are generated from line 214
-        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
-
-        // The following lines are generated from line 214
-        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
-
-        // The following lines are generated from line 214
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 214
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 214
-    public static Buffer IGNORE(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 214
-        buf.add(node1659(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 215
-    public static Buffer node1678(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 215
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 215
-        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
-
-        // The following lines are generated from line 215
-        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
-
-        // The following lines are generated from line 215
         buf.add(ctx.getSymbol(buf, "D", new ArrayList<>()));
 
-        // The following lines are generated from line 215
+        // The following lines are generated from line 210
+        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
+
+        // The following lines are generated from line 210
+        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
+
+        // The following lines are generated from line 210
+        buf.add(ctx.getSymbol(buf, "P", new ArrayList<>()));
+
+        // The following lines are generated from line 210
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 210
+    public static Buffer DROP(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 210
+        buf.add(node1586(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 211
+    public static Buffer node1601(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 211
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 211
         buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
 
-        // The following lines are generated from line 215
+        // The following lines are generated from line 211
         buf.add(ctx.getSymbol(buf, "X", new ArrayList<>()));
+
+        // The following lines are generated from line 211
+        buf.add(ctx.getSymbol(buf, "C", new ArrayList<>()));
+
+        // The following lines are generated from line 211
+        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
+
+        // The following lines are generated from line 211
+        buf.add(ctx.getSymbol(buf, "U", new ArrayList<>()));
+
+        // The following lines are generated from line 211
+        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
+
+        // The following lines are generated from line 211
+        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+
+        // The following lines are generated from line 211
+        buf.add(ctx.getSymbol(buf, "V", new ArrayList<>()));
+
+        // The following lines are generated from line 211
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 211
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 211
+    public static Buffer EXCLUSIVE(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 211
+        buf.add(node1601(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 212
+    public static Buffer node1626(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 212
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 212
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 212
+        buf.add(ctx.getSymbol(buf, "X", new ArrayList<>()));
+
+        // The following lines are generated from line 212
+        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+
+        // The following lines are generated from line 212
+        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
+
+        // The following lines are generated from line 212
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 212
+        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
+
+        // The following lines are generated from line 212
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 212
+    public static Buffer EXISTS(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 212
+        buf.add(node1626(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 213
+    public static Buffer node1645(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 213
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 213
+        buf.add(ctx.getSymbol(buf, "F", new ArrayList<>()));
+
+        // The following lines are generated from line 213
+        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+
+        // The following lines are generated from line 213
+        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
+
+        // The following lines are generated from line 213
+        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
+
+        // The following lines are generated from line 213
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 213
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 213
+    public static Buffer FIRST(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 213
+        buf.add(node1645(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 214
+    public static Buffer node1662(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 214
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 214
+        buf.add(ctx.getSymbol(buf, "F", new ArrayList<>()));
+
+        // The following lines are generated from line 214
+        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
+
+        // The following lines are generated from line 214
+        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
+
+        // The following lines are generated from line 214
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 214
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 214
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 214
+    public static Buffer FLOAT(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 214
+        buf.add(node1662(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 215
+    public static Buffer node1679(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 215
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 215
+        buf.add(ctx.getSymbol(buf, "F", new ArrayList<>()));
+
+        // The following lines are generated from line 215
+        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
+
+        // The following lines are generated from line 215
+        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
+
+        // The following lines are generated from line 215
+        buf.add(ctx.getSymbol(buf, "M", new ArrayList<>()));
 
         // The following lines are generated from line 215
         buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
@@ -5894,39 +5725,42 @@ public class Fuzzer{
         return buf;
     }
     // The following lines are generated from line 215
-    public static Buffer INDEX(Context ctx) throws Exception{
+    public static Buffer FROM(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 215
-        buf.add(node1678(ctx));
+        buf.add(node1679(ctx));
 
         return buf;
     }
     // The following lines are generated from line 216
-    public static Buffer node1695(Context ctx) throws Exception{
+    public static Buffer node1694(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 216
         buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
 
         // The following lines are generated from line 216
-        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+        buf.add(ctx.getSymbol(buf, "F", new ArrayList<>()));
 
         // The following lines are generated from line 216
-        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
-
-        // The following lines are generated from line 216
-        buf.add(ctx.getSymbol(buf, "P", new ArrayList<>()));
+        buf.add(ctx.getSymbol(buf, "U", new ArrayList<>()));
 
         // The following lines are generated from line 216
         buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
 
         // The following lines are generated from line 216
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
 
         // The following lines are generated from line 216
-        buf.add(ctx.getSymbol(buf, "C", new ArrayList<>()));
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
 
         // The following lines are generated from line 216
         buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 216
+        buf.add(ctx.getSymbol(buf, "X", new ArrayList<>()));
+
+        // The following lines are generated from line 216
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
 
         // The following lines are generated from line 216
         buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
@@ -5934,36 +5768,30 @@ public class Fuzzer{
         return buf;
     }
     // The following lines are generated from line 216
-    public static Buffer INPLACE(Context ctx) throws Exception{
+    public static Buffer FULLTEXT(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 216
-        buf.add(node1695(ctx));
+        buf.add(node1694(ctx));
 
         return buf;
     }
     // The following lines are generated from line 217
-    public static Buffer node1716(Context ctx) throws Exception{
+    public static Buffer node1717(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 217
         buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
 
         // The following lines are generated from line 217
-        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+        buf.add(ctx.getSymbol(buf, "H", new ArrayList<>()));
 
         // The following lines are generated from line 217
-        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
 
         // The following lines are generated from line 217
         buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
 
         // The following lines are generated from line 217
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 217
-        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
-
-        // The following lines are generated from line 217
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+        buf.add(ctx.getSymbol(buf, "H", new ArrayList<>()));
 
         // The following lines are generated from line 217
         buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
@@ -5971,920 +5799,935 @@ public class Fuzzer{
         return buf;
     }
     // The following lines are generated from line 217
-    public static Buffer INSERT(Context ctx) throws Exception{
+    public static Buffer HASH(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 217
-        buf.add(node1716(ctx));
+        buf.add(node1717(ctx));
 
         return buf;
     }
     // The following lines are generated from line 218
-    public static Buffer node1735(Context ctx) throws Exception{
+    public static Buffer node1732(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 218
         buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 218
+        buf.add(ctx.getSymbol(buf, "H", new ArrayList<>()));
 
         // The following lines are generated from line 218
         buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
 
         // The following lines are generated from line 218
-        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
+        buf.add(ctx.getSymbol(buf, "G", new ArrayList<>()));
 
         // The following lines are generated from line 218
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+        buf.add(ctx.getSymbol(buf, "H", new ArrayList<>()));
 
         // The following lines are generated from line 218
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+        buf.add(ctx.getSymbol(buf, "US", new ArrayList<>()));
 
-        return buf;
-    }
-    // The following lines are generated from line 218
-    public static Buffer INT(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
         // The following lines are generated from line 218
-        buf.add(node1735(ctx));
+        buf.add(ctx.getSymbol(buf, "P", new ArrayList<>()));
 
-        return buf;
-    }
-    // The following lines are generated from line 219
-    public static Buffer node1748(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 219
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+        // The following lines are generated from line 218
+        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
 
-        // The following lines are generated from line 219
+        // The following lines are generated from line 218
         buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
 
-        // The following lines are generated from line 219
-        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
-
-        // The following lines are generated from line 219
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 219
+        // The following lines are generated from line 218
         buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
 
+        // The following lines are generated from line 218
+        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
+
+        // The following lines are generated from line 218
+        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+
+        // The following lines are generated from line 218
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 218
+        buf.add(ctx.getSymbol(buf, "Y", new ArrayList<>()));
+
+        // The following lines are generated from line 218
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 218
+    public static Buffer HIGH_PRIORITY(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 218
+        buf.add(node1732(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 219
+    public static Buffer node1765(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 219
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 219
+        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+
+        // The following lines are generated from line 219
+        buf.add(ctx.getSymbol(buf, "F", new ArrayList<>()));
+
         // The following lines are generated from line 219
         buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
 
         return buf;
     }
     // The following lines are generated from line 219
-    public static Buffer INTO(Context ctx) throws Exception{
+    public static Buffer IF(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 219
-        buf.add(node1748(ctx));
+        buf.add(node1765(ctx));
 
         return buf;
     }
     // The following lines are generated from line 220
-    public static Buffer node1763(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 220
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 220
-        buf.add(ctx.getSymbol(buf, "K", new ArrayList<>()));
-
-        // The following lines are generated from line 220
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 220
-        buf.add(ctx.getSymbol(buf, "Y", new ArrayList<>()));
-
-        // The following lines are generated from line 220
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 220
-    public static Buffer KEY(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 220
-        buf.add(node1763(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 221
     public static Buffer node1776(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 221
+        // The following lines are generated from line 220
         buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
 
-        // The following lines are generated from line 221
-        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
-
-        // The following lines are generated from line 221
+        // The following lines are generated from line 220
         buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
 
-        // The following lines are generated from line 221
-        buf.add(ctx.getSymbol(buf, "K", new ArrayList<>()));
+        // The following lines are generated from line 220
+        buf.add(ctx.getSymbol(buf, "G", new ArrayList<>()));
 
-        // The following lines are generated from line 221
+        // The following lines are generated from line 220
+        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
+
+        // The following lines are generated from line 220
+        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
+
+        // The following lines are generated from line 220
+        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
+
+        // The following lines are generated from line 220
         buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
 
-        // The following lines are generated from line 221
+        // The following lines are generated from line 220
         buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
 
         return buf;
     }
-    // The following lines are generated from line 221
-    public static Buffer LIKE(Context ctx) throws Exception{
+    // The following lines are generated from line 220
+    public static Buffer IGNORE(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 221
+        // The following lines are generated from line 220
         buf.add(node1776(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 222
-    public static Buffer node1791(Context ctx) throws Exception{
+    // The following lines are generated from line 221
+    public static Buffer node1795(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 222
+        // The following lines are generated from line 221
         buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
 
-        // The following lines are generated from line 222
-        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
-
-        // The following lines are generated from line 222
+        // The following lines are generated from line 221
         buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
 
-        // The following lines are generated from line 222
+        // The following lines are generated from line 221
         buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
 
-        // The following lines are generated from line 222
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 222
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
-
-        // The following lines are generated from line 222
-        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
-
-        // The following lines are generated from line 222
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 222
-    public static Buffer LINEAR(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 222
-        buf.add(node1791(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 223
-    public static Buffer node1810(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 223
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 223
-        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
-
-        // The following lines are generated from line 223
-        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
-
-        // The following lines are generated from line 223
-        buf.add(ctx.getSymbol(buf, "C", new ArrayList<>()));
-
-        // The following lines are generated from line 223
-        buf.add(ctx.getSymbol(buf, "K", new ArrayList<>()));
-
-        // The following lines are generated from line 223
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 223
-    public static Buffer LOCK(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 223
-        buf.add(node1810(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 224
-    public static Buffer node1825(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 224
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 224
-        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
-
-        // The following lines are generated from line 224
-        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
-
-        // The following lines are generated from line 224
-        buf.add(ctx.getSymbol(buf, "W", new ArrayList<>()));
-
-        // The following lines are generated from line 224
-        buf.add(ctx.getSymbol(buf, "US", new ArrayList<>()));
-
-        // The following lines are generated from line 224
-        buf.add(ctx.getSymbol(buf, "P", new ArrayList<>()));
-
-        // The following lines are generated from line 224
-        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
-
-        // The following lines are generated from line 224
-        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
-
-        // The following lines are generated from line 224
-        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
-
-        // The following lines are generated from line 224
-        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
-
-        // The following lines are generated from line 224
-        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
-
-        // The following lines are generated from line 224
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 224
-        buf.add(ctx.getSymbol(buf, "Y", new ArrayList<>()));
-
-        // The following lines are generated from line 224
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 224
-    public static Buffer LOW_PRIORITY(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 224
-        buf.add(node1825(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 225
-    public static Buffer node1856(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 225
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 225
-        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
-
-        // The following lines are generated from line 225
-        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
-
-        // The following lines are generated from line 225
-        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
-
-        // The following lines are generated from line 225
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 225
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 225
-    public static Buffer NONE(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 225
-        buf.add(node1856(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 226
-    public static Buffer node1871(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 226
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 226
-        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
-
-        // The following lines are generated from line 226
-        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
-
-        // The following lines are generated from line 226
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 226
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 226
-    public static Buffer NOT(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 226
-        buf.add(node1871(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 227
-    public static Buffer node1884(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 227
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 227
-        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
-
-        // The following lines are generated from line 227
-        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
-
-        // The following lines are generated from line 227
-        buf.add(ctx.getSymbol(buf, "W", new ArrayList<>()));
-
-        // The following lines are generated from line 227
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
-
-        // The following lines are generated from line 227
-        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
-
-        // The following lines are generated from line 227
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 227
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 227
-    public static Buffer NOWAIT(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 227
-        buf.add(node1884(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 228
-    public static Buffer node1903(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 228
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 228
-        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
-
-        // The following lines are generated from line 228
-        buf.add(ctx.getSymbol(buf, "U", new ArrayList<>()));
-
-        // The following lines are generated from line 228
-        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
-
-        // The following lines are generated from line 228
-        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
-
-        // The following lines are generated from line 228
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 228
-    public static Buffer NULL(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 228
-        buf.add(node1903(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 229
-    public static Buffer node1918(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 229
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 229
-        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
-
-        // The following lines are generated from line 229
-        buf.add(ctx.getSymbol(buf, "F", new ArrayList<>()));
-
-        // The following lines are generated from line 229
-        buf.add(ctx.getSymbol(buf, "F", new ArrayList<>()));
-
-        // The following lines are generated from line 229
-        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
-
-        // The following lines are generated from line 229
-        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
-
-        // The following lines are generated from line 229
-        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
-
-        // The following lines are generated from line 229
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 229
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 229
-    public static Buffer OFFLINE(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 229
-        buf.add(node1918(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 230
-    public static Buffer node1939(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 230
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 230
-        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
-
-        // The following lines are generated from line 230
-        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
-
-        // The following lines are generated from line 230
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 230
-    public static Buffer ON(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 230
-        buf.add(node1939(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 231
-    public static Buffer node1950(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 231
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 231
-        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
-
-        // The following lines are generated from line 231
-        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
-
-        // The following lines are generated from line 231
-        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
-
-        // The following lines are generated from line 231
-        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
-
-        // The following lines are generated from line 231
-        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
-
-        // The following lines are generated from line 231
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 231
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 231
-    public static Buffer ONLINE(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 231
-        buf.add(node1950(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 232
-    public static Buffer node1969(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 232
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 232
-        buf.add(ctx.getSymbol(buf, "P", new ArrayList<>()));
-
-        // The following lines are generated from line 232
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
-
-        // The following lines are generated from line 232
-        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
-
-        // The following lines are generated from line 232
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 232
-        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
-
-        // The following lines are generated from line 232
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 232
-        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
-
-        // The following lines are generated from line 232
-        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
-
-        // The following lines are generated from line 232
-        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
-
-        // The following lines are generated from line 232
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 232
-    public static Buffer PARTITION(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 232
-        buf.add(node1969(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 233
-    public static Buffer node1994(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 233
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 233
-        buf.add(ctx.getSymbol(buf, "P", new ArrayList<>()));
-
-        // The following lines are generated from line 233
-        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
-
-        // The following lines are generated from line 233
-        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
-
-        // The following lines are generated from line 233
-        buf.add(ctx.getSymbol(buf, "M", new ArrayList<>()));
-
-        // The following lines are generated from line 233
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
-
-        // The following lines are generated from line 233
-        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
-
-        // The following lines are generated from line 233
-        buf.add(ctx.getSymbol(buf, "Y", new ArrayList<>()));
-
-        // The following lines are generated from line 233
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 233
-    public static Buffer PRIMARY(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 233
-        buf.add(node1994(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 234
-    public static Buffer node2015(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 234
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 234
-        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
-
-        // The following lines are generated from line 234
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 234
-        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
-
-        // The following lines are generated from line 234
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
-
-        // The following lines are generated from line 234
-        buf.add(ctx.getSymbol(buf, "M", new ArrayList<>()));
-
-        // The following lines are generated from line 234
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 234
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 234
-    public static Buffer RENAME(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 234
-        buf.add(node2015(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 235
-    public static Buffer node2034(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 235
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 235
-        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
-
-        // The following lines are generated from line 235
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 235
-        buf.add(ctx.getSymbol(buf, "P", new ArrayList<>()));
-
-        // The following lines are generated from line 235
-        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
-
-        // The following lines are generated from line 235
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
-
-        // The following lines are generated from line 235
-        buf.add(ctx.getSymbol(buf, "C", new ArrayList<>()));
-
-        // The following lines are generated from line 235
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 235
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 235
-    public static Buffer REPLACE(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 235
-        buf.add(node2034(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 236
-    public static Buffer node2055(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 236
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 236
-        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
-
-        // The following lines are generated from line 236
-        buf.add(ctx.getSymbol(buf, "C", new ArrayList<>()));
-
-        // The following lines are generated from line 236
-        buf.add(ctx.getSymbol(buf, "H", new ArrayList<>()));
-
-        // The following lines are generated from line 236
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 236
-        buf.add(ctx.getSymbol(buf, "M", new ArrayList<>()));
-
-        // The following lines are generated from line 236
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
-
-        // The following lines are generated from line 236
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 236
-    public static Buffer SCHEMA(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 236
-        buf.add(node2055(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 237
-    public static Buffer node2074(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 237
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 237
-        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
-
-        // The following lines are generated from line 237
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 237
-        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
-
-        // The following lines are generated from line 237
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 237
-        buf.add(ctx.getSymbol(buf, "C", new ArrayList<>()));
-
-        // The following lines are generated from line 237
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 237
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 237
-    public static Buffer SELECT(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 237
-        buf.add(node2074(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 238
-    public static Buffer node2093(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 238
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 238
-        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
-
-        // The following lines are generated from line 238
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 238
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 238
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 238
-    public static Buffer SET(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 238
-        buf.add(node2093(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 239
-    public static Buffer node2106(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 239
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 239
-        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
-
-        // The following lines are generated from line 239
-        buf.add(ctx.getSymbol(buf, "H", new ArrayList<>()));
-
-        // The following lines are generated from line 239
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
-
-        // The following lines are generated from line 239
-        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
-
-        // The following lines are generated from line 239
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 239
+        // The following lines are generated from line 221
         buf.add(ctx.getSymbol(buf, "D", new ArrayList<>()));
 
-        // The following lines are generated from line 239
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 239
-    public static Buffer SHARED(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 239
-        buf.add(node2106(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 240
-    public static Buffer node2125(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 240
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 240
-        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
-
-        // The following lines are generated from line 240
-        buf.add(ctx.getSymbol(buf, "P", new ArrayList<>()));
-
-        // The following lines are generated from line 240
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
-
-        // The following lines are generated from line 240
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 240
-        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
-
-        // The following lines are generated from line 240
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
-
-        // The following lines are generated from line 240
-        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
-
-        // The following lines are generated from line 240
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 240
-    public static Buffer SPATIAL(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 240
-        buf.add(node2125(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 241
-    public static Buffer node2146(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 241
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 241
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 241
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
-
-        // The following lines are generated from line 241
-        buf.add(ctx.getSymbol(buf, "B", new ArrayList<>()));
-
-        // The following lines are generated from line 241
-        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
-
-        // The following lines are generated from line 241
+        // The following lines are generated from line 221
         buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
 
-        // The following lines are generated from line 241
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 241
-    public static Buffer TABLE(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 241
-        buf.add(node2146(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 242
-    public static Buffer node2163(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 242
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 242
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 242
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 242
-        buf.add(ctx.getSymbol(buf, "M", new ArrayList<>()));
-
-        // The following lines are generated from line 242
-        buf.add(ctx.getSymbol(buf, "P", new ArrayList<>()));
-
-        // The following lines are generated from line 242
-        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
-
-        // The following lines are generated from line 242
-        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
-
-        // The following lines are generated from line 242
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
-
-        // The following lines are generated from line 242
-        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
-
-        // The following lines are generated from line 242
-        buf.add(ctx.getSymbol(buf, "Y", new ArrayList<>()));
-
-        // The following lines are generated from line 242
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 242
-    public static Buffer TEMPORARY(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 242
-        buf.add(node2163(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 243
-    public static Buffer node2188(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 243
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 243
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 243
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 243
+        // The following lines are generated from line 221
         buf.add(ctx.getSymbol(buf, "X", new ArrayList<>()));
 
+        // The following lines are generated from line 221
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 221
+    public static Buffer INDEX(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 221
+        buf.add(node1795(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 222
+    public static Buffer node1812(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 222
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 222
+        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+
+        // The following lines are generated from line 222
+        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
+
+        // The following lines are generated from line 222
+        buf.add(ctx.getSymbol(buf, "P", new ArrayList<>()));
+
+        // The following lines are generated from line 222
+        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
+
+        // The following lines are generated from line 222
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 222
+        buf.add(ctx.getSymbol(buf, "C", new ArrayList<>()));
+
+        // The following lines are generated from line 222
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 222
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 222
+    public static Buffer INPLACE(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 222
+        buf.add(node1812(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 223
+    public static Buffer node1833(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 223
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 223
+        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+
+        // The following lines are generated from line 223
+        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
+
+        // The following lines are generated from line 223
+        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
+
+        // The following lines are generated from line 223
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 223
+        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
+
+        // The following lines are generated from line 223
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 223
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 223
+    public static Buffer INSERT(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 223
+        buf.add(node1833(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 224
+    public static Buffer node1852(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 224
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 224
+        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+
+        // The following lines are generated from line 224
+        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
+
+        // The following lines are generated from line 224
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 224
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 224
+    public static Buffer INT(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 224
+        buf.add(node1852(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 225
+    public static Buffer node1865(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 225
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 225
+        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+
+        // The following lines are generated from line 225
+        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
+
+        // The following lines are generated from line 225
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 225
+        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
+
+        // The following lines are generated from line 225
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 225
+    public static Buffer INTO(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 225
+        buf.add(node1865(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 226
+    public static Buffer node1880(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 226
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 226
+        buf.add(ctx.getSymbol(buf, "K", new ArrayList<>()));
+
+        // The following lines are generated from line 226
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 226
+        buf.add(ctx.getSymbol(buf, "Y", new ArrayList<>()));
+
+        // The following lines are generated from line 226
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 226
+    public static Buffer KEY(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 226
+        buf.add(node1880(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 227
+    public static Buffer node1893(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 227
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 227
+        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
+
+        // The following lines are generated from line 227
+        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+
+        // The following lines are generated from line 227
+        buf.add(ctx.getSymbol(buf, "K", new ArrayList<>()));
+
+        // The following lines are generated from line 227
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 227
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 227
+    public static Buffer LIKE(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 227
+        buf.add(node1893(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 228
+    public static Buffer node1908(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 228
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 228
+        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
+
+        // The following lines are generated from line 228
+        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+
+        // The following lines are generated from line 228
+        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
+
+        // The following lines are generated from line 228
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 228
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 228
+        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
+
+        // The following lines are generated from line 228
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 228
+    public static Buffer LINEAR(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 228
+        buf.add(node1908(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 229
+    public static Buffer node1927(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 229
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 229
+        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
+
+        // The following lines are generated from line 229
+        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
+
+        // The following lines are generated from line 229
+        buf.add(ctx.getSymbol(buf, "C", new ArrayList<>()));
+
+        // The following lines are generated from line 229
+        buf.add(ctx.getSymbol(buf, "K", new ArrayList<>()));
+
+        // The following lines are generated from line 229
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 229
+    public static Buffer LOCK(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 229
+        buf.add(node1927(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 230
+    public static Buffer node1942(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 230
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 230
+        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
+
+        // The following lines are generated from line 230
+        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
+
+        // The following lines are generated from line 230
+        buf.add(ctx.getSymbol(buf, "W", new ArrayList<>()));
+
+        // The following lines are generated from line 230
+        buf.add(ctx.getSymbol(buf, "US", new ArrayList<>()));
+
+        // The following lines are generated from line 230
+        buf.add(ctx.getSymbol(buf, "P", new ArrayList<>()));
+
+        // The following lines are generated from line 230
+        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
+
+        // The following lines are generated from line 230
+        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+
+        // The following lines are generated from line 230
+        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
+
+        // The following lines are generated from line 230
+        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
+
+        // The following lines are generated from line 230
+        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+
+        // The following lines are generated from line 230
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 230
+        buf.add(ctx.getSymbol(buf, "Y", new ArrayList<>()));
+
+        // The following lines are generated from line 230
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 230
+    public static Buffer LOW_PRIORITY(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 230
+        buf.add(node1942(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 231
+    public static Buffer node1973(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 231
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 231
+        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
+
+        // The following lines are generated from line 231
+        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
+
+        // The following lines are generated from line 231
+        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
+
+        // The following lines are generated from line 231
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 231
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 231
+    public static Buffer NONE(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 231
+        buf.add(node1973(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 232
+    public static Buffer node1988(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 232
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 232
+        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
+
+        // The following lines are generated from line 232
+        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
+
+        // The following lines are generated from line 232
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 232
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 232
+    public static Buffer NOT(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 232
+        buf.add(node1988(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 233
+    public static Buffer node2001(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 233
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 233
+        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
+
+        // The following lines are generated from line 233
+        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
+
+        // The following lines are generated from line 233
+        buf.add(ctx.getSymbol(buf, "W", new ArrayList<>()));
+
+        // The following lines are generated from line 233
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 233
+        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+
+        // The following lines are generated from line 233
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 233
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 233
+    public static Buffer NOWAIT(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 233
+        buf.add(node2001(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 234
+    public static Buffer node2020(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 234
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 234
+        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
+
+        // The following lines are generated from line 234
+        buf.add(ctx.getSymbol(buf, "U", new ArrayList<>()));
+
+        // The following lines are generated from line 234
+        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
+
+        // The following lines are generated from line 234
+        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
+
+        // The following lines are generated from line 234
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 234
+    public static Buffer NULL(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 234
+        buf.add(node2020(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 235
+    public static Buffer node2035(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 235
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 235
+        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
+
+        // The following lines are generated from line 235
+        buf.add(ctx.getSymbol(buf, "F", new ArrayList<>()));
+
+        // The following lines are generated from line 235
+        buf.add(ctx.getSymbol(buf, "F", new ArrayList<>()));
+
+        // The following lines are generated from line 235
+        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
+
+        // The following lines are generated from line 235
+        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+
+        // The following lines are generated from line 235
+        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
+
+        // The following lines are generated from line 235
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 235
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 235
+    public static Buffer OFFLINE(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 235
+        buf.add(node2035(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 236
+    public static Buffer node2056(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 236
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 236
+        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
+
+        // The following lines are generated from line 236
+        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
+
+        // The following lines are generated from line 236
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 236
+    public static Buffer ON(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 236
+        buf.add(node2056(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 237
+    public static Buffer node2067(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 237
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 237
+        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
+
+        // The following lines are generated from line 237
+        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
+
+        // The following lines are generated from line 237
+        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
+
+        // The following lines are generated from line 237
+        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+
+        // The following lines are generated from line 237
+        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
+
+        // The following lines are generated from line 237
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 237
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 237
+    public static Buffer ONLINE(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 237
+        buf.add(node2067(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 238
+    public static Buffer node2086(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 238
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 238
+        buf.add(ctx.getSymbol(buf, "P", new ArrayList<>()));
+
+        // The following lines are generated from line 238
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 238
+        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
+
+        // The following lines are generated from line 238
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 238
+        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+
+        // The following lines are generated from line 238
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 238
+        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+
+        // The following lines are generated from line 238
+        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
+
+        // The following lines are generated from line 238
+        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
+
+        // The following lines are generated from line 238
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 238
+    public static Buffer PARTITION(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 238
+        buf.add(node2086(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 239
+    public static Buffer node2111(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 239
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 239
+        buf.add(ctx.getSymbol(buf, "P", new ArrayList<>()));
+
+        // The following lines are generated from line 239
+        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
+
+        // The following lines are generated from line 239
+        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+
+        // The following lines are generated from line 239
+        buf.add(ctx.getSymbol(buf, "M", new ArrayList<>()));
+
+        // The following lines are generated from line 239
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 239
+        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
+
+        // The following lines are generated from line 239
+        buf.add(ctx.getSymbol(buf, "Y", new ArrayList<>()));
+
+        // The following lines are generated from line 239
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 239
+    public static Buffer PRIMARY(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 239
+        buf.add(node2111(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 240
+    public static Buffer node2132(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 240
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 240
+        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
+
+        // The following lines are generated from line 240
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 240
+        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
+
+        // The following lines are generated from line 240
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 240
+        buf.add(ctx.getSymbol(buf, "M", new ArrayList<>()));
+
+        // The following lines are generated from line 240
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 240
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 240
+    public static Buffer RENAME(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 240
+        buf.add(node2132(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 241
+    public static Buffer node2151(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 241
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 241
+        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
+
+        // The following lines are generated from line 241
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 241
+        buf.add(ctx.getSymbol(buf, "P", new ArrayList<>()));
+
+        // The following lines are generated from line 241
+        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
+
+        // The following lines are generated from line 241
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 241
+        buf.add(ctx.getSymbol(buf, "C", new ArrayList<>()));
+
+        // The following lines are generated from line 241
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 241
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 241
+    public static Buffer REPLACE(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 241
+        buf.add(node2151(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 242
+    public static Buffer node2172(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 242
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 242
+        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
+
+        // The following lines are generated from line 242
+        buf.add(ctx.getSymbol(buf, "C", new ArrayList<>()));
+
+        // The following lines are generated from line 242
+        buf.add(ctx.getSymbol(buf, "H", new ArrayList<>()));
+
+        // The following lines are generated from line 242
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 242
+        buf.add(ctx.getSymbol(buf, "M", new ArrayList<>()));
+
+        // The following lines are generated from line 242
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 242
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 242
+    public static Buffer SCHEMA(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 242
+        buf.add(node2172(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 243
+    public static Buffer node2191(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 243
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 243
+        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
+
+        // The following lines are generated from line 243
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 243
+        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
+
+        // The following lines are generated from line 243
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 243
+        buf.add(ctx.getSymbol(buf, "C", new ArrayList<>()));
+
         // The following lines are generated from line 243
         buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
 
@@ -6894,24 +6737,27 @@ public class Fuzzer{
         return buf;
     }
     // The following lines are generated from line 243
-    public static Buffer TEXT(Context ctx) throws Exception{
+    public static Buffer SELECT(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 243
-        buf.add(node2188(ctx));
+        buf.add(node2191(ctx));
 
         return buf;
     }
     // The following lines are generated from line 244
-    public static Buffer node2203(Context ctx) throws Exception{
+    public static Buffer node2210(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 244
         buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
 
         // The following lines are generated from line 244
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
 
         // The following lines are generated from line 244
-        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 244
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
 
         // The following lines are generated from line 244
         buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
@@ -6919,274 +6765,289 @@ public class Fuzzer{
         return buf;
     }
     // The following lines are generated from line 244
-    public static Buffer TO(Context ctx) throws Exception{
+    public static Buffer SET(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 244
-        buf.add(node2203(ctx));
+        buf.add(node2210(ctx));
 
         return buf;
     }
     // The following lines are generated from line 245
-    public static Buffer node2214(Context ctx) throws Exception{
+    public static Buffer node2223(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 245
         buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
 
         // The following lines are generated from line 245
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 245
-        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
-
-        // The following lines are generated from line 245
-        buf.add(ctx.getSymbol(buf, "U", new ArrayList<>()));
-
-        // The following lines are generated from line 245
-        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
-
-        // The following lines are generated from line 245
-        buf.add(ctx.getSymbol(buf, "C", new ArrayList<>()));
-
-        // The following lines are generated from line 245
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
-
-        // The following lines are generated from line 245
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 245
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 245
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 245
-    public static Buffer TRUNCATE(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 245
-        buf.add(node2214(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 246
-    public static Buffer node2237(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 246
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 246
-        buf.add(ctx.getSymbol(buf, "U", new ArrayList<>()));
-
-        // The following lines are generated from line 246
-        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
-
-        // The following lines are generated from line 246
-        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
-
-        // The following lines are generated from line 246
-        buf.add(ctx.getSymbol(buf, "Q", new ArrayList<>()));
-
-        // The following lines are generated from line 246
-        buf.add(ctx.getSymbol(buf, "U", new ArrayList<>()));
-
-        // The following lines are generated from line 246
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 246
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 246
-    public static Buffer UNIQUE(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 246
-        buf.add(node2237(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 247
-    public static Buffer node2256(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 247
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 247
-        buf.add(ctx.getSymbol(buf, "U", new ArrayList<>()));
-
-        // The following lines are generated from line 247
-        buf.add(ctx.getSymbol(buf, "P", new ArrayList<>()));
-
-        // The following lines are generated from line 247
-        buf.add(ctx.getSymbol(buf, "D", new ArrayList<>()));
-
-        // The following lines are generated from line 247
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
-
-        // The following lines are generated from line 247
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 247
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 247
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 247
-    public static Buffer UPDATE(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 247
-        buf.add(node2256(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 248
-    public static Buffer node2275(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 248
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 248
-        buf.add(ctx.getSymbol(buf, "U", new ArrayList<>()));
-
-        // The following lines are generated from line 248
         buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
 
-        // The following lines are generated from line 248
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 248
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 248
-    public static Buffer USE(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 248
-        buf.add(node2275(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 249
-    public static Buffer node2288(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 249
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 249
-        buf.add(ctx.getSymbol(buf, "V", new ArrayList<>()));
-
-        // The following lines are generated from line 249
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
-
-        // The following lines are generated from line 249
-        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
-
-        // The following lines are generated from line 249
-        buf.add(ctx.getSymbol(buf, "U", new ArrayList<>()));
-
-        // The following lines are generated from line 249
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 249
-        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
-
-        // The following lines are generated from line 249
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 249
-    public static Buffer VALUES(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 249
-        buf.add(node2288(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 250
-    public static Buffer node2307(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 250
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 250
-        buf.add(ctx.getSymbol(buf, "V", new ArrayList<>()));
-
-        // The following lines are generated from line 250
-        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
-
-        // The following lines are generated from line 250
-        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
-
-        // The following lines are generated from line 250
-        buf.add(ctx.getSymbol(buf, "W", new ArrayList<>()));
-
-        // The following lines are generated from line 250
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 250
-    public static Buffer VIEW(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 250
-        buf.add(node2307(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 251
-    public static Buffer node2322(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 251
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 251
-        buf.add(ctx.getSymbol(buf, "W", new ArrayList<>()));
-
-        // The following lines are generated from line 251
-        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
-
-        // The following lines are generated from line 251
-        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
-
-        // The following lines are generated from line 251
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 251
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 251
-    public static Buffer WAIT(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 251
-        buf.add(node2322(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 252
-    public static Buffer node2337(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 252
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 252
-        buf.add(ctx.getSymbol(buf, "W", new ArrayList<>()));
-
-        // The following lines are generated from line 252
+        // The following lines are generated from line 245
         buf.add(ctx.getSymbol(buf, "H", new ArrayList<>()));
 
-        // The following lines are generated from line 252
+        // The following lines are generated from line 245
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 245
+        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
+
+        // The following lines are generated from line 245
         buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
 
-        // The following lines are generated from line 252
+        // The following lines are generated from line 245
+        buf.add(ctx.getSymbol(buf, "D", new ArrayList<>()));
+
+        // The following lines are generated from line 245
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 245
+    public static Buffer SHARED(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 245
+        buf.add(node2223(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 246
+    public static Buffer node2242(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 246
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 246
+        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
+
+        // The following lines are generated from line 246
+        buf.add(ctx.getSymbol(buf, "P", new ArrayList<>()));
+
+        // The following lines are generated from line 246
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 246
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 246
+        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+
+        // The following lines are generated from line 246
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 246
+        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
+
+        // The following lines are generated from line 246
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 246
+    public static Buffer SPATIAL(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 246
+        buf.add(node2242(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 247
+    public static Buffer node2263(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 247
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 247
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 247
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 247
+        buf.add(ctx.getSymbol(buf, "B", new ArrayList<>()));
+
+        // The following lines are generated from line 247
+        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
+
+        // The following lines are generated from line 247
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 247
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 247
+    public static Buffer TABLE(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 247
+        buf.add(node2263(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 248
+    public static Buffer node2280(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 248
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 248
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 248
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 248
+        buf.add(ctx.getSymbol(buf, "M", new ArrayList<>()));
+
+        // The following lines are generated from line 248
+        buf.add(ctx.getSymbol(buf, "P", new ArrayList<>()));
+
+        // The following lines are generated from line 248
+        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
+
+        // The following lines are generated from line 248
         buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
+
+        // The following lines are generated from line 248
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 248
+        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
+
+        // The following lines are generated from line 248
+        buf.add(ctx.getSymbol(buf, "Y", new ArrayList<>()));
+
+        // The following lines are generated from line 248
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 248
+    public static Buffer TEMPORARY(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 248
+        buf.add(node2280(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 249
+    public static Buffer node2305(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 249
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 249
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 249
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 249
+        buf.add(ctx.getSymbol(buf, "X", new ArrayList<>()));
+
+        // The following lines are generated from line 249
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 249
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 249
+    public static Buffer TEXT(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 249
+        buf.add(node2305(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 250
+    public static Buffer node2320(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 250
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 250
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 250
+        buf.add(ctx.getSymbol(buf, "O", new ArrayList<>()));
+
+        // The following lines are generated from line 250
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 250
+    public static Buffer TO(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 250
+        buf.add(node2320(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 251
+    public static Buffer node2331(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 251
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 251
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 251
+        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
+
+        // The following lines are generated from line 251
+        buf.add(ctx.getSymbol(buf, "U", new ArrayList<>()));
+
+        // The following lines are generated from line 251
+        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
+
+        // The following lines are generated from line 251
+        buf.add(ctx.getSymbol(buf, "C", new ArrayList<>()));
+
+        // The following lines are generated from line 251
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 251
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 251
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 251
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 251
+    public static Buffer TRUNCATE(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 251
+        buf.add(node2331(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 252
+    public static Buffer node2354(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 252
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 252
+        buf.add(ctx.getSymbol(buf, "U", new ArrayList<>()));
+
+        // The following lines are generated from line 252
+        buf.add(ctx.getSymbol(buf, "N", new ArrayList<>()));
+
+        // The following lines are generated from line 252
+        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+
+        // The following lines are generated from line 252
+        buf.add(ctx.getSymbol(buf, "Q", new ArrayList<>()));
+
+        // The following lines are generated from line 252
+        buf.add(ctx.getSymbol(buf, "U", new ArrayList<>()));
 
         // The following lines are generated from line 252
         buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
@@ -7197,579 +7058,777 @@ public class Fuzzer{
         return buf;
     }
     // The following lines are generated from line 252
-    public static Buffer WHERE(Context ctx) throws Exception{
+    public static Buffer UNIQUE(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 252
-        buf.add(node2337(ctx));
-
-        return buf;
-    }
-    // The following lines are generated from line 255
-    public static Buffer node2354(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 255
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        // The following lines are generated from line 255
-        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
-
-        // The following lines are generated from line 255
-        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
-
-        // The following lines are generated from line 255
-        buf.add(ctx.getSymbol(buf, "U", new ArrayList<>()));
-
-        // The following lines are generated from line 255
-        buf.add(ctx.getSymbol(buf, "B", new ArrayList<>()));
-
-        // The following lines are generated from line 255
-        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
-
-        return buf;
-    }
-    // The following lines are generated from line 255
-    public static Buffer STUB(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 255
         buf.add(node2354(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 259
-    public static Buffer LB(Context ctx) throws Exception{
+    // The following lines are generated from line 253
+    public static Buffer node2373(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 259
-        buf.add(Variable.factory("("));
+        // The following lines are generated from line 253
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 253
+        buf.add(ctx.getSymbol(buf, "U", new ArrayList<>()));
+
+        // The following lines are generated from line 253
+        buf.add(ctx.getSymbol(buf, "P", new ArrayList<>()));
+
+        // The following lines are generated from line 253
+        buf.add(ctx.getSymbol(buf, "D", new ArrayList<>()));
+
+        // The following lines are generated from line 253
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 253
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 253
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 253
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
 
         return buf;
     }
-    // The following lines are generated from line 260
-    public static Buffer RB(Context ctx) throws Exception{
+    // The following lines are generated from line 253
+    public static Buffer UPDATE(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 260
-        buf.add(Variable.factory(")"));
+        // The following lines are generated from line 253
+        buf.add(node2373(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 254
+    public static Buffer node2392(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 254
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 254
+        buf.add(ctx.getSymbol(buf, "U", new ArrayList<>()));
+
+        // The following lines are generated from line 254
+        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
+
+        // The following lines are generated from line 254
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 254
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 254
+    public static Buffer USE(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 254
+        buf.add(node2392(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 255
+    public static Buffer node2405(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 255
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 255
+        buf.add(ctx.getSymbol(buf, "V", new ArrayList<>()));
+
+        // The following lines are generated from line 255
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 255
+        buf.add(ctx.getSymbol(buf, "L", new ArrayList<>()));
+
+        // The following lines are generated from line 255
+        buf.add(ctx.getSymbol(buf, "U", new ArrayList<>()));
+
+        // The following lines are generated from line 255
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 255
+        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
+
+        // The following lines are generated from line 255
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 255
+    public static Buffer VALUES(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 255
+        buf.add(node2405(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 256
+    public static Buffer node2424(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 256
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 256
+        buf.add(ctx.getSymbol(buf, "V", new ArrayList<>()));
+
+        // The following lines are generated from line 256
+        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+
+        // The following lines are generated from line 256
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 256
+        buf.add(ctx.getSymbol(buf, "W", new ArrayList<>()));
+
+        // The following lines are generated from line 256
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 256
+    public static Buffer VIEW(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 256
+        buf.add(node2424(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 257
+    public static Buffer node2439(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 257
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 257
+        buf.add(ctx.getSymbol(buf, "W", new ArrayList<>()));
+
+        // The following lines are generated from line 257
+        buf.add(ctx.getSymbol(buf, "A", new ArrayList<>()));
+
+        // The following lines are generated from line 257
+        buf.add(ctx.getSymbol(buf, "I", new ArrayList<>()));
+
+        // The following lines are generated from line 257
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 257
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 257
+    public static Buffer WAIT(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 257
+        buf.add(node2439(ctx));
+
+        return buf;
+    }
+    // The following lines are generated from line 258
+    public static Buffer node2454(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 258
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 258
+        buf.add(ctx.getSymbol(buf, "W", new ArrayList<>()));
+
+        // The following lines are generated from line 258
+        buf.add(ctx.getSymbol(buf, "H", new ArrayList<>()));
+
+        // The following lines are generated from line 258
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 258
+        buf.add(ctx.getSymbol(buf, "R", new ArrayList<>()));
+
+        // The following lines are generated from line 258
+        buf.add(ctx.getSymbol(buf, "E", new ArrayList<>()));
+
+        // The following lines are generated from line 258
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        return buf;
+    }
+    // The following lines are generated from line 258
+    public static Buffer WHERE(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 258
+        buf.add(node2454(ctx));
 
         return buf;
     }
     // The following lines are generated from line 261
-    public static Buffer LT(Context ctx) throws Exception{
+    public static Buffer node2471(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 261
-        buf.add(Variable.factory("<"));
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
+
+        // The following lines are generated from line 261
+        buf.add(ctx.getSymbol(buf, "S", new ArrayList<>()));
+
+        // The following lines are generated from line 261
+        buf.add(ctx.getSymbol(buf, "T", new ArrayList<>()));
+
+        // The following lines are generated from line 261
+        buf.add(ctx.getSymbol(buf, "U", new ArrayList<>()));
+
+        // The following lines are generated from line 261
+        buf.add(ctx.getSymbol(buf, "B", new ArrayList<>()));
+
+        // The following lines are generated from line 261
+        buf.add(ctx.getSymbol(buf, "SPACE", new ArrayList<>()));
 
         return buf;
     }
-    // The following lines are generated from line 262
-    public static Buffer GT(Context ctx) throws Exception{
+    // The following lines are generated from line 261
+    public static Buffer STUB(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 262
-        buf.add(Variable.factory(">"));
-
-        return buf;
-    }
-    // The following lines are generated from line 263
-    public static Buffer EQ(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 263
-        buf.add(Variable.factory("="));
-
-        return buf;
-    }
-    // The following lines are generated from line 264
-    public static Buffer SC(Context ctx) throws Exception{
-        Buffer buf = new Buffer();
-        // The following lines are generated from line 264
-        buf.add(Variable.factory(";"));
+        // The following lines are generated from line 261
+        buf.add(node2471(ctx));
 
         return buf;
     }
     // The following lines are generated from line 265
-    public static Buffer US(Context ctx) throws Exception{
+    public static Buffer LB(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 265
-        buf.add(Variable.factory("_"));
+        buf.add(Variable.factory("("));
 
         return buf;
     }
     // The following lines are generated from line 266
-    public static Buffer DS(Context ctx) throws Exception{
+    public static Buffer RB(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 266
-        buf.add(Variable.factory("-"));
+        buf.add(Variable.factory(")"));
 
         return buf;
     }
     // The following lines are generated from line 267
-    public static Buffer ASTERISK(Context ctx) throws Exception{
+    public static Buffer LT(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 267
-        buf.add(Variable.factory("*"));
+        buf.add(Variable.factory("<"));
 
         return buf;
     }
     // The following lines are generated from line 268
-    public static Buffer DQ(Context ctx) throws Exception{
+    public static Buffer GT(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 268
-        buf.add(Variable.factory("\""));
+        buf.add(Variable.factory(">"));
 
         return buf;
     }
     // The following lines are generated from line 269
-    public static Buffer COMMA(Context ctx) throws Exception{
+    public static Buffer EQ(Context ctx) throws Exception{
         Buffer buf = new Buffer();
         // The following lines are generated from line 269
-        buf.add(Variable.factory(","));
+        buf.add(Variable.factory("="));
+
+        return buf;
+    }
+    // The following lines are generated from line 270
+    public static Buffer SC(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 270
+        buf.add(Variable.factory(";"));
 
         return buf;
     }
     // The following lines are generated from line 271
-    public static Buffer node2414(Context ctx) throws Exception{
+    public static Buffer US(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 271
+        buf.add(Variable.factory("_"));
+
+        return buf;
+    }
+    // The following lines are generated from line 272
+    public static Buffer DS(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 272
+        buf.add(Variable.factory("-"));
+
+        return buf;
+    }
+    // The following lines are generated from line 273
+    public static Buffer ASTERISK(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 273
+        buf.add(Variable.factory("*"));
+
+        return buf;
+    }
+    // The following lines are generated from line 274
+    public static Buffer DQ(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 274
+        buf.add(Variable.factory("\""));
+
+        return buf;
+    }
+    // The following lines are generated from line 275
+    public static Buffer COMMA(Context ctx) throws Exception{
+        Buffer buf = new Buffer();
+        // The following lines are generated from line 275
+        buf.add(Variable.factory(","));
+
+        return buf;
+    }
+    // The following lines are generated from line 277
+    public static Buffer node2531(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(48);
         s.add(58);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 271
+    // The following lines are generated from line 277
     public static Buffer DIGIT(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 271
-        buf.add(node2414(ctx));
+        // The following lines are generated from line 277
+        buf.add(node2531(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 272
-    public static Buffer node2418(Context ctx) throws Exception{
+    // The following lines are generated from line 278
+    public static Buffer node2535(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(32);
         s.add(33);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 272
+    // The following lines are generated from line 278
     public static Buffer SPACE(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 272
-        buf.add(node2418(ctx));
+        // The following lines are generated from line 278
+        buf.add(node2535(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 273
-    public static Buffer node2422(Context ctx) throws Exception{
+    // The following lines are generated from line 279
+    public static Buffer node2539(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(10);
         s.add(11);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 273
+    // The following lines are generated from line 279
     public static Buffer NL(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 273
-        buf.add(node2422(ctx));
+        // The following lines are generated from line 279
+        buf.add(node2539(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 274
-    public static Buffer node2426(Context ctx) throws Exception{
+    // The following lines are generated from line 280
+    public static Buffer node2543(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(65);
         s.add(66);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 274
+    // The following lines are generated from line 280
     public static Buffer A(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 274
-        buf.add(node2426(ctx));
+        // The following lines are generated from line 280
+        buf.add(node2543(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 275
-    public static Buffer node2430(Context ctx) throws Exception{
+    // The following lines are generated from line 281
+    public static Buffer node2547(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(66);
         s.add(67);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 275
+    // The following lines are generated from line 281
     public static Buffer B(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 275
-        buf.add(node2430(ctx));
+        // The following lines are generated from line 281
+        buf.add(node2547(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 276
-    public static Buffer node2434(Context ctx) throws Exception{
+    // The following lines are generated from line 282
+    public static Buffer node2551(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(67);
         s.add(68);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 276
+    // The following lines are generated from line 282
     public static Buffer C(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 276
-        buf.add(node2434(ctx));
+        // The following lines are generated from line 282
+        buf.add(node2551(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 277
-    public static Buffer node2438(Context ctx) throws Exception{
+    // The following lines are generated from line 283
+    public static Buffer node2555(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(68);
         s.add(69);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 277
+    // The following lines are generated from line 283
     public static Buffer D(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 277
-        buf.add(node2438(ctx));
+        // The following lines are generated from line 283
+        buf.add(node2555(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 278
-    public static Buffer node2442(Context ctx) throws Exception{
+    // The following lines are generated from line 284
+    public static Buffer node2559(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(69);
         s.add(70);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 278
+    // The following lines are generated from line 284
     public static Buffer E(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 278
-        buf.add(node2442(ctx));
+        // The following lines are generated from line 284
+        buf.add(node2559(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 279
-    public static Buffer node2446(Context ctx) throws Exception{
+    // The following lines are generated from line 285
+    public static Buffer node2563(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(70);
         s.add(71);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 279
+    // The following lines are generated from line 285
     public static Buffer F(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 279
-        buf.add(node2446(ctx));
+        // The following lines are generated from line 285
+        buf.add(node2563(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 280
-    public static Buffer node2450(Context ctx) throws Exception{
+    // The following lines are generated from line 286
+    public static Buffer node2567(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(71);
         s.add(72);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 280
+    // The following lines are generated from line 286
     public static Buffer G(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 280
-        buf.add(node2450(ctx));
+        // The following lines are generated from line 286
+        buf.add(node2567(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 281
-    public static Buffer node2454(Context ctx) throws Exception{
+    // The following lines are generated from line 287
+    public static Buffer node2571(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(72);
         s.add(73);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 281
+    // The following lines are generated from line 287
     public static Buffer H(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 281
-        buf.add(node2454(ctx));
+        // The following lines are generated from line 287
+        buf.add(node2571(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 282
-    public static Buffer node2458(Context ctx) throws Exception{
+    // The following lines are generated from line 288
+    public static Buffer node2575(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(73);
         s.add(74);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 282
+    // The following lines are generated from line 288
     public static Buffer I(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 282
-        buf.add(node2458(ctx));
+        // The following lines are generated from line 288
+        buf.add(node2575(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 283
-    public static Buffer node2462(Context ctx) throws Exception{
+    // The following lines are generated from line 289
+    public static Buffer node2579(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(74);
         s.add(75);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 283
+    // The following lines are generated from line 289
     public static Buffer J(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 283
-        buf.add(node2462(ctx));
+        // The following lines are generated from line 289
+        buf.add(node2579(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 284
-    public static Buffer node2466(Context ctx) throws Exception{
+    // The following lines are generated from line 290
+    public static Buffer node2583(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(75);
         s.add(76);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 284
+    // The following lines are generated from line 290
     public static Buffer K(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 284
-        buf.add(node2466(ctx));
+        // The following lines are generated from line 290
+        buf.add(node2583(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 285
-    public static Buffer node2470(Context ctx) throws Exception{
+    // The following lines are generated from line 291
+    public static Buffer node2587(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(76);
         s.add(77);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 285
+    // The following lines are generated from line 291
     public static Buffer L(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 285
-        buf.add(node2470(ctx));
+        // The following lines are generated from line 291
+        buf.add(node2587(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 286
-    public static Buffer node2474(Context ctx) throws Exception{
+    // The following lines are generated from line 292
+    public static Buffer node2591(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(77);
         s.add(78);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 286
+    // The following lines are generated from line 292
     public static Buffer M(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 286
-        buf.add(node2474(ctx));
+        // The following lines are generated from line 292
+        buf.add(node2591(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 287
-    public static Buffer node2478(Context ctx) throws Exception{
+    // The following lines are generated from line 293
+    public static Buffer node2595(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(78);
         s.add(79);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 287
+    // The following lines are generated from line 293
     public static Buffer N(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 287
-        buf.add(node2478(ctx));
+        // The following lines are generated from line 293
+        buf.add(node2595(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 288
-    public static Buffer node2482(Context ctx) throws Exception{
+    // The following lines are generated from line 294
+    public static Buffer node2599(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(79);
         s.add(80);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 288
+    // The following lines are generated from line 294
     public static Buffer O(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 288
-        buf.add(node2482(ctx));
+        // The following lines are generated from line 294
+        buf.add(node2599(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 289
-    public static Buffer node2486(Context ctx) throws Exception{
+    // The following lines are generated from line 295
+    public static Buffer node2603(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(80);
         s.add(81);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 289
+    // The following lines are generated from line 295
     public static Buffer P(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 289
-        buf.add(node2486(ctx));
+        // The following lines are generated from line 295
+        buf.add(node2603(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 290
-    public static Buffer node2490(Context ctx) throws Exception{
+    // The following lines are generated from line 296
+    public static Buffer node2607(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(81);
         s.add(82);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 290
+    // The following lines are generated from line 296
     public static Buffer Q(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 290
-        buf.add(node2490(ctx));
+        // The following lines are generated from line 296
+        buf.add(node2607(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 291
-    public static Buffer node2494(Context ctx) throws Exception{
+    // The following lines are generated from line 297
+    public static Buffer node2611(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(82);
         s.add(83);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 291
+    // The following lines are generated from line 297
     public static Buffer R(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 291
-        buf.add(node2494(ctx));
+        // The following lines are generated from line 297
+        buf.add(node2611(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 292
-    public static Buffer node2498(Context ctx) throws Exception{
+    // The following lines are generated from line 298
+    public static Buffer node2615(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(83);
         s.add(84);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 292
+    // The following lines are generated from line 298
     public static Buffer S(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 292
-        buf.add(node2498(ctx));
+        // The following lines are generated from line 298
+        buf.add(node2615(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 293
-    public static Buffer node2502(Context ctx) throws Exception{
+    // The following lines are generated from line 299
+    public static Buffer node2619(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(84);
         s.add(85);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 293
+    // The following lines are generated from line 299
     public static Buffer T(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 293
-        buf.add(node2502(ctx));
+        // The following lines are generated from line 299
+        buf.add(node2619(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 294
-    public static Buffer node2506(Context ctx) throws Exception{
+    // The following lines are generated from line 300
+    public static Buffer node2623(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(85);
         s.add(86);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 294
+    // The following lines are generated from line 300
     public static Buffer U(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 294
-        buf.add(node2506(ctx));
+        // The following lines are generated from line 300
+        buf.add(node2623(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 295
-    public static Buffer node2510(Context ctx) throws Exception{
+    // The following lines are generated from line 301
+    public static Buffer node2627(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(86);
         s.add(87);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 295
+    // The following lines are generated from line 301
     public static Buffer V(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 295
-        buf.add(node2510(ctx));
+        // The following lines are generated from line 301
+        buf.add(node2627(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 296
-    public static Buffer node2514(Context ctx) throws Exception{
+    // The following lines are generated from line 302
+    public static Buffer node2631(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(87);
         s.add(88);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 296
+    // The following lines are generated from line 302
     public static Buffer W(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 296
-        buf.add(node2514(ctx));
+        // The following lines are generated from line 302
+        buf.add(node2631(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 297
-    public static Buffer node2518(Context ctx) throws Exception{
+    // The following lines are generated from line 303
+    public static Buffer node2635(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(88);
         s.add(89);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 297
+    // The following lines are generated from line 303
     public static Buffer X(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 297
-        buf.add(node2518(ctx));
+        // The following lines are generated from line 303
+        buf.add(node2635(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 298
-    public static Buffer node2522(Context ctx) throws Exception{
+    // The following lines are generated from line 304
+    public static Buffer node2639(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(89);
         s.add(90);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 298
+    // The following lines are generated from line 304
     public static Buffer Y(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 298
-        buf.add(node2522(ctx));
+        // The following lines are generated from line 304
+        buf.add(node2639(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 299
-    public static Buffer node2526(Context ctx) throws Exception{
+    // The following lines are generated from line 305
+    public static Buffer node2643(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(90);
         s.add(91);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 299
+    // The following lines are generated from line 305
     public static Buffer Z(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 299
-        buf.add(node2526(ctx));
+        // The following lines are generated from line 305
+        buf.add(node2643(ctx));
 
         return buf;
     }
-    // The following lines are generated from line 300
-    public static Buffer node2530(Context ctx) throws Exception{
+    // The following lines are generated from line 306
+    public static Buffer node2647(Context ctx) throws Exception{
         List<Integer> s = new ArrayList<>();
         s.add(65);
         s.add(91);
         return new Buffer(""+(char)(CharSet.get_random_character_from_set(s)));
     }
-    // The following lines are generated from line 300
+    // The following lines are generated from line 306
     public static Buffer CH(Context ctx) throws Exception{
         Buffer buf = new Buffer();
-        // The following lines are generated from line 300
-        buf.add(node2530(ctx));
+        // The following lines are generated from line 306
+        buf.add(node2647(ctx));
 
         return buf;
     }

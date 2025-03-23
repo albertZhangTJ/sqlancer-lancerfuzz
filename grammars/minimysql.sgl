@@ -26,17 +26,20 @@ grammar MiniMySQL;
 
 alterTable
     : error['exist'] ALTER TABLE t = table.any
-     ( alterSpecification )**random[1, 6, ','] SC
+     ( alterSpecification )**random[1, 6, ',', 75] SC
     ;
 
 fragment alterSpecification
     : 
-    ADD COLUMN? new['column'] columnDefinition FIRST?    
-    | ADD COLUMN? '(' (new['column'] columnDefinition)**random[1, 3, ','] ')' 
-    | DROP COLUMN? column[t].unique_any error['delete all', 'has a partitioning function dependency']
-    | DROP PRIMARY KEY error['primary']
-    | RENAME ( TO | AS ) new['table']
-    | RENAME COLUMN column[t].unique_any TO column.unique_any error['has a partitioning function dependency and cannot be dropped or renamed']
+    c=$column[t]
+    ( 
+        ADD COLUMN? new['column'] columnDefinition FIRST?    
+        | ADD COLUMN? '(' (new['column'] columnDefinition)**random[1, 3, ',', 75] ')' 
+        | DROP COLUMN? c.unique_any error['delete all', 'has a partitioning function dependency']
+        | DROP PRIMARY KEY error['primary']
+        | RENAME ( TO | AS ) new['table']
+        | RENAME COLUMN c.unique_any TO new['column'] error['has a partitioning function dependency and cannot be dropped or renamed']
+    )
     ;
 
 fragment columnDefinition
@@ -86,7 +89,7 @@ createIndex
         error['A SPATIAL index may only contain a geometrical type column']  SPATIAL
     ) )**random[0, 1, 90]
     INDEX new['index']
-    ON t=table.any c=$column[t] '(' ( c.unique_any )**random[1, 6] ')'
+    ON t=table.any c=$column[t] '(' ( c.unique_any )**random[1, 6, ',', 90] ')'
     (
         ALGORITHM EQ (DEFAULT | INPLACE | COPY)
         | LOCK EQ (DEFAULT | NONE | SHARED | EXCLUSIVE)
@@ -98,23 +101,26 @@ truncateTable : TRUNCATE TABLE table.any SC ;
     
 insertStatement
     : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? error['Duplicate'] t=table.any
-    '('  ( c+=column[t] )**random[1, 6, ',', 75] ')' 
-    VALUES '(' ( expression[c.next] )**random[c.len,','] ')'
+    '(' cl=$column[t] ( c+=cl.unique_any )**random[1, 6, ',', 75] ')' 
+    VALUES '(' ( expression[c.next.type]  )**random[c.len,','] ')'
     SC
     ;
 
 updateStatement
     : UPDATE error['Duplicate'] LOW_PRIORITY? IGNORE? t=table.any
-    SET (cc=columnName[t].any '=' expression[cc])**random[1,6] (WHERE (NOT)? cc=columnName[t].any '=' expression[cc])? SC
+    SET (cc=column[t].any '=' expression[cc.type])**random[1, 6, ',', 75] (WHERE (NOT)? cc=column[t].any '=' expression[cc.type])? SC
     ;
 
-expression [type='default']
-    : int_val <type=='INT'>
-    | text_val <type=='TEXT'> 
-    | float_val <type=='FLOAT'>;
-    //| least 
-    //| greatest 
-    //| if_func;
+expression [type, depth=3]
+    : int_expr <type=='int'>
+    | text_expr <type=='text'> 
+    | float_expr <type=='float'>
+    | <depth>0> ( 
+        least[type, depth$-1] 
+        | greatest[type, depth$-1] 
+        | if_func[type, depth$-1]
+    )
+    ;
 
 selectStatement [rep=random[1,5,',']] returns [c] :
     @2
@@ -145,7 +151,7 @@ where_predicate:
 
 predicate : ( 50%'(' pivot=$t.any.c.any ( expression[pivot] | (tt=t DOT | tt=$t )  cc=tt.c.filter[type==pivot.type].any ) 
                     comparison 
-                    ( expression[cc] | (tt=t DOT | tt=$t )  cc=tt.c.filter[type=pivot.type].any ) ')' 
+                    ( expression[cc] | (tt=t DOT | tt=$t )  cc=tt.c.filter[type==pivot.type].any ) ')' 
             | 30% ifnull 
             | if_func)
         ;
@@ -160,10 +166,10 @@ waitNowaitClause
 abs : ' ABS(' (float_expr | int_expr ) ')' ;
 bit_count : ' BIT_COUNT(' int_expr ')';
 coalesce : ' COALESCE(' expression ( ',' expression )* ')';
-if_func : ' IF(' (expression comparison expression | ifnull) ', ' expression ', ' expression ') '; 
-ifnull : ' IFNULL(' expression ', ' expression ') ';
-greatest : ' GREATEST(' expression ( ', ' expression )+ ') ';
-least : ' LEAST(' expression ( ', ' expression )+ ') ';
+if_func [type, depth] : ' IF(' ( expression[type, depth] comparison expression[type, depth] | ifnull[type, depth] ) ', ' expression[type, depth] ', ' expression[type, depth] ') '; 
+ifnull [type, depth] : ' IFNULL(' expression[type, depth] ', ' expression[type, depth] ') ';
+greatest [type, depth] : ' GREATEST(' expression[type, depth] ( ', ' expression[type, depth] )+ ') ';
+least [type, depth] : ' LEAST(' expression[type, depth] ( ', ' expression[type, depth] )+ ') ';
 strcmp : ' STRCMP(' text_expr ', ' text_expr ') ';
 substr : ' SUBSTR(' text_expr ', ' int_expr ', ' int_expr ') ';
 substring : ' SUBSTRING(' text_expr ', ' int_expr ', ' int_expr ') ';
@@ -176,13 +182,13 @@ last_insert_id : ' LAST_INSERT_ID() ';
 float_expr : ( 50% float_val | abs  | NULL ) ;
 float_val : int_val ('.' int_val )? ;
 int_expr : ( 50% (DS)**random[0, 1] int_val | bit_count | strcmp | last_insert_id | NULL );
-int_val :  (DIGIT)**random[1, 5, 0] ;
+int_val :  (DIGIT)**random[1, 5] ;
 text_expr : ( 70% text_val | substr | substring | lcase | ucase | space | trim | NULL );
 text_val :  DQ ( (CH | DIGIT) )**random[1, 100] DQ ;
 
 db returns [d] : d=$query['SHOW DATABASES;', 'Database'] ;
 table returns [t] : t=$query['SHOW TABLES;', 'Tables_in_'$+DB];
-column [t] returns [c] : c=$query['SHOW COLUMNS FROM '$+t, 'Field'];
+column [t] returns [c] : c=$query['SHOW COLUMNS FROM '$+t, 'Field', 'Type', 'type'];
 index [t] returns [i] : i=$query['SHOW INDEX FROM '$+t, 'Key_name'];
 
 
