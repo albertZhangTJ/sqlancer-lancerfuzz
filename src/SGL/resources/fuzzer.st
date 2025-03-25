@@ -364,6 +364,27 @@ public class Fuzzer{
                         Variable res = Variable.factory(val);
                         return res;
                     }
+                    //random[min,max,delimiter]
+                    if (args.get(0).isNumerical() && args.get(1).isNumerical() && args.get(2).isString()){
+                        int min = args.get(0).getNumerical();
+                        int max = args.get(1).getNumerical();
+                        String delimiter = args.get(2).getValue();
+                        int val = min;
+                        double dr = 0.75;
+                        while (true){
+                            if (Math.random()<dr){
+                                break;
+                            }
+                            val++;
+                            //wrap around when overflow
+                            if (val>max){
+                                val = min;
+                            }
+                        }
+                        Variable res = Variable.factory(val);
+                        res.setAttr("delimiter", Variable.factory(delimiter));
+                        return res;
+                    }
                 }
                 if (args.size()==4){
                     if (args.get(0).isNumerical() && args.get(1).isNumerical() && args.get(2).isString() && args.get(3).isNumerical()){
@@ -1099,7 +1120,7 @@ public class Fuzzer{
         }
         catch (UnavailableException | DeadEndException ue){
             Fuzzer.context.resetError();
-            //ue.printStackTrace();
+            ue.printStackTrace();
             return "--[Unavailable Error]: don't worry if you see this occasionally" + ue.getMessage();
         }
     }

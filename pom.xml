@@ -201,6 +201,7 @@
             <goals><goal>single</goal></goals>
             <phase>package</phase>
             <configuration>
+              <skip>${skip.main}</skip>
               <classifier>sqlancer</classifier>
               <forceCreation>true</forceCreation>
               <descriptorRefs>
@@ -221,6 +222,7 @@
             <goals><goal>single</goal></goals>
             <phase>package</phase>
             <configuration>
+              <skip>${skip.SGL}</skip>
               <classifier>SGL</classifier>
               <forceCreation>true</forceCreation>
               <descriptorRefs>

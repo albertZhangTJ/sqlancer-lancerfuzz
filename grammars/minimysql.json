@@ -76,10 +76,11 @@
                 "insertStatement",
                 "updateStatement",
                 "truncateTable",
-                "createIndex"
+                "createIndex",
+                "selectStatement"
             ],
             "weights" : [
-                1, 2, 5, 5, 1, 2
+                1, 2, 5, 5, 1, 2, 10
             ],
             "min" : 500,
             "max" : 1500
