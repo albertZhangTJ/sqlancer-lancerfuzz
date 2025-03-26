@@ -31,4 +31,8 @@ public class SQLConnection implements SQLancerDBConnection {
     public Statement createStatement() throws SQLException {
         return connection.createStatement();
     }
+
+    public Statement createStatement(int arg1, int arg2) throws SQLException {
+        return connection.createStatement(arg1, arg2);
+    }
 }

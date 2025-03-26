@@ -81,7 +81,7 @@ createTable
     ;
 
 createIndex
-    : error['used in key specification without a key length'] CREATE  
+    : error['used in key specification without a key length']  error['Too many key parts specified'] CREATE  
     ((
        49% UNIQUE error['Duplicate', 'A UNIQUE INDEX must include all columns in the '] | 
         49% FULLTEXT error['cannot be part of',' support FULLTEXT indexes'] | 
@@ -110,7 +110,7 @@ updateStatement
     SET (cc=column[t].any '=' expression[cc.type])**random[1, 6, ',', 75] (WHERE (NOT)? cc=column[t].any '=' expression[cc.type])? SC
     ;
 
-expression [type, depth=1]
+expression [type, depth=2]
     : int_expr <type=='int'>
     | text_expr <type=='text'> 
     | float_expr <type=='float'>
@@ -121,7 +121,7 @@ expression [type, depth=1]
     )
     ;
 
-selectStatement [rep=random[1,5,',']] returns [c] :
+selectStatement [outmost=1, rep=random[1,5,',']] returns [c] :
     @2
 	SELECT error['is ambiguous'] (
         90% ( (tt=t.any DOT | tt=$t.any) c+=tt.c.unique_any )**rep
@@ -129,21 +129,28 @@ selectStatement [rep=random[1,5,',']] returns [c] :
     ) 
     @1
     at=$table
-	FROM ( tt=at.unique_any tt.c=$column[tt] t+=$tt | 10% '(' cc=$selectStatement ')' AS tt=new['table'] tt.c=$cc t+=$tt)
+	FROM ( tt=at.unique_any tt.c=$column[tt] t+=$tt | 10% '(' cc=$selectStatement[0] ')' AS tt=new['table'] tt.c=$cc t+=$tt)
 	//no separate needed since it is directly positioned after the FROM clause
     (
-		JOIN ( tt=at.unique_any tt.c=$column[tt] t+=$tt | 10% '(' cc=$selectStatement ')' AS tt=new['table'] tt.c=$cc t+=$tt)
+		JOIN ( tt=at.unique_any tt.c=$column[tt] t+=$tt | 10% '(' cc=$selectStatement[0] ')' AS tt=new['table'] tt.c=$cc t+=$tt)
 	)?
     @3
-    where_predicate[t, c]?
-	//( ( UNION | INTERSECT )  selectStatement[random[c.len,',']] )?
-    
+    ( ' /*BEGIN_COND*/ ' <outmost==1> | ' ' <outmost==0>)
+    where_predicate[t, c, outmost]
+    (' /*END_COND*/ ' <outmost==1> | ' ' <outmost==0>)
+	//( ( UNION | INTERSECT )  selectStatement[0, random[c.len,',']] )?
+    (SC <outmost==1> | ' ' <outmost==0> )
 	;
 	
-where_predicate [t, c]:
-	WHERE predicate[t, c]
-	| WHERE c.any IN '(' selectStatement[random[1,',']] ')' error['Operand should contain 1 column(s)']
-	| WHERE NOT? EXISTS '(' selectStatement ')'
+where_predicate [t, c, outmost]:
+	WHERE 
+    ( ' /*BEGIN_PRED*/ ' <outmost==1> | ' ' <outmost==0> )
+    ( 
+        60% predicate[t, c]
+	    | c.any IN '(' selectStatement[0, random[1,',']] ')' error['Operand should contain 1 column(s)']
+	    | NOT? EXISTS '(' selectStatement[0] ')'
+    )
+    ( ' /*END_PRED*/ ' <outmost==1> | ' ' <outmost==0> )
 	;
 
 predicate [t, c]: ( 50%'(' pivot=$t.any.c.any ( expression[pivot.type] | (tt=t.any DOT | tt=$t.any )  cc=tt.c.filter['type', '==', pivot.type].any ) 

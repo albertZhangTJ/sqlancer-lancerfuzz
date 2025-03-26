@@ -52,13 +52,15 @@ public class ProtoEntry {
     //TODO
     public static void test(MainOptions options) throws Exception{
         try{
-            Fuzzer.init(null);
-            while (true){
-                String next = Fuzzer.fuzz_next_and_execute();
-                if (next==null){
-                    break;
+            while(true){
+                Fuzzer.init(null);
+                while (true){
+                    String next = Fuzzer.fuzz_next_and_execute();
+                    if (next==null){
+                        break;
+                    }
+                    System.out.println(next);
                 }
-                System.out.println(next);
             }
         }
         catch (Exception e){

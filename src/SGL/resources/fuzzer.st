@@ -1096,6 +1096,78 @@ public class Fuzzer{
         }
     }
 
+    public static String remove_tagged(String s, String o, String c) {
+        StringBuilder result = new StringBuilder();
+        int i = 0;
+        
+        while (i < s.length()) {
+            int openingIndex = s.indexOf(o, i);
+            
+            // If no more opening tags, add the rest and finish
+            if (openingIndex == -1) {
+                result.append(s.substring(i));
+                break;
+            }
+            
+            // Add text before the opening tag
+            result.append(s.substring(i, openingIndex));
+            
+            // Find the next closing tag
+            int closingIndex = s.indexOf(c, openingIndex + o.length());
+            
+            // If no matching closing tag, add the rest and finish
+            if (closingIndex == -1) {
+                result.append(s.substring(i));
+                break;
+            }
+            
+            // Skip to after the closing tag
+            i = closingIndex + c.length();
+        }
+        
+        return result.toString();
+    }
+
+    public static int count_row(ResultSet resultSet) throws SQLException {
+        // Store original position
+        int currentRow = resultSet.getRow();
+        
+        // Move to last row and get position (which equals row count)
+        resultSet.last();
+        int rowCount = resultSet.getRow();
+        
+        // Reset to original position
+        if (currentRow == 0) {
+            resultSet.beforeFirst();
+        } else {
+            resultSet.absolute(currentRow);
+        }
+        
+        return rowCount;
+    }
+
+
+    public static String test_TLP(String stmt) throws Exception{
+        String base = remove_tagged(stmt, "/*BEGIN_COND*/", "/*END_COND*/");
+        stmt = stmt.replace("/*BEGIN_COND*/", "").replace("/*END_COND*/", "");
+        String t = stmt.replace("/*BEGIN_PRED*/", "(").replace("/*END_PRED*/", ")");
+        String f = stmt.replace("/*BEGIN_PRED*/", " NOT (").replace("/*END_PRED*/", ")");
+        String n = stmt.replace("/*BEGIN_PRED*/", "(").replace("/*END_PRED*/", ") IS NULL ");
+        int base_count = count_row(Fuzzer.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY).executeQuery(base));
+        base = base + " -- BASE QUERY: " + base_count + " rows\n";
+        int t_count = count_row(Fuzzer.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY).executeQuery(t));
+        t = t + " -- TRUE QUERY: " + t_count + " rows\n";
+        int f_count = count_row(Fuzzer.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY).executeQuery(f));
+        f = f + " -- FALSE QUERY: " + f_count + " rows\n";
+        int n_count = count_row(Fuzzer.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY).executeQuery(n));
+        n = n + " -- NULL QUERY: " + n_count + " rows\n";
+        String test = base + t + f + n;
+        if (base_count!=t_count + f_count + n_count){
+            throw new Exception("CARDINALITY MISMATCH!!!\n"+ test);
+        }
+        return test;
+    }
+
     public static String fuzz_next_and_execute() throws Exception{
         
         try {
@@ -1107,6 +1179,9 @@ public class Fuzzer{
             try {
                 Fuzzer.connection.createStatement().execute(stmt);
                 Fuzzer.context.resetError();
+                if (stmt.contains("BEGIN_PRED")){
+                    return test_TLP(stmt);
+                }
                 return stmt;
             }
             catch (SQLException se){

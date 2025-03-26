@@ -49,8 +49,8 @@
             "rules" : [
                 "createTable"
             ],
-            "min" : 50,
-            "max" : 300
+            "min" : 30,
+            "max" : 100
         },
    		{
             "name" : "insert",
@@ -65,8 +65,8 @@
             "rules" : [
                 "updateStatement"
             ],
-            "min" : 100,
-            "max" : 500
+            "min" : 50,
+            "max" : 150
         },
         {
             "name" : "mix",
@@ -80,7 +80,7 @@
                 "selectStatement"
             ],
             "weights" : [
-                1, 2, 5, 5, 1, 2, 10
+                1, 2, 10, 2, 1, 2, 10
             ],
             "min" : 500,
             "max" : 1500
