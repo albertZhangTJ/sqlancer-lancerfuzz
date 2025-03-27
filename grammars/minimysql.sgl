@@ -42,7 +42,7 @@ fragment alterSpecification
     ;
 
 fragment columnDefinition
-    : ' FLOAT ' | ' INT ' | ' TEXT '
+    : ' DOUBLE ' | ' INT ' | ' TEXT '
     ;
 
 dropDatabase
@@ -64,7 +64,7 @@ useDatabase
 
 createTable
     : CREATE error['A BLOB field is not allowed in partition function', 'is of a not allowed type for this type of partitioning'] 
-      ( 90% ' '  | TEMPORARY error['Cannot create temporary table with partitions'] ) TABLE 
+      ( 90% ' '  | TEMPORARY error['Cannot create temporary table with partitions'] error['Cannot create FULLTEXT index on temporary InnoDB table'] ) TABLE 
         ifNotExists? new['table']
         (
             90% LB ( cn+=new['column'] columnDefinition)**random[5, 10, ',', 30] RB 
@@ -110,20 +110,22 @@ updateStatement
     SET (cc=column[t].any '=' expression[cc.type])**random[1, 6, ',', 75] (WHERE (NOT)? cc=column[t].any '=' expression[cc.type])? SC
     ;
 
-expression [type, depth=2]
-    : int_expr <type=='int'>
-    | text_expr <type=='text'> 
-    | float_expr <type=='float'>
-    | <depth>0> ( 
+expression [type, depth=4]
+    : error['out of range'] error['Out of range value']
+    (int_expr[depth$-1] <type=='int'>
+    | text_expr[depth$-1] <type=='text'> 
+    | double_expr[depth$-1] <type=='double'>
+    | 5% <depth>1> (
         least[type, depth$-1] 
         | greatest[type, depth$-1] 
         | if_func[type, depth$-1]
     )
+    ) 
     ;
 
 selectStatement [outmost=1, rep=random[1,5,',']] returns [c] :
     @2
-	SELECT error['is ambiguous'] (
+	SELECT error['is ambiguous'] error['Duplicate column name'] (
         90% ( (tt=t.any DOT | tt=$t.any) c+=tt.c.unique_any )**rep
         | ASTERISK ( tt=$t.next (c+=$tt.c.next)**tt.c.len )**t.len
     ) 
@@ -136,7 +138,7 @@ selectStatement [outmost=1, rep=random[1,5,',']] returns [c] :
 	)?
     @3
     ( ' /*BEGIN_COND*/ ' <outmost==1> | ' ' <outmost==0>)
-    where_predicate[t, c, outmost]
+    ( where_predicate[t, c, outmost] | ' ' <outmost==0> )
     (' /*END_COND*/ ' <outmost==1> | ' ' <outmost==0>)
 	//( ( UNION | INTERSECT )  selectStatement[0, random[c.len,',']] )?
     (SC <outmost==1> | ' ' <outmost==0> )
@@ -163,31 +165,41 @@ predicate [t, c]: ( 50%'(' pivot=$t.any.c.any ( expression[pivot.type] | (tt=t.a
 comparison : ( LT | GT | EQ | LT EQ | GT EQ );
 
 waitNowaitClause
-    : WAIT float_val
+    : WAIT double_val
     | NOWAIT
     ;
 
-abs : ' ABS(' (float_expr | int_expr ) ')' ;
-bit_count : ' BIT_COUNT(' int_expr ')';
-coalesce : ' COALESCE(' expression ( ',' expression )* ')';
+abs [depth] : ' ABS(' ( expression['int', depth] | expression['double', depth] 70% ) ')' ;
+bit_count [depth] : ' BIT_COUNT(' expression['int', depth] ')';
+//coalesce  : ' COALESCE(' expression ( ',' expression )* ')';
 if_func [type, depth] : ' IF(' ( expression[type, depth] comparison expression[type, depth] | ifnull[type, depth] ) ', ' expression[type, depth] ', ' expression[type, depth] ') '; 
 ifnull [type, depth] : ' IFNULL(' expression[type, depth] ', ' expression[type, depth] ') ';
 greatest [type, depth] : ' GREATEST(' expression[type, depth] ( ', ' expression[type, depth] )+ ') ';
 least [type, depth] : ' LEAST(' expression[type, depth] ( ', ' expression[type, depth] )+ ') ';
-strcmp : ' STRCMP(' text_expr ', ' text_expr ') ';
-substr : ' SUBSTR(' text_expr ', ' int_expr ', ' int_expr ') ';
-substring : ' SUBSTRING(' text_expr ', ' int_expr ', ' int_expr ') ';
-trim : ' TRIM(' text_expr') ';
-lcase : ' LCASE(' text_expr ') ';
-ucase : ' UCASE(' text_expr ') ';
-space : ' SPACE(' int_expr ') ';
+strcmp [depth] : ' STRCMP(' expression['text', depth] ', ' expression['text', depth] ') ';
+substr [depth] : ' SUBSTR(' expression['text', depth] ', ' expression['int', depth] ', ' expression['int', depth] ') ';
+substring [depth] : ' SUBSTRING(' expression['text', depth] ', ' expression['int', depth] ', ' expression['int', depth] ') ';
+trim [depth] : ' TRIM(' expression['text', depth]') ';
+lcase [depth] : ' LCASE(' expression['text', depth] ') ';
+ucase [depth] : ' UCASE(' expression['text', depth] ') ';
+space [depth] : ' SPACE(' expression['int', depth] ') ' error['was larger than'];
 last_insert_id : ' LAST_INSERT_ID() ';
+acos [depth=1] : ' ACOS(' ( expression['int', depth] | expression['double', depth] 70% ) ') ';
+asin [depth=1]: ' ASIN(' ( expression['int', depth] | expression['double', depth] 70% ) ') ';
+atan [depth=1] : ' ATAN(' ( expression['int', depth] | expression['double', depth] 70% )**random[1,2,','] ') ';
+atan2 [depth=1] : ' ATAN2(' ( expression['int', depth] | expression['double', depth] 70% )**random[2,','] ') ';
+ceil [depth=1] : ( ' CEIL(' | ' CEILING(' ) ( expression['int', depth] | expression['double', depth] 70% ) ') ';
+cos [depth=1] : ' COS(' ( expression['int', depth] | expression['double', depth] 70% ) ') ' error['range'];
+cot [depth=1] : ' COT(' ( expression['int', depth] | expression['double', depth] 70% ) ') ' error['range'];
+crc32 [depth=1] : ' CRC32(' ( expression['int', depth] | expression['text', depth] 70% | expression['double', depth] ) ')/4 '; //divided by 4 to avoid overflow
+degrees [depth=1] : ' DEGREES(' ( expression['int', depth] | expression['double', depth] 70% ) ') ';
+exp [depth=1] : ' EXP(' ( expression['int', depth] | expression['double', depth] 70% ) ') ';
 
-float_expr : ( 50% float_val | abs  | NULL ) ;
-float_val : int_val ('.' int_val )? ;
-int_expr : ( 50% (DS)**random[0, 1] int_val | bit_count | strcmp | last_insert_id | NULL );
+double_expr [depth=2] : double_val | <depth>0> ( abs[depth] | acos[depth] | asin[depth] | atan[depth] | atan2[depth] | cos[depth] | cot[depth] | degrees[depth] | exp[depth] | NULL ) ;
+double_val : int_val ('.' int_val )? ;
+int_expr [depth=2] : (DS)**random[0, 1] int_val | <depth>0> ( bit_count[depth] | strcmp[depth] | last_insert_id | ceil[depth] | crc32[depth] | NULL );
 int_val :  (DIGIT)**random[1, 5] ;
-text_expr : ( 70% text_val | substr | substring | lcase | ucase | space | trim | NULL );
+text_expr [depth=2] : text_val | <depth>0> ( substr[depth] | substring[depth] | lcase[depth] | ucase[depth] | space[depth] | trim[depth] | NULL );
 text_val :  DQ ( (CH | DIGIT) )**random[1, 100] DQ ;
 
 db returns [d] : d=$query['SHOW DATABASES;', 'Database'] ;
@@ -211,6 +223,7 @@ CREATE : SPACE C R E A T E SPACE;
 DATABASE : SPACE D A T A B A S E SPACE;
 DEFAULT : SPACE D E F A U L T SPACE;
 DELAYED : SPACE D E L A Y E D SPACE;
+DOUBLE : SPACE D O U B L E SPACE;
 DROP : SPACE D R O P SPACE;
 EXCLUSIVE : SPACE E X C L U S I V E SPACE;
 EXISTS : SPACE E X I S T S SPACE;

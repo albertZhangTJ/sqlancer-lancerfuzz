@@ -1184,7 +1184,7 @@ public class Fuzzer{
                 }
                 return stmt;
             }
-            catch (SQLException se){
+            catch (Exception se){
                 System.out.println(stmt + " -- ERROR!");
                 if (Fuzzer.context.isExpectedError(se.getMessage())){
                     Fuzzer.context.resetError();
@@ -1195,7 +1195,7 @@ public class Fuzzer{
         }
         catch (UnavailableException | DeadEndException ue){
             Fuzzer.context.resetError();
-            ue.printStackTrace();
+            //ue.printStackTrace();
             return "--[Unavailable Error]: don't worry if you see this occasionally" + ue.getMessage();
         }
     }
