@@ -8,7 +8,6 @@ Features described might still be un-implemented or buggy.
 
 This work is inspired by [Grammarinator](https://github.com/renatahodovan/grammarinator) for AST generation and [StringTemplate](https://github.com/antlr/stringtemplate4) for fuzzer rendering.
 
-
 ## Quick Start
 
 We have prepared (not yet) annotated LancerSpec and corresponding configuration files for MySQL dialect, SQLite dialect, as well as Postgresql dialect.
@@ -18,7 +17,22 @@ You can run the examples or your own files using
 <pre><code>./scripts/run.sh [path to grammar file] [path to config file]
 </code></pre>
 
+## Extra Information Required (Compared to ANTLR)
 
+| Feature | Purpose | Example | Required? |
+|---------|---------|---------|-----------|
+| Type Annotations | Specify SQL data types for expressions and literals | `expr returns [SQLType type]` | Yes |
+| Variable System | Maintain context for test case generation | `variable = expr` | Yes |
+| Predicates | Enforce semantic constraints | `predicate {condition}` | Optional |
+| Weightage | Control probability of rule selection | `weightage 80` | Optional |
+| Precedence | Define operator precedence | `precedence 1` | Optional |
+| Action Blocks | Execute custom Java code during generation | `action {Java code}` | Optional |
+| EBNF Suffixes | Control repetition patterns | `*`, `+`, `?` | Yes |
+| Expression Operations | Define arithmetic/logical operations | `expr op = (PLUS | MINUS)` | Yes |
+| Type Inference Rules | Specify type promotion and conversion | `NUMERIC_TYPE + NUMERIC_TYPE -> NUMERIC_TYPE` | Yes |
+| Error Handling | Define expected errors and recovery | `catch (SQLException e)` | Optional |
+| Context Variables | Store and retrieve generation context | `context.get("variable")` | Optional |
+| Template Rendering | Generate formatted SQL statements | `template "SELECT $expr$"` | Optional |
 
 ## LancerSpec Syntax
 
