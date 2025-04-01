@@ -49,16 +49,16 @@
             "rules" : [
                 "createTable"
             ],
-            "min" : 30,
-            "max" : 100
+            "min" : 20,
+            "max" : 50
         },
    		{
             "name" : "insert",
             "rules" : [
                 "insertStatement"
             ],
-            "min" : 500,
-            "max" : 1500
+            "min" : 200,
+            "max" : 1000
         },
         {
             "name" : "update",
@@ -80,7 +80,7 @@
                 "selectStatement"
             ],
             "weights" : [
-                1, 2, 10, 2, 1, 2, 10
+                1, 2, 3, 2, 1, 2, 5
             ],
             "min" : 500,
             "max" : 1500

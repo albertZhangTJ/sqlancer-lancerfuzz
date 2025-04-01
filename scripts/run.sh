@@ -13,7 +13,7 @@ echo "Building SQLancer" && \
 mvn clean package -Dskip.SGL=true -DskipTests && \
 cd target && \
 echo "Starting SQLancer" && \
-java -jar sqlancer-jar-with-dependencies.jar -g | tee log/stdout.log && \
+java -jar sqlancer-jar-with-dependencies.jar -g && \
 cd .. && \
 echo "Finished, cleaning up" && \
 cp src/sqlancer/any/Fuzzer.java.template.txt src/sqlancer/any/Fuzzer.java && \

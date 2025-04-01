@@ -188,18 +188,108 @@ acos [depth=1] : ' ACOS(' ( expression['int', depth] | expression['double', dept
 asin [depth=1]: ' ASIN(' ( expression['int', depth] | expression['double', depth] 70% ) ') ';
 atan [depth=1] : ' ATAN(' ( expression['int', depth] | expression['double', depth] 70% )**random[1,2,','] ') ';
 atan2 [depth=1] : ' ATAN2(' ( expression['int', depth] | expression['double', depth] 70% )**random[2,','] ') ';
+avg [type, depth=1] : ' AVG(' expression[type, depth] ') ';
 ceil [depth=1] : ( ' CEIL(' | ' CEILING(' ) ( expression['int', depth] | expression['double', depth] 70% ) ') ';
+concat [depth=1] : ' CONCAT(' ( expression['text', depth] | expression['int', depth] 20% | expression['double', depth] 10% )**random[2,5,','] ') ';
 cos [depth=1] : ' COS(' ( expression['int', depth] | expression['double', depth] 70% ) ') ' error['range'];
 cot [depth=1] : ' COT(' ( expression['int', depth] | expression['double', depth] 70% ) ') ' error['range'];
 crc32 [depth=1] : ' CRC32(' ( expression['int', depth] | expression['text', depth] 70% | expression['double', depth] ) ')/4 '; //divided by 4 to avoid overflow
 degrees [depth=1] : ' DEGREES(' ( expression['int', depth] | expression['double', depth] 70% ) ') ';
 exp [depth=1] : ' EXP(' ( expression['int', depth] | expression['double', depth] 70% ) ') ';
+left [depth=1] : ' LEFT(' expression['text', depth] ',' expression['int', depth] ') ';
+ln [depth=1] : ' LN(' ( expression['double', depth] | expression['int', depth] 30% ) ') 'error['Invalid argument'];
+log [depth=1] : ' LOG(' ( expression['double', depth] | expression['int', depth] 30% )**random[1,2,','] ') 'error['Invalid argument'];
+log10 [depth=1] : ' LOG10(' ( expression['double', depth] | expression['int', depth] 30% ) ') 'error['Invalid argument'];
+log2 [depth=1] : ' LOG2(' ( expression['double', depth] | expression['int', depth] 30% ) ') 'error['Invalid argument'];
+lower [depth=1] : ' LOWER(' expression['text', depth] ') ';
+lpad [depth=1] : ' LPAD(' expression['text', depth] ',' int_val ',' expression['text', depth] ') ';
+md5 [depth=1] : ' MD5(' expression['text', depth] ') ';
+mod [type, depth=1] : ' MOD(' expression[type, depth] ',' expression[type, depth] ') ' error['Division by'];
+pi [depth=0] : ' PI() ';
+pow [type, depth=1] : ' POW(' expression[type, depth] ',' expression[type, depth] ') ';
+radians [depth=1] : ' RADIANS(' expression['double', depth] ') ';
+rand [depth=1] : ' RAND(' ( expression['int', depth] )**random[0,1] ') ';
+replace [depth=1] : ' REPLACE(' expression['text', depth] ',' expression['text', depth] ',' expression['text', depth] ') ';
+right [depth=1] : ' RIGHT(' expression['text', depth] ',' expression['int', depth] ') ';
+round [type, depth=1] : ' ROUND(' expression[type, depth] ( ',' expression['int', depth] )? ') ';
+sign [depth=1] : ' SIGN(' ( expression['int', depth] | expression['double', depth] 70% ) ') ';
+sin [depth=1] : ' SIN(' ( expression['int', depth] | expression['double', depth] 70% ) ') ' error['range'];
+sqrt [depth=1] : ' SQRT(' ( expression['int', depth] | expression['double', depth] 70% ) ') ';
+tan [depth=1] : ' TAN(' ( expression['int', depth] | expression['double', depth] 70% ) ') ' error['range'];
+truncate [depth=1] : ' TRUNCATE(' expression['double', depth] ',' expression['int', depth] ') ';
+upper [depth=1] : ' UPPER(' expression['text', depth] ') ';
 
-double_expr [depth=2] : double_val | <depth>0> ( abs[depth] | acos[depth] | asin[depth] | atan[depth] | atan2[depth] | cos[depth] | cot[depth] | degrees[depth] | exp[depth] | NULL ) ;
-double_val : int_val ('.' int_val )? ;
-int_expr [depth=2] : (DS)**random[0, 1] int_val | <depth>0> ( bit_count[depth] | strcmp[depth] | last_insert_id | ceil[depth] | crc32[depth] | NULL );
-int_val :  (DIGIT)**random[1, 5] ;
-text_expr [depth=2] : text_val | <depth>0> ( substr[depth] | substring[depth] | lcase[depth] | ucase[depth] | space[depth] | trim[depth] | NULL );
+numerical_operation [type, depth=1] : ' (' expression[type, depth] ('+' | '-' | '*' | <type!='int'> '/' error['Division by']) expression[type, depth] ') ';
+
+double_expr [depth=2] 
+    : double_val 
+    | <depth>0> ( 
+        abs[depth] 
+        | acos[depth] 
+        | asin[depth] 
+        | atan[depth] 
+        | atan2[depth] 
+        //| avg['double', depth] 
+        | cos[depth] 
+        | cot[depth] 
+        | degrees[depth] 
+        | exp[depth] 
+        | ln[depth]
+        | log[depth]
+        | log10[depth]
+        | log2[depth]
+        | mod['double', depth] 
+        | pi[depth]
+        | pow['double', depth] 
+        | radians[depth]
+        | rand[depth]
+        | round['double', depth]
+        | sin[depth]
+        | sqrt[depth]
+        | tan[depth]
+        | truncate[depth]
+        | NULL 
+        | numerical_operation['double', depth]
+    ) ;
+double_val : (DS)**random[0, 1, '', 90] int_val ('.' int_val )? ;
+
+int_expr [depth=2] 
+    : int_val 
+    | <depth>0> ( 
+        //avg['int'] 
+        bit_count[depth] 
+        | strcmp[depth] 
+        | last_insert_id 
+        | ceil[depth] 
+        | crc32[depth] 
+        | mod['int', depth] 
+        | pow['int', depth] 
+        | round['int', depth]
+        | sign[depth]
+        | NULL 
+        | numerical_operation['int', depth]
+    );
+int_val :  (DS)**random[0, 1, '', 90] (DIGIT)**random[1, 5] ;
+
+text_expr [depth=2] 
+    : text_val 
+    | <depth>0> ( 
+        concat[depth]
+        | substr[depth] 
+        | substring[depth] 
+        | lcase[depth] 
+        | ucase[depth] 
+        | space[depth]
+        | md5[depth] 
+        | trim[depth] 
+        | left[depth]
+        | lower[depth]
+        | lpad[depth]
+        | replace[depth]
+        | right[depth]
+        | upper[depth]
+        | NULL 
+    ) error['Data too long'] error['was larger than'];
 text_val :  DQ ( (CH | DIGIT) )**random[1, 100] DQ ;
 
 db returns [d] : d=$query['SHOW DATABASES;', 'Database'] ;

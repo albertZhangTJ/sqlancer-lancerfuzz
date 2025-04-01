@@ -126,7 +126,7 @@ public class Fuzzer{
         //local variables
         private HashMap<String, Variable> symbols;
         private List<HashMap<String, Variable>> symbolStack;
-        private List<Variable> args;
+        public List<Variable> args;
         private List<String> errors;
         //return value from a grammar function call
         private Variable result;
@@ -168,10 +168,12 @@ public class Fuzzer{
 
         public boolean isExpectedError(String msg){
             for (String err: this.errors){
+                //System.out.println("-- Expected error: "+err);
                 if (msg.contains(err)){
                     return true;
                 }
             }
+            //System.out.println("-- Msg not found: "+msg);
             return false;
         }
 
@@ -214,7 +216,8 @@ public class Fuzzer{
         public void enter(List<Variable> arg_decls) throws Exception{
             if (args!=null && args.size()>0){
                 if (args.size()>arg_decls.size()){
-                    throw new IllegalArgumentException("Fuzzer.Context.enter :: size of provided argument list exceeds that in the rule signature");
+                    String msg = "args.size() == "+args.size()+"\n";
+                    throw new IllegalArgumentException("Fuzzer.Context.enter :: size of provided argument list exceeds that in the rule signature\n" + msg);
                 }
                 for (int i=0; i<this.args.size(); i++){
                     arg_decls.get(i).clone(this.args.get(i));    
@@ -1033,6 +1036,7 @@ public class Fuzzer{
 
         public String get_next_rule() throws Exception{
             if (this.current_stage>=this.rules.size()){
+                //System.out.println("Outta stages");
                 return null;
             }
             if (this.tickets_current_stage==-1){
@@ -1046,6 +1050,7 @@ public class Fuzzer{
                 this.current_stage++;
                 this.tickets_current_stage = -1;
             }
+            //System.out.println("Current stage: "+ this.current_stage +"   Total stage: "+this.rules.size()+ "   Tickets for this stage: "+this.tickets_current_stage+"   Rule: "+result);
             return result;
         }
     }
@@ -1160,6 +1165,7 @@ public class Fuzzer{
         String f = stmt.replace("/*BEGIN_PRED*/", " NOT (").replace("/*END_PRED*/", ")");
         String n = stmt.replace("/*BEGIN_PRED*/", "(").replace("/*END_PRED*/", ") IS NULL ");
         Statement statement = Fuzzer.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+        statement.setQueryTimeout(30);
         int base_count = count_row(statement.executeQuery(base));
         base = base + " -- BASE QUERY: " + base_count + " rows\n";
         int t_count = count_row(statement.executeQuery(t));
@@ -1181,17 +1187,18 @@ public class Fuzzer{
         try {
             String stmt = fuzz_next();
             
-            if (stmt==null || stmt.contains("--[Internal Exception, moving on]")){
+            if (stmt==null || stmt.contains("-- [Internal Exception, moving on]")){
                 return stmt;
             }
             try {
                 Statement statement = null;
                 try {
                     statement = Fuzzer.connection.createStatement();
+                    statement.setQueryTimeout(5);
                     statement.execute(stmt);
                 }
                 catch (Exception e){
-                    throw e;
+                    throw new Exception(stmt+" -- ERROR! " + e.getMessage(), e);
                 }
                 finally {
                     statement.close();
@@ -1203,10 +1210,10 @@ public class Fuzzer{
                 return stmt;
             }
             catch (Exception se){
-                System.out.println(stmt + " -- ERROR!");
+                //System.out.println(stmt + " -- ERROR!");
                 if (Fuzzer.context.isExpectedError(se.getMessage())){
                     Fuzzer.context.resetError();
-                    return "--[Expected Error]:" + se.getMessage();
+                    return "-- [Expected Error]:" + se.getMessage();
                 }
                 throw se;
             }
@@ -1214,7 +1221,7 @@ public class Fuzzer{
         catch (UnavailableException | DeadEndException ue){
             Fuzzer.context.resetError();
             //ue.printStackTrace();
-            return "--[Unavailable Error]: don't worry if you see this occasionally" + ue.getMessage();
+            return "-- [Unavailable Error]: don't worry if you see this occasionally";
         }
     }
     // at compile time, each standalone rule (without the fragment modifier)
@@ -1230,6 +1237,10 @@ public class Fuzzer{
 
     // this is the entry point
     public static String fuzz(String rule) throws Exception{
+        //This is a workaround
+        //If the a previous statement failed on-entering
+        //Its args might be carried over forever
+        Fuzzer.context.args = null;
         Buffer buf = dispatch(Fuzzer.context, rule);
         return buf.toString();
     }
