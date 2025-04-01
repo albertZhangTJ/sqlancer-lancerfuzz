@@ -506,7 +506,8 @@ public class Fuzzer{
             String query = args.get(0).getValue();
             String col = args.get(1).getValue();
             Variable v = Variable.factory();
-            ResultSet rs = this.conn.createStatement().executeQuery(query);
+            Statement stmt = this.conn.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
             while (rs.next()){
                 Variable r = Variable.factory(rs.getString(col));
                 for (int i=2; i<args.size(); i=i+2){
@@ -516,6 +517,8 @@ public class Fuzzer{
                 }
                 v.addEntry(r);
             }
+            stmt.close();
+            rs.close();
             return v;
         }
         //for the "new" built-in function 
@@ -1062,6 +1065,9 @@ public class Fuzzer{
     public static Context context;
 
     public static void init(SQLConnection conn) throws Exception{
+        if (Fuzzer.connection!=null){
+            Fuzzer.connection.close();
+        }
         Fuzzer.rules = new ArrayList<>();
         if (conn != null){
             Fuzzer.connection = conn;
@@ -1142,7 +1148,7 @@ public class Fuzzer{
         } else {
             resultSet.absolute(currentRow);
         }
-        
+        resultSet.close();
         return rowCount;
     }
 
@@ -1153,17 +1159,19 @@ public class Fuzzer{
         String t = stmt.replace("/*BEGIN_PRED*/", "(").replace("/*END_PRED*/", ")");
         String f = stmt.replace("/*BEGIN_PRED*/", " NOT (").replace("/*END_PRED*/", ")");
         String n = stmt.replace("/*BEGIN_PRED*/", "(").replace("/*END_PRED*/", ") IS NULL ");
-        int base_count = count_row(Fuzzer.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY).executeQuery(base));
+        Statement statement = Fuzzer.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+        int base_count = count_row(statement.executeQuery(base));
         base = base + " -- BASE QUERY: " + base_count + " rows\n";
-        int t_count = count_row(Fuzzer.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY).executeQuery(t));
+        int t_count = count_row(statement.executeQuery(t));
         t = t + " -- TRUE QUERY: " + t_count + " rows\n";
-        int f_count = count_row(Fuzzer.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY).executeQuery(f));
+        int f_count = count_row(statement.executeQuery(f));
         f = f + " -- FALSE QUERY: " + f_count + " rows\n";
-        int n_count = count_row(Fuzzer.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY).executeQuery(n));
+        int n_count = count_row(statement.executeQuery(n));
         n = n + " -- NULL QUERY: " + n_count + " rows\n";
         String test = base + t + f + n;
+        statement.close();
         if (base_count!=t_count + f_count + n_count){
-            throw new Exception("CARDINALITY MISMATCH!!!\n"+ test);
+            throw new Exception("-- CARDINALITY MISMATCH!!!\n"+ test);
         }
         return test;
     }
@@ -1177,7 +1185,17 @@ public class Fuzzer{
                 return stmt;
             }
             try {
-                Fuzzer.connection.createStatement().execute(stmt);
+                Statement statement = null;
+                try {
+                    statement = Fuzzer.connection.createStatement();
+                    statement.execute(stmt);
+                }
+                catch (Exception e){
+                    throw e;
+                }
+                finally {
+                    statement.close();
+                }
                 Fuzzer.context.resetError();
                 if (stmt.contains("BEGIN_PRED")){
                     return test_TLP(stmt);

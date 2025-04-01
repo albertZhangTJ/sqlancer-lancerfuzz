@@ -2,6 +2,8 @@ package sqlancer.any;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.Writer;
 import java.io.PrintWriter;
 import java.nio.file.Files;
@@ -17,54 +19,99 @@ import sqlancer.MainOptions;
 
 @SuppressWarnings("unused")
 public class ProtoEntry {
-    private static final int ALLOWED_CONSECUTIVE_FAILS = 5;
-    private static int failed_log_counter;
-    private static void log_failed(String test_case, String error) throws Exception{
-        // System.out.println(test_case);
-        // System.out.println(error);
-        String file_path = "log/database"+failed_log_counter+".log";
-        File f = new File(file_path);
-        f.createNewFile();
-        Writer w = new PrintWriter(new FileOutputStream(f));
-        w.write(error+"\n"+test_case);
-        failed_log_counter++;
-        w.close();
-    }
+    // private static final int ALLOWED_CONSECUTIVE_FAILS = 5;
+    // private static int failed_log_counter;
+    // private static void log_failed(String test_case, String error) throws Exception{
+    //     // System.out.println(test_case);
+    //     // System.out.println(error);
+    //     String file_path = "log/database"+failed_log_counter+".log";
+    //     File f = new File(file_path);
+    //     f.createNewFile();
+    //     Writer w = new PrintWriter(new FileOutputStream(f));
+    //     w.write(error+"\n"+test_case);
+    //     failed_log_counter++;
+    //     w.close();
+    // }
 
-    private static int case_log_counter;
-    private static void log_case(String test_case) throws Exception{
-        // System.out.println(test_case);
-        String file_path = "log/database"+case_log_counter+"-passed.log";
-        File f = new File(file_path);
-        f.createNewFile();
-        Writer w = new PrintWriter(new FileOutputStream(f));
-        w.write(test_case);
-        case_log_counter++;
-        w.close();
-    }
+    // private static int case_log_counter;
+    // private static void log_case(String test_case) throws Exception{
+    //     // System.out.println(test_case);
+    //     String file_path = "log/database"+case_log_counter+"-passed.log";
+    //     File f = new File(file_path);
+    //     f.createNewFile();
+    //     Writer w = new PrintWriter(new FileOutputStream(f));
+    //     w.write(test_case);
+    //     case_log_counter++;
+    //     w.close();
+    // }
 
-    private static void init_logger() throws Exception{
-        failed_log_counter = 0;
-        case_log_counter = 0;
-        Files.createDirectory(Paths.get("./log"));
-    }
+    // private static void init_logger() throws Exception{
+    //     failed_log_counter = 0;
+    //     case_log_counter = 0;
+    //     Files.createDirectory(Paths.get("./log"));
+    // }
 
+    public static boolean createFile(String name, String content) {
+        try {
+            FileWriter writer = new FileWriter(name);
+            writer.write(content);
+            writer.close();
+            System.out.println("Successfully wrote to the file: " + name);
+            return true;
+        } catch (IOException e) {
+            System.out.println("An error occurred while writing to the file.");
+            e.printStackTrace();
+            return false;
+        }
+    }
+    public static String format_stat(long start_camp, long start_case, long total_stmt, int case_stmt, int case_count, int crash_count){
+        String result = "\n-- ============================================\n";
+        result = result + "-- Time since start of campaign: " + (System.currentTimeMillis() - start_camp)/1000.0 + "s\n";
+        result = result + "-- Time since start of test case: " + (System.currentTimeMillis() - start_case)/1000.0 + "s\n";
+        result = result + "-- Total number of statements in campaign: " + total_stmt + "\n";
+        result = result + "-- Number of statements in test case: " + case_stmt + "\n";
+        result = result + "-- Campaign average throughput: " + total_stmt/((System.currentTimeMillis() - start_camp)/1000.0) + " statements/s\n";
+        result = result + "-- Test case average throughput: " + case_stmt/((System.currentTimeMillis() - start_case)/1000.0) + " statements/s\n";
+        result = result + "-- Total number of test cases: " + case_count + "\n";
+        result = result + "-- Total number of failed cases: " + crash_count + "\n";
+        result = result + "-- ============================================\n";
+        return result;
+    }
     //TODO
     public static void test(MainOptions options) throws Exception{
-        try{
-            while(true){
+        int crash_count = 0;
+        long start_time_camp = System.currentTimeMillis();
+        long stmt_count_total = 0;
+        int case_count = 0;
+        while (true){
+            case_count++;
+            long start_time_case = System.currentTimeMillis();
+            int stmt_count_case = 0;
+            String test = "";
+            try{
                 Fuzzer.init(null);
                 while (true){
                     String next = Fuzzer.fuzz_next_and_execute();
                     if (next==null){
                         break;
                     }
+                    stmt_count_case++;
+                    stmt_count_total++;
+                    test = test + next;
                     System.out.println(next);
                 }
             }
-        }
-        catch (Exception e){
-            e.printStackTrace();
+            catch (Exception e){
+                test = test + e.getMessage();
+                test = test + format_stat(start_time_camp, start_time_case, stmt_count_total, stmt_count_case, case_count, crash_count);
+                String name = "logs/crash"+crash_count+".log";
+                crash_count++;
+                if (!createFile(name, test)){
+                    break;
+                }
+                e.printStackTrace();
+            }
+            System.out.println(format_stat(start_time_camp, start_time_case, stmt_count_total, stmt_count_case, case_count, crash_count));
         }
         return;
         // //extract the needed info from MainOption class
