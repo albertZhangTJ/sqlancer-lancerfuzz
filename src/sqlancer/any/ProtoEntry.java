@@ -66,48 +66,44 @@ public class ProtoEntry {
         long stmt_count_total = 0;
         int case_count = 0;
         long expected_count = 0;
-        while (true){
-            case_count++;
-            long start_time_case = System.currentTimeMillis();
-            int stmt_count_case = 0;
-            int expected_count_case = 0;
-            String test = "";
-            try{
-                Fuzzer.init(null);
-                while (true){
-                    String next = Fuzzer.fuzz_next_and_execute();
-                    if (next==null){
-                        break;
-                    }
-                    if (!next.startsWith("-- [Unavailable Error]:")){
-                        stmt_count_case++;
-                        stmt_count_total++;
-                        test = test + next + "\n";
-                        if (next.startsWith("-- [Expected Error]:")){
-                            expected_count++;
-                            expected_count_case++;
-                        }
-                        
-                    }
-                    System.out.println(next);
-                    if (stmt_count_case%200 == 0){
-                        System.out.println(short_stat(start_time_camp, stmt_count_total, crash_count));
-                    }
-                }
-            }
-            catch (Exception e){
-                crash_count++;
-                test = test + "-- " + e.getMessage() + "\n";
-                test = test + e.getStackTrace().toString() + "\n";
-                test = test + format_stat(start_time_camp, start_time_case, stmt_count_total, stmt_count_case, case_count, crash_count, expected_count, expected_count_case);
-                String name = "logs/crash"+crash_count+".log";
-                if (!createFile(name, test)){
+        case_count++;
+        long start_time_case = System.currentTimeMillis();
+        int stmt_count_case = 0;
+        int expected_count_case = 0;
+        String test = "";
+        try{
+            Fuzzer.init(null);
+            while (true){
+                String next = Fuzzer.fuzz_next_and_execute();
+                if (next==null){
                     break;
                 }
-                e.printStackTrace();
+                if (!next.startsWith("-- [Unavailable Error]:")){
+                    stmt_count_case++;
+                    stmt_count_total++;
+                    test = test + next + "\n";
+                    if (next.startsWith("-- [Expected Error]:")){
+                        expected_count++;
+                        expected_count_case++;
+                    }
+                    
+                }
+                System.out.println(next);
+                if (stmt_count_case%200 == 0){
+                    System.out.println(short_stat(start_time_camp, stmt_count_total, crash_count));
+                }
             }
-            System.out.println(format_stat(start_time_camp, start_time_case, stmt_count_total, stmt_count_case, case_count, crash_count, expected_count, expected_count_case));
         }
+        catch (Exception e){
+            crash_count++;
+            test = test + "-- " + e.getMessage() + "\n";
+            test = test + e.getStackTrace().toString() + "\n";
+            test = test + format_stat(start_time_camp, start_time_case, stmt_count_total, stmt_count_case, case_count, crash_count, expected_count, expected_count_case);
+            String name = "logs/crash"+crash_count+".log";
+            createFile(name, test);
+            e.printStackTrace();
+        }
+        System.out.println(format_stat(start_time_camp, start_time_case, stmt_count_total, stmt_count_case, case_count, crash_count, expected_count, expected_count_case));
         return;
     }
 }

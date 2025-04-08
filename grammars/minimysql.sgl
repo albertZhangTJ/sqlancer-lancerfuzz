@@ -30,8 +30,7 @@ alterTable
     ;
 
 fragment alterSpecification
-    : 
-    ( 
+    : ( 
         ADD COLUMN? new['column'] columnDefinition FIRST?    
         | ADD COLUMN? '(' (new['column'] columnDefinition)**random[1, 3, ',', 75] ')' 
         | DROP COLUMN? c.unique_any error['delete all', 'has a partitioning function dependency']
@@ -67,8 +66,8 @@ createTable
       ( 90% ' '  | TEMPORARY error['Cannot create temporary table with partitions'] error['Cannot create FULLTEXT index on temporary InnoDB table'] ) TABLE 
         ifNotExists? new['table']
         (
-            90% LB ( cn+=new['column'] columnDefinition)**random[5, 10, ',', 30] RB 
-            ( 80% ' '  |
+            80% LB ( cn+=new['column'] columnDefinition)**random[5, 10, ',', 30] RB 
+            ( 60% ' '  |
                     ' ENGINE ' EQ (' MyISAM ' | ' InnoDB ' ) |
                     PARTITION BY (LINEAR)? error['allowed type']
                     ( 
@@ -125,13 +124,13 @@ expression [type, depth=4]
 
 selectStatement [outmost=1, rep=random[1,5,',']] returns [c] :
     @2
-	SELECT error['is ambiguous'] error['Duplicate column name'] (
+	SELECT (DISTINCT <outmost==0> | ALL)? error['is ambiguous'] error['Duplicate column name'] (
         90% ( (tt=t.any DOT | tt=$t.any) c+=tt.c.unique_any )**rep
         | ASTERISK ( tt=$t.next (c+=$tt.c.next)**tt.c.len )**t.len
     ) 
     @1
     at=$table
-	FROM ( tt=at.unique_any tt.c=$column[tt] t+=$tt | 10% '(' cc=$selectStatement[0] ')' AS tt=new['table'] tt.c=$cc t+=$tt)
+	FROM ( tt=at.unique_any tt.c=$column[tt] t+=$tt | 30% '(' cc=$selectStatement[0] ')' AS tt=new['table'] tt.c=$cc t+=$tt)
 	//no separate needed since it is directly positioned after the FROM clause
     (
 		JOIN ( tt=at.unique_any tt.c=$column[tt] t+=$tt | 10% '(' cc=$selectStatement[0] ')' AS tt=new['table'] tt.c=$cc t+=$tt)
@@ -304,6 +303,7 @@ ifExists : IF EXISTS;
 
 ADD : SPACE A D D SPACE;
 ALGORITHM : SPACE A L G O R I T H M SPACE;
+ALL : SPACE A L L SPACE;
 ALTER : SPACE A L T E R SPACE;
 AS : SPACE A S SPACE;
 BY : SPACE B Y SPACE;
@@ -313,6 +313,7 @@ CREATE : SPACE C R E A T E SPACE;
 DATABASE : SPACE D A T A B A S E SPACE;
 DEFAULT : SPACE D E F A U L T SPACE;
 DELAYED : SPACE D E L A Y E D SPACE;
+DISTINCT : SPACE D I S T I N C T SPACE;
 DOUBLE : SPACE D O U B L E SPACE;
 DROP : SPACE D R O P SPACE;
 EXCLUSIVE : SPACE E X C L U S I V E SPACE;
