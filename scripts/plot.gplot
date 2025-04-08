@@ -1,0 +1,22 @@
+set terminal svg enhanced font "sans,12" size 800,450
+set output "loc_cmp.svg"
+
+set style data histogram
+set style histogram cluster gap 1
+set boxwidth 0.9
+set style fill pattern
+
+# Set border and background
+set border 3 lw 1
+set grid y
+
+set yrange [0:*]
+
+# Set axes labels
+set xlabel "Statement" font ",12"
+set ylabel "Number of Lines" font ",12"
+set title "Number of Lines by Statement (Partial)" font ",14"
+
+# Plot with distinct patterns and colors
+plot 'data.dat' using 2:xtic(1) title "SGL" lc rgb "#FF0000" fs pattern 1, \
+     '' using 3 title "SQLancer" lc rgb "#0000FF" fs pattern 7

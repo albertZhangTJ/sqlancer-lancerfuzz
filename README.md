@@ -12,4 +12,8 @@ SQL Generation Language (SGL, previously LancerFuzz) is a metasyntax language de
 SGL has an EBNF-like design based on [ANTLR](www.antlr.org). Beyond typical context-free grammar features, SGL has a variable system for maintaining context for test case generation. SGL also features a predicate system on the grammar level to enforce semantic constraints in the target languages. For full SGL documentation, see [here](src/SGL/README.md).
 
 ## Quick Start
-TODO
+Prepare a MySQL 8.X database accessible through JDBC connection.
+Edit `grammars/minimysql.json` to indicate the JDBC connection string, the default value is "jdbc:mysql://localhost:3306/?user=sqlancer&password=sqlancer".
+(NOTICE: DO NOT RUN THIS ON DB INSTANCES WITH ANY VALUABLE DATA!!!)
+
+Run `./scripts/run.sh grammars/minimysql.sgl grammars/minimysql.json`.
