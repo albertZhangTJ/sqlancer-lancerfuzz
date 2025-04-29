@@ -11,6 +11,11 @@ import java.lang.NumberFormatException;
 import sqlancer.SQLConnection;
 import java.sql.*;
 public class Fuzzer{
+
+    public static long query_time = 0;
+    public static long dispatch_time = 0;
+    public static long generation_time = 0;
+    public static long turn_time = 0;
     public static class UnavailableException extends Exception {
         private static final long serialVersionUID = 1L;
         public boolean isUndefined; //the variable/attr requested does not exist
@@ -131,7 +136,7 @@ public class Fuzzer{
         //return value from a grammar function call
         private Variable result;
         //JDBC connection to the DB under test, only used by the query built-in function
-        private SQLConnection conn;
+        private Statement stmt;
         //This is the list of supported operators by SGL
         public static final List<String> OPERATORS = Collections.unmodifiableList(Arrays.asList("=", "+=", "$+", "$-", "==", "!=", ">", "<", ">=", "<="));
         //used by the "new" function for making sure all symbols in the target language scope is unique
@@ -145,11 +150,11 @@ public class Fuzzer{
         }
 
 
-        public Context(SQLConnection conn){
+        public Context(Statement stmt){
             this.symbols = new HashMap<>();
             this.symbolStack = new ArrayList<>();
             this.errors = new ArrayList<>();
-            this.conn = conn;
+            this.stmt = stmt;
             this.idCount = new HashMap<>();
         }
 
@@ -500,7 +505,8 @@ public class Fuzzer{
         //requires 2 or more arguments
         //the 
         public Variable query(List<Variable> args) throws Exception{
-            if (this.conn==null){
+            long stime = System.currentTimeMillis();
+            if (this.stmt==null){
                 throw new IllegalArgumentException("ERROR : Fuzzer.Context.query :: JDBC Connection to target DBMS is not set or set to null, query function not available");
             }
             if (args.size()<2){
@@ -509,8 +515,7 @@ public class Fuzzer{
             String query = args.get(0).getValue();
             String col = args.get(1).getValue();
             Variable v = Variable.factory();
-            Statement stmt = this.conn.createStatement();
-            ResultSet rs = stmt.executeQuery(query);
+            ResultSet rs = this.stmt.executeQuery(query);
             while (rs.next()){
                 Variable r = Variable.factory(rs.getString(col));
                 for (int i=2; i<args.size(); i=i+2){
@@ -520,8 +525,8 @@ public class Fuzzer{
                 }
                 v.addEntry(r);
             }
-            stmt.close();
             rs.close();
+            Fuzzer.query_time += System.currentTimeMillis()-stime;
             return v;
         }
         //for the "new" built-in function 
@@ -1066,25 +1071,31 @@ public class Fuzzer{
     public static List<String> rules;
     public static final int DEFAULT_MAX_REP = 8;
     public static SQLConnection connection = null;
+    public static Statement stmt = null;
     public static Stages stages = null;
     public static Context context;
 
     public static void init(SQLConnection conn) throws Exception{
         if (Fuzzer.connection!=null){
+            Fuzzer.stmt.close();
             Fuzzer.connection.close();
         }
         Fuzzer.rules = new ArrayList<>();
         if (conn != null){
             Fuzzer.connection = conn;
+            Fuzzer.stmt = conn.createStatement();
+            Fuzzer.stmt.setQueryTimeout(10);
         }
         else if ("<JDBC/>".length()>0){
             <JDBC_CLASS/>
             Fuzzer.connection = new SQLConnection(DriverManager.getConnection("<JDBC/>")); 
+            Fuzzer.stmt = Fuzzer.connection.createStatement();
+            Fuzzer.stmt.setQueryTimeout(10);
         }
         else {
             throw new Exception("Fuzzer.init :: Fuzzer must be initialized with either compile-time set JDBC string or runtime set SQLConnection, none found");
         }
-        Fuzzer.context = new Context(Fuzzer.connection);
+        Fuzzer.context = new Context(Fuzzer.stmt);
         Fuzzer.stages = new Stages();
         // EXAMPLE:
         // Fuzzer.rules.add("createTable");
@@ -1141,20 +1152,12 @@ public class Fuzzer{
 
     public static int count_row(ResultSet resultSet) throws SQLException {
         // Store original position
-        int currentRow = resultSet.getRow();
-        
-        // Move to last row and get position (which equals row count)
-        resultSet.last();
-        int rowCount = resultSet.getRow();
-        
-        // Reset to original position
-        if (currentRow == 0) {
-            resultSet.beforeFirst();
-        } else {
-            resultSet.absolute(currentRow);
+        int res = 0;
+        while (resultSet.next()){
+            res++;
         }
         resultSet.close();
-        return rowCount;
+        return res;
     }
 
 
@@ -1164,8 +1167,8 @@ public class Fuzzer{
         String t = stmt.replace("/*BEGIN_PRED*/", "(").replace("/*END_PRED*/", ")");
         String f = stmt.replace("/*BEGIN_PRED*/", " NOT (").replace("/*END_PRED*/", ")");
         String n = stmt.replace("/*BEGIN_PRED*/", "(").replace("/*END_PRED*/", ") IS NULL ");
-        Statement statement = Fuzzer.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-        statement.setQueryTimeout(30);
+        Statement statement = Fuzzer.stmt;
+        //statement.setQueryTimeout(30);
         int base_count = count_row(statement.executeQuery(base));
         base = base + " -- BASE QUERY: " + base_count + " rows\n";
         int t_count = count_row(statement.executeQuery(t));
@@ -1175,7 +1178,6 @@ public class Fuzzer{
         int n_count = count_row(statement.executeQuery(n));
         n = n + " -- NULL QUERY: " + n_count + " rows\n";
         String test = base + t + f + n;
-        statement.close();
         if (base_count!=t_count + f_count + n_count){
             throw new Exception("-- CARDINALITY MISMATCH!!!\n"+ test);
         }
@@ -1185,34 +1187,33 @@ public class Fuzzer{
     public static String fuzz_next_and_execute() throws Exception{
         
         try {
+            long stime = System.currentTimeMillis();
             String stmt = fuzz_next();
-            
+            Fuzzer.generation_time += System.currentTimeMillis() - stime;
             if (stmt==null || stmt.contains("-- [Internal Exception, moving on]")){
                 return stmt;
             }
             try {
                 Statement statement = null;
                 try {
-                    statement = Fuzzer.connection.createStatement();
-                    statement.setQueryTimeout(5);
+                    statement = Fuzzer.stmt;
                     statement.execute(stmt);
                 }
                 catch (Exception e){
                     throw new Exception(stmt+" -- ERROR! " + e.getMessage(), e);
                 }
-                finally {
-                    statement.close();
-                }
                 Fuzzer.context.resetError();
                 if (stmt.contains("BEGIN_PRED")){
                     return test_TLP(stmt);
                 }
+                Fuzzer.turn_time += System.currentTimeMillis() - stime;
                 return stmt;
             }
             catch (Exception se){
                 //System.out.println(stmt + " -- ERROR!");
                 if (Fuzzer.context.isExpectedError(se.getMessage())){
                     Fuzzer.context.resetError();
+                    Fuzzer.turn_time += System.currentTimeMillis() - stime;
                     return "-- [Expected Error]:" + se.getMessage();
                 }
                 throw se;
@@ -1231,6 +1232,7 @@ public class Fuzzer{
         // if (rule.equals("createTable")){
         //     return createTable(ctx);
         // }
+        long stime = System.currentTimeMillis();
 <DISPATCH_RULES/>        
         throw new Exception("Fuzzer::dispatch : there is no rule registered with name "+rule);
     }

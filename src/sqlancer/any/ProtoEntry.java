@@ -66,44 +66,60 @@ public class ProtoEntry {
         long stmt_count_total = 0;
         int case_count = 0;
         long expected_count = 0;
-        case_count++;
-        long start_time_case = System.currentTimeMillis();
-        int stmt_count_case = 0;
-        int expected_count_case = 0;
-        String test = "";
-        try{
-            Fuzzer.init(null);
-            while (true){
-                String next = Fuzzer.fuzz_next_and_execute();
-                if (next==null){
-                    break;
-                }
-                if (!next.startsWith("-- [Unavailable Error]:")){
-                    stmt_count_case++;
-                    stmt_count_total++;
-                    test = test + next + "\n";
-                    if (next.startsWith("-- [Expected Error]:")){
-                        expected_count++;
-                        expected_count_case++;
+        while (true){
+            case_count++;
+            long start_time_case = System.currentTimeMillis();
+            int stmt_count_case = 0;
+            int expected_count_case = 0;
+            String test = "";
+            String ablation = "";
+            long last_probe = System.currentTimeMillis();
+            try{
+                Fuzzer.init(null);
+                while (true){
+                    String next = Fuzzer.fuzz_next_and_execute();
+                    if (next==null){
+                        break;
                     }
-                    
-                }
-                System.out.println(next);
-                if (stmt_count_case%200 == 0){
-                    System.out.println(short_stat(start_time_camp, stmt_count_total, crash_count));
+                    if (!next.startsWith("-- [Unavailable Error]:")){
+                        stmt_count_case++;
+                        stmt_count_total++;
+                        // compensating for the TLP-ed ones
+                        // one return is actually 4 SELECT statements
+                        if (next.startsWith(" SELECT")){
+                            stmt_count_case+=3;
+                            stmt_count_total+=3;
+                        }
+                        test = test + next + "\n";
+                        if (next.startsWith("-- [Expected Error]:")){
+                            expected_count++;
+                            expected_count_case++;
+                        }
+                        
+                    }
+                    if (stmt_count_case%200 == 0){
+                        System.out.println(short_stat(start_time_camp, stmt_count_total, crash_count));
+                        ablation = ablation + ((System.currentTimeMillis()-start_time_camp)/1000.0) + " " + (200/((System.currentTimeMillis()-last_probe)/1000.0)) + "\n";
+                        last_probe = System.currentTimeMillis();
+                    }
                 }
             }
+            catch (Exception e){
+                crash_count++;
+                test = test + "-- " + e.getMessage() + "\n";
+                test = test + e.getStackTrace().toString() + "\n";
+                test = test + format_stat(start_time_camp, start_time_case, stmt_count_total, stmt_count_case, case_count, crash_count, expected_count, expected_count_case);
+                String name = "logs/crash"+crash_count+".log";
+                createFile(name, test);
+                e.printStackTrace();
+            }
+            System.out.println("Query percentage: " + ((double)Fuzzer.query_time)/(System.currentTimeMillis()-start_time_case)*100 + "%");
+            System.out.println("AST logic percentage: " + ((double)Fuzzer.generation_time - Fuzzer.query_time)/(System.currentTimeMillis()-start_time_case)*100 + "%");
+            System.out.println("Execution time percentage: " + ((double)Fuzzer.turn_time - Fuzzer.generation_time)/(System.currentTimeMillis()-start_time_case)*100 + "%");
+            System.out.println("Logging time percentage: " + (1 - ((double)Fuzzer.turn_time)/(System.currentTimeMillis()-start_time_case))*100 + "%");
+            System.out.println(format_stat(start_time_camp, start_time_case, stmt_count_total, stmt_count_case, case_count, crash_count, expected_count, expected_count_case));
+            System.out.println(ablation);
         }
-        catch (Exception e){
-            crash_count++;
-            test = test + "-- " + e.getMessage() + "\n";
-            test = test + e.getStackTrace().toString() + "\n";
-            test = test + format_stat(start_time_camp, start_time_case, stmt_count_total, stmt_count_case, case_count, crash_count, expected_count, expected_count_case);
-            String name = "logs/crash"+crash_count+".log";
-            createFile(name, test);
-            e.printStackTrace();
-        }
-        System.out.println(format_stat(start_time_camp, start_time_case, stmt_count_total, stmt_count_case, case_count, crash_count, expected_count, expected_count_case));
         return;
     }
 }
