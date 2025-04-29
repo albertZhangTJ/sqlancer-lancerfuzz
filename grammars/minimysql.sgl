@@ -26,7 +26,7 @@ grammar MiniMySQL;
 
 alterTable
     : error['exist'] ALTER TABLE t = table.any c=$column[t]
-     ( alterSpecification )**random[1, 6, ',', 75] SC
+     ( alterSpecification )**random[1, 6, ',', 75] SCHEMA_CHANGE=$1 SC
     ;
 
 fragment alterSpecification
@@ -37,6 +37,7 @@ fragment alterSpecification
         | DROP PRIMARY KEY error['primary']
         | RENAME ( TO | AS ) new['table']
         | RENAME COLUMN c.unique_any TO new['column'] error['has a partitioning function dependency and cannot be dropped or renamed']
+        | ALGORITHM '=' ( 'INSTANT' | 'INPLACE' | 'COPY' | 'DEFAULT' ) error['is not supported']
     )
     ;
 
@@ -54,7 +55,7 @@ dropSchema
 
 
 createDatabase
-    : CREATE (DATABASE | SCHEMA) ifNotExists? DB SC
+    : CREATE (DATABASE | SCHEMA) ifNotExists? DB SCHEMA_CHANGE=$1 SC
     ;
 
 useDatabase
@@ -76,7 +77,7 @@ createTable
                     )
             )
             | LIKE table.any
-        )  SC
+        )  SCHEMA_CHANGE=$1 SC
     ;
 
 createIndex
@@ -87,15 +88,15 @@ createIndex
         error['A SPATIAL index may only contain a geometrical type column']  SPATIAL
     ) )**random[0, 1, 90]
     INDEX new['index']
-    ON t=table.any c=$column[t] '(' ( c.unique_any )**random[1, 6, ',', 90] ')'
+    ON t=table.any c=$column[t] '(' ( c.unique_any (( ' ASC ' | ' DESC ' ) error['support'] error['explicit index order'] )? )**random[1, 6, ',', 90] ')'
     (
         ALGORITHM EQ (DEFAULT | INPLACE | COPY)
         | LOCK EQ (DEFAULT | NONE | SHARED | EXCLUSIVE)
-    ) error['is not supported']
+    ) error['is not supported'] SCHEMA_CHANGE=$1 
     SC
     ;
 
-truncateTable : TRUNCATE TABLE table.any SC ;
+truncateTable : TRUNCATE TABLE table.any SCHEMA_CHANGE=$1 SC ;
     
 insertStatement
     : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? error['Duplicate'] t=table.any
@@ -109,7 +110,7 @@ updateStatement
     SET (cc=column[t].any '=' expression[cc.type])**random[1, 6, ',', 75] (WHERE (NOT)? cc=column[t].any '=' expression[cc.type])? SC
     ;
 
-expression [type, depth=4]
+expression [type, depth=2]
     : error['out of range'] error['Out of range value']
     (int_expr[depth$-1] <type=='int'>
     | text_expr[depth$-1] <type=='text'> 
@@ -292,7 +293,8 @@ text_expr [depth=2]
 text_val :  DQ ( (CH | DIGIT) )**random[1, 100] DQ ;
 
 db returns [d] : d=$query['SHOW DATABASES;', 'Database'] ;
-table returns [t] : t=$query['SHOW TABLES;', 'Tables_in_'$+DB];
+table returns [t] : ( <SCHEMA_CHANGE==1> TABLE_CACHE=$query['SHOW TABLES;', 'Tables_in_'$+DB] SCHEMA_CHANGE=$0 | <SCHEMA_CHANGE==0> '' ) t=$TABLE_CACHE ;
+//table returns [t] : t=$query['SHOW TABLES;', 'Tables_in_'$+DB] ;
 column [t] returns [c] : c=$query['SHOW COLUMNS FROM '$+t, 'Field', 'Type', 'type'];
 index [t] returns [i] : i=$query['SHOW INDEX FROM '$+t, 'Key_name'];
 
