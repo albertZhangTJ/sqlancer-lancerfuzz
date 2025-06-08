@@ -149,6 +149,10 @@ public class Fuzzer{
             rules.add(name);
         }
 
+        public static void clear_rules(){
+            rules = new ArrayList<>();
+        }
+
 
         public Context(Statement stmt){
             this.symbols = new HashMap<>();
@@ -351,22 +355,24 @@ public class Fuzzer{
                         int min = args.get(0).getNumerical();
                         int max = args.get(1).getNumerical();
                         int ds = args.get(2).getNumerical();
-                        if (ds==0){
-                            throw new IllegalArgumentException("ERROR : Fuzzer.Context.random :: random function cannot be called with no max AND uniform distribution");
-                        }
                         if (ds>99 || ds<0){
                             throw new IllegalArgumentException("ERROR : Fuzzer.Context.random :: unrecognizable decay_spec, accepted value are integers in range [0,99]");
                         }
                         int val = min;
                         double dr = ds/100.0;
-                        while (true){
-                            if (Math.random()<dr){
-                                break;
-                            }
-                            val++;
-                            //wrap around when overflow
-                            if (val>max){
-                                val = min;
+                        if (ds==0){
+                            val += (int)((max-min+1)*Math.random());
+                        }
+                        else {
+                            while (true){
+                                if (Math.random()<dr){
+                                    break;
+                                }
+                                val++;
+                                //wrap around when overflow
+                                if (val>max){
+                                    val = min;
+                                }
                             }
                         }
                         Variable res = Variable.factory(val);
@@ -1080,14 +1086,13 @@ public class Fuzzer{
             Fuzzer.stmt.close();
             Fuzzer.connection.close();
         }
-        Fuzzer.rules = new ArrayList<>();
         if (conn != null){
             Fuzzer.connection = conn;
             Fuzzer.stmt = conn.createStatement();
             Fuzzer.stmt.setQueryTimeout(10);
         }
         else if ("<JDBC/>".length()>0){
-            <JDBC_CLASS/>
+            //<JDBC_CLASS/>
             Fuzzer.connection = new SQLConnection(DriverManager.getConnection("<JDBC/>")); 
             Fuzzer.stmt = Fuzzer.connection.createStatement();
             Fuzzer.stmt.setQueryTimeout(10);
@@ -1095,7 +1100,9 @@ public class Fuzzer{
         else {
             throw new Exception("Fuzzer.init :: Fuzzer must be initialized with either compile-time set JDBC string or runtime set SQLConnection, none found");
         }
+        Fuzzer.rules = new ArrayList<>();
         Fuzzer.context = new Context(Fuzzer.stmt);
+        Context.clear_rules();
         Fuzzer.stages = new Stages();
         // EXAMPLE:
         // Fuzzer.rules.add("createTable");
@@ -1198,14 +1205,14 @@ public class Fuzzer{
                 try {
                     statement = Fuzzer.stmt;
                     statement.execute(stmt);
+                    if (stmt.contains("BEGIN_PRED")){
+                        return test_TLP(stmt);
+                    }
                 }
                 catch (Exception e){
                     throw new Exception(stmt+" -- ERROR! " + e.getMessage(), e);
                 }
                 Fuzzer.context.resetError();
-                if (stmt.contains("BEGIN_PRED")){
-                    return test_TLP(stmt);
-                }
                 Fuzzer.turn_time += System.currentTimeMillis() - stime;
                 return stmt;
             }

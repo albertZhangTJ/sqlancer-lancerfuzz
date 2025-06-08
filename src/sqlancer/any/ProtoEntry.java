@@ -113,13 +113,11 @@ public class ProtoEntry {
                 createFile(name, test);
                 e.printStackTrace();
             }
-            System.out.println("Query percentage: " + ((double)Fuzzer.query_time)/(System.currentTimeMillis()-start_time_case)*100 + "%");
-            System.out.println("AST logic percentage: " + ((double)Fuzzer.generation_time - Fuzzer.query_time)/(System.currentTimeMillis()-start_time_case)*100 + "%");
-            System.out.println("Execution time percentage: " + ((double)Fuzzer.turn_time - Fuzzer.generation_time)/(System.currentTimeMillis()-start_time_case)*100 + "%");
-            System.out.println("Logging time percentage: " + (1 - ((double)Fuzzer.turn_time)/(System.currentTimeMillis()-start_time_case))*100 + "%");
+            System.out.println("Query percentage: " + ((double)Fuzzer.query_time)/(System.currentTimeMillis()-start_time_camp)*100 + "%");
+            System.out.println("AST logic percentage: " + ((double)Fuzzer.generation_time - Fuzzer.query_time)/(System.currentTimeMillis()-start_time_camp)*100 + "%");
+            System.out.println("Execution time percentage: " + ((double)Fuzzer.turn_time - Fuzzer.generation_time)/(System.currentTimeMillis()-start_time_camp)*100 + "%");
+            System.out.println("Logging time percentage: " + (1 - ((double)Fuzzer.turn_time)/(System.currentTimeMillis()-start_time_camp))*100 + "%");
             System.out.println(format_stat(start_time_camp, start_time_case, stmt_count_total, stmt_count_case, case_count, crash_count, expected_count, expected_count_case));
-            System.out.println(ablation);
         }
-        return;
     }
 }

@@ -46,7 +46,7 @@ fragment columnDefinition
     ;
 
 dropDatabase
-    : DROP DATABASE ifExists DB = new['database'] SC
+    : DROP DATABASE ifExists DB ='database1' SC
     ;
 
 dropSchema
@@ -134,7 +134,7 @@ selectStatement [outmost=1, rep=random[1,5,',']] returns [c] :
 	FROM ( tt=at.unique_any tt.c=$column[tt] t+=$tt | 30% '(' cc=$selectStatement[0] ')' AS tt=new['table'] tt.c=$cc t+=$tt)
 	//no separate needed since it is directly positioned after the FROM clause
     (
-		JOIN ( tt=at.unique_any tt.c=$column[tt] t+=$tt | 10% '(' cc=$selectStatement[0] ')' AS tt=new['table'] tt.c=$cc t+=$tt)
+		JOIN error['reopen'] ( tt=at.unique_any tt.c=$column[tt] t+=$tt | 10% '(' cc=$selectStatement[0] ')' AS tt=new['table'] tt.c=$cc t+=$tt)
 	)?
     @3
     ( ' /*BEGIN_COND*/ ' <outmost==1> | ' ' <outmost==0>)
@@ -206,7 +206,7 @@ lpad [depth=1] : ' LPAD(' expression['text', depth] ',' int_val ',' expression['
 md5 [depth=1] : ' MD5(' expression['text', depth] ') ';
 mod [type, depth=1] : ' MOD(' expression[type, depth] ',' expression[type, depth] ') ' error['Division by'];
 pi [depth=0] : ' PI() ';
-pow [type, depth=1] : ' POW(' expression[type, depth] ',' expression[type, depth] ') ';
+pow [type, depth=1] : ' POW(' error['range'] expression[type, depth] ',' expression[type, depth] ') ';
 radians [depth=1] : ' RADIANS(' expression['double', depth] ') ';
 rand [depth=1] : ' RAND(' ( expression['int', depth] )**random[0,1] ') ';
 replace [depth=1] : ' REPLACE(' expression['text', depth] ',' expression['text', depth] ',' expression['text', depth] ') ';
@@ -242,7 +242,7 @@ double_expr [depth=2]
         | pi[depth]
         | pow['double', depth] 
         | radians[depth]
-        | rand[depth]
+        //| rand[depth]
         | round['double', depth]
         | sin[depth]
         | sqrt[depth]
