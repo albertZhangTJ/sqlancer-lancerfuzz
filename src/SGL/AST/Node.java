@@ -9,8 +9,7 @@ import SGL.Utils;
 @SuppressWarnings("unused")
 public class Node {
     private static int nodes_count = 0;
-
-    private int id;
+    protected int id;
     private String identifier;
     private List<Edge> outward_edges;
     private List<String> expected_errors = new ArrayList<>();
@@ -120,12 +119,13 @@ public class Node {
             Node child = this.get_outward_edges().get(i).get_dest();
             if (child instanceof QuantifierNode){
                 QuantifierNode q = (QuantifierNode)child;
-                if (q.get_type()==3){ //post-processing is only needed for type 3, ** 
+                if (q.get_type()==3 && !q.arged()){ //post-processing is only needed for type 3, ** 
                     if (i==this.get_outward_edges().size()-1){
                         Utils.panic("Node::post_process : A quantifier node with operator ** expects a variable (or an expression that evaluates to a variable) after it, line: "+q.lines);
                     }
-                    q.set_param((this.get_outward_edges().get(i+1).get_dest()));
-                    this.outward_edges.remove(i+1);
+                    if (q.set_param((this.get_outward_edges().get(i+1).get_dest()))){
+                        this.outward_edges.remove(i+1);
+                    }
                 }
             }
         }

@@ -9,7 +9,6 @@ public class SQLConnection implements SQLancerDBConnection {
 
     private final Connection connection;
     private static int id = 0;
-    private static int stmt_cnt = 0;
 
     public SQLConnection(Connection connection) {
         this.connection = connection;
@@ -41,8 +40,6 @@ public class SQLConnection implements SQLancerDBConnection {
     }
 
     public Statement createStatement() throws SQLException {
-        stmt_cnt++;
-        System.out.println("Statement created, id: "+stmt_cnt);
         return connection.createStatement();
     }
 

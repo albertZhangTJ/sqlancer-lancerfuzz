@@ -97,6 +97,7 @@ createIndex
     ;
 
 truncateTable : TRUNCATE TABLE table.any SCHEMA_CHANGE=$1 SC ;
+dropTable : DROP TABLE table.any SCHEMA_CHANGE=$1 SC ;
     
 insertStatement
     : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? error['Duplicate'] t=table.any
@@ -113,13 +114,13 @@ updateStatement
 expression [type, depth=2]
     : error['out of range'] error['Out of range value']
     (int_expr[depth$-1] <type=='int'>
-    | text_expr[depth$-1] <type=='text'> 
-    | double_expr[depth$-1] <type=='double'>
-    | 5% <depth>1> (
-        least[type, depth$-1] 
-        | greatest[type, depth$-1] 
-        | if_func[type, depth$-1]
-    )
+        | text_expr[depth$-1] <type=='text'> 
+        | double_expr[depth$-1] <type=='double'>
+        | 5% <depth>1> (
+            least[type, depth$-1] 
+            | greatest[type, depth$-1] 
+            | if_func[type, depth$-1]
+        )
     ) 
     ;
 
@@ -134,8 +135,8 @@ selectStatement [outmost=1, rep=random[1,5,',']] returns [c] :
 	FROM ( tt=at.unique_any tt.c=$column[tt] t+=$tt | 30% '(' cc=$selectStatement[0] ')' AS tt=new['table'] tt.c=$cc t+=$tt)
 	//no separate needed since it is directly positioned after the FROM clause
     (
-		JOIN error['reopen'] ( tt=at.unique_any tt.c=$column[tt] t+=$tt | 10% '(' cc=$selectStatement[0] ')' AS tt=new['table'] tt.c=$cc t+=$tt)
-	)?
+		JOIN error['reopen'] ( tt=at.unique_any tt.c=$column[tt] t+=$tt | 5% '(' cc=$selectStatement[0] ')' AS tt=new['table'] tt.c=$cc t+=$tt)
+	)**random[0,1,90]
     @3
     ( ' /*BEGIN_COND*/ ' <outmost==1> | ' ' <outmost==0>)
     ( where_predicate[t, c, outmost] | ' ' <outmost==0> )
@@ -148,7 +149,7 @@ where_predicate [t, c, outmost]:
 	WHERE 
     ( ' /*BEGIN_PRED*/ ' <outmost==1> | ' ' <outmost==0> )
     ( 
-        60% predicate[t, c]
+        80% predicate[t, c]
 	    | c.any IN '(' selectStatement[0, random[1,',']] ')' error['Operand should contain 1 column(s)']
 	    | NOT? EXISTS '(' selectStatement[0] ')'
     )

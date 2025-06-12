@@ -136,7 +136,8 @@ public class Fuzzer{
         //return value from a grammar function call
         private Variable result;
         //JDBC connection to the DB under test, only used by the query built-in function
-        private Statement stmt;
+        //private Statement stmt;
+
         //This is the list of supported operators by SGL
         public static final List<String> OPERATORS = Collections.unmodifiableList(Arrays.asList("=", "+=", "$+", "$-", "==", "!=", ">", "<", ">=", "<="));
         //used by the "new" function for making sure all symbols in the target language scope is unique
@@ -154,11 +155,10 @@ public class Fuzzer{
         }
 
 
-        public Context(Statement stmt){
+        public Context(){
             this.symbols = new HashMap<>();
             this.symbolStack = new ArrayList<>();
             this.errors = new ArrayList<>();
-            this.stmt = stmt;
             this.idCount = new HashMap<>();
         }
 
@@ -512,28 +512,38 @@ public class Fuzzer{
         //the 
         public Variable query(List<Variable> args) throws Exception{
             long stime = System.currentTimeMillis();
-            if (this.stmt==null){
-                throw new IllegalArgumentException("ERROR : Fuzzer.Context.query :: JDBC Connection to target DBMS is not set or set to null, query function not available");
-            }
-            if (args.size()<2){
-                throw new IllegalArgumentException("ERROR : Fuzzer.Context.query :: a call to the query function must contain at least 2 arguments: query and column name");
-            }
-            String query = args.get(0).getValue();
-            String col = args.get(1).getValue();
-            Variable v = Variable.factory();
-            ResultSet rs = this.stmt.executeQuery(query);
-            while (rs.next()){
-                Variable r = Variable.factory(rs.getString(col));
-                for (int i=2; i<args.size(); i=i+2){
-                    String attrCol = args.get(i).getValue();
-                    String attr = args.get(i+1).getValue();
-                    r.setAttr(attr, Variable.factory(rs.getString(attrCol)));
+            try {
+                Statement stmt = Fuzzer.connection.createStatement();
+                stmt.setQueryTimeout(10);
+                //if (this.stmt==null){
+                //    throw new IllegalArgumentException("ERROR : Fuzzer.Context.query :: JDBC Connection to target DBMS is not set or set to null, query function not available");
+                //}
+                if (args.size()<2){
+                    throw new IllegalArgumentException("ERROR : Fuzzer.Context.query :: a call to the query function must contain at least 2 arguments: query and column name");
                 }
-                v.addEntry(r);
+                String query = args.get(0).getValue();
+                String col = args.get(1).getValue();
+                Variable v = Variable.factory();
+                ResultSet rs = stmt.executeQuery(query);
+                while (rs.next()){
+                    Variable r = Variable.factory(rs.getString(col));
+                    for (int i=2; i<args.size(); i=i+2){
+                        String attrCol = args.get(i).getValue();
+                        String attr = args.get(i+1).getValue();
+                        r.setAttr(attr, Variable.factory(rs.getString(attrCol)));
+                    }
+                    v.addEntry(r);
+                }
+                rs.close();
+                stmt.close();
+                return v;
             }
-            rs.close();
-            Fuzzer.query_time += System.currentTimeMillis()-stime;
-            return v;
+            catch (Exception e){
+                throw e;
+            }
+            finally {
+                Fuzzer.query_time += System.currentTimeMillis()-stime;
+            }
         }
         //for the "new" built-in function 
         public Variable new_id(List<Variable> args) throws Exception{
@@ -1077,31 +1087,31 @@ public class Fuzzer{
     public static List<String> rules;
     public static final int DEFAULT_MAX_REP = 8;
     public static SQLConnection connection = null;
-    public static Statement stmt = null;
+    //public static Statement stmt = null;
     public static Stages stages = null;
     public static Context context;
 
     public static void init(SQLConnection conn) throws Exception{
         if (Fuzzer.connection!=null){
-            Fuzzer.stmt.close();
+            //Fuzzer.stmt.close();
             Fuzzer.connection.close();
         }
         if (conn != null){
             Fuzzer.connection = conn;
-            Fuzzer.stmt = conn.createStatement();
-            Fuzzer.stmt.setQueryTimeout(10);
+            //Fuzzer.stmt = conn.createStatement();
+            //Fuzzer.stmt.setQueryTimeout(10);
         }
         else if ("<JDBC/>".length()>0){
             //<JDBC_CLASS/>
-            Fuzzer.connection = new SQLConnection(DriverManager.getConnection("<JDBC/>")); 
-            Fuzzer.stmt = Fuzzer.connection.createStatement();
-            Fuzzer.stmt.setQueryTimeout(10);
+            Fuzzer.connection = new SQLConnection(DriverManager.getConnection("<JDBC/>"));
+            //Fuzzer.stmt = Fuzzer.connection.createStatement();
+            //Fuzzer.stmt.setQueryTimeout(10);
         }
         else {
             throw new Exception("Fuzzer.init :: Fuzzer must be initialized with either compile-time set JDBC string or runtime set SQLConnection, none found");
         }
         Fuzzer.rules = new ArrayList<>();
-        Fuzzer.context = new Context(Fuzzer.stmt);
+        Fuzzer.context = new Context();
         Context.clear_rules();
         Fuzzer.stages = new Stages();
         // EXAMPLE:
@@ -1174,8 +1184,8 @@ public class Fuzzer{
         String t = stmt.replace("/*BEGIN_PRED*/", "(").replace("/*END_PRED*/", ")");
         String f = stmt.replace("/*BEGIN_PRED*/", " NOT (").replace("/*END_PRED*/", ")");
         String n = stmt.replace("/*BEGIN_PRED*/", "(").replace("/*END_PRED*/", ") IS NULL ");
-        Statement statement = Fuzzer.stmt;
-        //statement.setQueryTimeout(30);
+        Statement statement = Fuzzer.connection.createStatement();
+        statement.setQueryTimeout(10);
         int base_count = count_row(statement.executeQuery(base));
         base = base + " -- BASE QUERY: " + base_count + " rows\n";
         int t_count = count_row(statement.executeQuery(t));
@@ -1184,6 +1194,7 @@ public class Fuzzer{
         f = f + " -- FALSE QUERY: " + f_count + " rows\n";
         int n_count = count_row(statement.executeQuery(n));
         n = n + " -- NULL QUERY: " + n_count + " rows\n";
+        statement.close();
         String test = base + t + f + n;
         if (base_count!=t_count + f_count + n_count){
             throw new Exception("-- CARDINALITY MISMATCH!!!\n"+ test);
@@ -1192,38 +1203,69 @@ public class Fuzzer{
     }
 
     public static String fuzz_next_and_execute() throws Exception{
-        
+        long stime = System.currentTimeMillis();
         try {
-            long stime = System.currentTimeMillis();
-            String stmt = fuzz_next();
-            Fuzzer.generation_time += System.currentTimeMillis() - stime;
+            String stmt = "";
+            try {
+                stmt = fuzz_next();
+                Fuzzer.generation_time += System.currentTimeMillis() - stime;
+            }
+            catch (Exception e){
+                Fuzzer.generation_time += System.currentTimeMillis() - stime;
+                throw e;
+            }
             if (stmt==null || stmt.contains("-- [Internal Exception, moving on]")){
+                /**
+                String sql = "SELECT table_name, table_rows FROM information_schema.tables WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE' ORDER BY table_rows DESC;";
+                try {
+                    Statement statement = Fuzzer.connection.createStatement();
+                    ResultSet rs = statement.executeQuery(sql);
+                    // Print header
+                    System.out.printf("%-30s %15s%n", "Table Name", "Row Count");
+                    System.out.println("-".repeat(45));
+                    
+                    // Print results
+                    while (rs.next()) {
+                        String tableName = rs.getString("table_name");
+                        long rowCount = rs.getLong("table_rows");
+                        System.out.printf("%-30s %,15d%n", tableName, rowCount);
+                    }
+                    rs.close();
+                    statement.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+                **/
                 return stmt;
             }
             try {
-                Statement statement = null;
                 try {
-                    statement = Fuzzer.stmt;
-                    statement.execute(stmt);
                     if (stmt.contains("BEGIN_PRED")){
                         return test_TLP(stmt);
+                    }
+                    else {
+                        Statement statement = Fuzzer.connection.createStatement();
+                        statement.setQueryTimeout(10);
+                        statement.execute(stmt);
+                        statement.close();
                     }
                 }
                 catch (Exception e){
                     throw new Exception(stmt+" -- ERROR! " + e.getMessage(), e);
                 }
                 Fuzzer.context.resetError();
-                Fuzzer.turn_time += System.currentTimeMillis() - stime;
                 return stmt;
             }
             catch (Exception se){
                 //System.out.println(stmt + " -- ERROR!");
                 if (Fuzzer.context.isExpectedError(se.getMessage())){
                     Fuzzer.context.resetError();
-                    Fuzzer.turn_time += System.currentTimeMillis() - stime;
                     return "-- [Expected Error]:" + se.getMessage();
                 }
                 throw se;
+            }
+            finally {
+                Fuzzer.turn_time += System.currentTimeMillis() - stime;
             }
         }
         catch (UnavailableException | DeadEndException ue){

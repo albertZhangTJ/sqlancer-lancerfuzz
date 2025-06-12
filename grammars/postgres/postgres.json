@@ -8,7 +8,7 @@
         },
         {
             "name" : "JDBC_CLASS", 
-            "default" : "com.mysql.cj.jdbc.Driver"
+            "default" : "org.postgresql.Driver"
         }
     ],
     "stages" : [

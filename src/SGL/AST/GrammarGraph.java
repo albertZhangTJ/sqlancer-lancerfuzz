@@ -62,6 +62,7 @@ public class GrammarGraph{
                 RuleNode.build(graph, rulespec);
             }
         }
+        Utils.log_stage("Initial AST built, starting post-processing");
         Set<Integer> key_set = graph.vertices.keySet();
         for (Integer key : key_set){
             graph.vertices.get(key).post_process();

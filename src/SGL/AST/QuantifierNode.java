@@ -70,8 +70,15 @@ public class QuantifierNode extends Node{
     public int get_type(){
         return this.type;
     }
-    public void set_param(Node arg){
+    public boolean set_param(Node arg){
+        if (this.parameter!=null){
+            return false;
+        }
         this.parameter = arg;
+        return true;
+    }
+    public boolean arged(){
+        return this.parameter!=null;
     }
     
     public String render(List<String> function_list, String padding, boolean print){

@@ -1,0 +1,502 @@
+/*
+MySQL (Positive Technologies) grammar
+The MIT License (MIT).
+Copyright (c) 2015-2017, Ivan Kochurkin (kvanttt@gmail.com), Positive Technologies.
+Copyright (c) 2017, Ivan Khudyashev (IHudyashov@ptsecurity.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
+grammar postgres;
+
+// PostgresAggregate.java
+// TODO: maybe pass operands in instead of generating here
+aggregate_func 
+    : 'AVG(' ( int_expr | float_expr | real_expr | decimal_expr )**random[1, ', '] ')' 
+    | 'BIT_AND(' int_expr**random[1, ', '] ')' | 'BIT_OR(' int_expr**random[1, ', '] ')' | 'BOOL_AND(' bool_expr**random[1, ', '] ')'
+    | 'BOOL_AND(' bool_expr**random[1, ', '] ')' | 'COUNT(' int_expr**random[1, ', '] ')' | 'EVERY(' bool_expr**random[1, ', '] ')'
+    | 'MAX(' any_expr**random[1, ', '] ')' | 'MIN(' any_expr**random[1, ', '] ')'
+    | 'SUM(' ( int_expr | float_expr | real_expr | decimal_expr )**random[1, ', '] ')' 
+    ;
+
+// PostgresAlias.java
+alias
+    : ' AS '
+    ;
+
+// PostgresBetweenOperation.java
+between [type]
+    : ' BETWEEN ' ' SYMMETRIC '? expr[type] ' AND ' expr[type]
+    ;
+
+// PostgresBinaryArithmeticOperation.java
+binary_arith_op
+    : '+' | '-' | '*' | '/' | '%' | '^' 
+    ;
+
+// PostgresBinaryBitOperation.java
+binary_bit_op
+    : '||' | '&' | '|' | '#' | '<<' | '>>' 
+    ;
+
+// PostgresBinaryComparisonOperation.java
+binary_comp_op
+    : '=' | ' IS DISTINCT FROM ' | ' IS NOT DISTINCT FROM ' | '!=' | '<' | '<=' | '>' | '>=' 
+    ;
+
+// PostgresBinaryLogicalOperation.java
+binary_logical_op 
+    : ' AND ' | ' OR ' 
+    ;
+
+// PostgresBinaryRangeOperation.java
+binary_range_op
+    : '+' | '-' | '*' 
+    ;
+
+binary_range_comp_op
+    : '@>' | '<@' | '&&' | '<<' | '>>' | '&<' | '>&' | '-|-'
+    ;
+
+// PostgresCastOperation.java
+// TODO
+
+// PostgresCollate.java
+collate_op
+    : ' COLLATE '
+    ;
+
+// PostgresColumnReference.java
+// TODO
+
+// PostgresConcatOperation.java
+concat_op
+    : ' || '
+    ;
+
+// PostgresConstant.java
+const
+    : boolean_const
+    | null_const
+    | str_const
+    | int_const
+    | float_const
+    | double_const
+    | dec_const
+    | bit_const
+    | range_const
+    ;
+
+boolean_const : ' TRUE ' | ' FALSE ' ;
+null_const : ' NULL ';
+
+
+alterTable
+    : error['exist'] ALTER TABLE t = table.any c=$column[t]
+     ( alterSpecification )**random[1, 6, ',', 75] SCHEMA_CHANGE=$1 SC
+    ;
+
+fragment alterSpecification
+    : ( 
+        ADD COLUMN? new['column'] columnDefinition FIRST?    
+        | ADD COLUMN? '(' (new['column'] columnDefinition)**random[1, 3, ',', 75] ')' 
+        | DROP COLUMN? c.unique_any error['delete all', 'has a partitioning function dependency']
+        | DROP PRIMARY KEY error['primary']
+        | RENAME ( TO | AS ) new['table']
+        | RENAME COLUMN c.unique_any TO new['column'] error['has a partitioning function dependency and cannot be dropped or renamed']
+        | ALGORITHM '=' ( 'INSTANT' | 'INPLACE' | 'COPY' | 'DEFAULT' ) error['is not supported']
+    )
+    ;
+
+fragment columnDefinition
+    : ' DOUBLE ' | ' INT ' | ' TEXT '
+    ;
+
+dropDatabase
+    : DROP DATABASE ifExists DB ='database1' SC
+    ;
+
+dropSchema
+    : DROP SCHEMA ifExists DB SC
+    ;
+
+
+createDatabase
+    : CREATE (DATABASE | SCHEMA) ifNotExists? DB SCHEMA_CHANGE=$1 SC
+    ;
+
+useDatabase
+    : USE DB SC
+    ;
+
+createTable
+    : CREATE error['A BLOB field is not allowed in partition function', 'is of a not allowed type for this type of partitioning'] 
+      ( 90% ' '  | TEMPORARY error['Cannot create temporary table with partitions'] error['Cannot create FULLTEXT index on temporary InnoDB table'] ) TABLE 
+        ifNotExists? new['table']
+        (
+            80% LB ( cn+=new['column'] columnDefinition)**random[5, 10, ',', 30] RB 
+            ( 60% ' '  |
+                    ' ENGINE ' EQ (' MyISAM ' | ' InnoDB ' ) |
+                    PARTITION BY (LINEAR)? error['allowed type']
+                    ( 
+                        'HASH(' cn.any ')' |
+                        ' KEY ' ( 'ALGORITHM=' ('1'|'2'))? '(' cn.any ')'
+                    )
+            )
+            | LIKE table.any
+        )  SCHEMA_CHANGE=$1 SC
+    ;
+
+createIndex
+    : error['used in key specification without a key length']  error['Too many key parts specified'] CREATE  
+    ((
+       49% UNIQUE error['Duplicate', 'A UNIQUE INDEX must include all columns in the '] | 
+        49% FULLTEXT error['cannot be part of',' support FULLTEXT indexes'] | 
+        error['A SPATIAL index may only contain a geometrical type column']  SPATIAL
+    ) )**random[0, 1, 90]
+    INDEX new['index']
+    ON t=table.any c=$column[t] '(' ( c.unique_any (( ' ASC ' | ' DESC ' ) error['support'] error['explicit index order'] )? )**random[1, 6, ',', 90] ')'
+    (
+        ALGORITHM EQ (DEFAULT | INPLACE | COPY)
+        | LOCK EQ (DEFAULT | NONE | SHARED | EXCLUSIVE)
+    ) error['is not supported'] SCHEMA_CHANGE=$1 
+    SC
+    ;
+
+truncateTable : TRUNCATE TABLE table.any SCHEMA_CHANGE=$1 SC ;
+    
+insertStatement
+    : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? error['Duplicate'] t=table.any
+    '(' cl=$column[t] ( c+=cl.unique_any )**random[1, 6, ',', 75] ')' 
+    VALUES '(' ( expression[c.next.type]  )**random[c.len,','] ')'
+    SC
+    ;
+
+updateStatement
+    : UPDATE error['Duplicate'] LOW_PRIORITY? IGNORE? t=table.any
+    SET (cc=column[t].any '=' expression[cc.type])**random[1, 6, ',', 75] (WHERE (NOT)? cc=column[t].any '=' expression[cc.type])? SC
+    ;
+
+expression [type, depth=2]
+    : error['out of range'] error['Out of range value']
+    (int_expr[depth$-1] <type=='int'>
+    | text_expr[depth$-1] <type=='text'> 
+    | double_expr[depth$-1] <type=='double'>
+    | 5% <depth>1> (
+        least[type, depth$-1] 
+        | greatest[type, depth$-1] 
+        | if_func[type, depth$-1]
+    )
+    ) 
+    ;
+
+selectStatement [outmost=1, rep=random[1,5,',']] returns [c] :
+    @2
+	SELECT (DISTINCT <outmost==0> | ALL)? error['is ambiguous'] error['Duplicate column name'] (
+        90% ( (tt=t.any DOT | tt=$t.any) c+=tt.c.unique_any )**rep
+        | ASTERISK ( tt=$t.next (c+=$tt.c.next)**tt.c.len )**t.len
+    ) 
+    @1
+    at=$table
+	FROM ( tt=at.unique_any tt.c=$column[tt] t+=$tt | 30% '(' cc=$selectStatement[0] ')' AS tt=new['table'] tt.c=$cc t+=$tt)
+	//no separate needed since it is directly positioned after the FROM clause
+    (
+		JOIN error['reopen'] ( tt=at.unique_any tt.c=$column[tt] t+=$tt | 10% '(' cc=$selectStatement[0] ')' AS tt=new['table'] tt.c=$cc t+=$tt)
+	)?
+    @3
+    ( ' /*BEGIN_COND*/ ' <outmost==1> | ' ' <outmost==0>)
+    ( where_predicate[t, c, outmost] | ' ' <outmost==0> )
+    (' /*END_COND*/ ' <outmost==1> | ' ' <outmost==0>)
+	//( ( UNION | INTERSECT )  selectStatement[0, random[c.len,',']] )?
+    (SC <outmost==1> | ' ' <outmost==0> )
+	;
+	
+where_predicate [t, c, outmost]:
+	WHERE 
+    ( ' /*BEGIN_PRED*/ ' <outmost==1> | ' ' <outmost==0> )
+    ( 
+        60% predicate[t, c]
+	    | c.any IN '(' selectStatement[0, random[1,',']] ')' error['Operand should contain 1 column(s)']
+	    | NOT? EXISTS '(' selectStatement[0] ')'
+    )
+    ( ' /*END_PRED*/ ' <outmost==1> | ' ' <outmost==0> )
+	;
+
+predicate [t, c]: ( 50%'(' pivot=$t.any.c.any ( expression[pivot.type] | (tt=t.any DOT | tt=$t.any )  cc=tt.c.filter['type', '==', pivot.type].any ) 
+                    comparison 
+                    ( expression[pivot.type] | (tt=t.any DOT | tt=$t.any )  cc=tt.c.filter['type', '==', pivot.type].any ) ')' 
+            | 30% ifnull[t.any.c.any.type, 1]
+            | if_func[t.any.c.any.type, 1])
+        ;
+
+comparison : ( LT | GT | EQ | LT EQ | GT EQ );
+
+waitNowaitClause
+    : WAIT double_val
+    | NOWAIT
+    ;
+
+abs [depth] : ' ABS(' ( expression['int', depth] | expression['double', depth] 70% ) ')' ;
+bit_count [depth] : ' BIT_COUNT(' expression['int', depth] ')';
+//coalesce  : ' COALESCE(' expression ( ',' expression )* ')';
+if_func [type, depth] : ' IF(' ( expression[type, depth] comparison expression[type, depth] | ifnull[type, depth] ) ', ' expression[type, depth] ', ' expression[type, depth] ') '; 
+ifnull [type, depth] : ' IFNULL(' expression[type, depth] ', ' expression[type, depth] ') ';
+greatest [type, depth] : ' GREATEST(' expression[type, depth] ( ', ' expression[type, depth] )+ ') ';
+least [type, depth] : ' LEAST(' expression[type, depth] ( ', ' expression[type, depth] )+ ') ';
+strcmp [depth] : ' STRCMP(' expression['text', depth] ', ' expression['text', depth] ') ';
+substr [depth] : ' SUBSTR(' expression['text', depth] ', ' expression['int', depth] ', ' expression['int', depth] ') ';
+substring [depth] : ' SUBSTRING(' expression['text', depth] ', ' expression['int', depth] ', ' expression['int', depth] ') ';
+trim [depth] : ' TRIM(' expression['text', depth]') ';
+lcase [depth] : ' LCASE(' expression['text', depth] ') ';
+ucase [depth] : ' UCASE(' expression['text', depth] ') ';
+space [depth] : ' SPACE(' expression['int', depth] ') ' error['was larger than'];
+last_insert_id : ' LAST_INSERT_ID() ';
+acos [depth=1] : ' ACOS(' ( expression['int', depth] | expression['double', depth] 70% ) ') ';
+asin [depth=1]: ' ASIN(' ( expression['int', depth] | expression['double', depth] 70% ) ') ';
+atan [depth=1] : ' ATAN(' ( expression['int', depth] | expression['double', depth] 70% )**random[1,2,','] ') ';
+atan2 [depth=1] : ' ATAN2(' ( expression['int', depth] | expression['double', depth] 70% )**random[2,','] ') ';
+avg [type, depth=1] : ' AVG(' expression[type, depth] ') ';
+ceil [depth=1] : ( ' CEIL(' | ' CEILING(' ) ( expression['int', depth] | expression['double', depth] 70% ) ') ';
+concat [depth=1] : ' CONCAT(' ( expression['text', depth] | expression['int', depth] 20% | expression['double', depth] 10% )**random[2,5,','] ') ';
+cos [depth=1] : ' COS(' ( expression['int', depth] | expression['double', depth] 70% ) ') ' error['range'];
+cot [depth=1] : ' COT(' ( expression['int', depth] | expression['double', depth] 70% ) ') ' error['range'];
+crc32 [depth=1] : ' CRC32(' ( expression['int', depth] | expression['text', depth] 70% | expression['double', depth] ) ')/4 '; //divided by 4 to avoid overflow
+degrees [depth=1] : ' DEGREES(' ( expression['int', depth] | expression['double', depth] 70% ) ') ';
+exp [depth=1] : ' EXP(' ( expression['int', depth] | expression['double', depth] 70% ) ') ';
+left [depth=1] : ' LEFT(' expression['text', depth] ',' expression['int', depth] ') ';
+ln [depth=1] : ' LN(' ( expression['double', depth] | expression['int', depth] 30% ) ') 'error['Invalid argument'];
+log [depth=1] : ' LOG(' ( expression['double', depth] | expression['int', depth] 30% )**random[1,2,','] ') 'error['Invalid argument'];
+log10 [depth=1] : ' LOG10(' ( expression['double', depth] | expression['int', depth] 30% ) ') 'error['Invalid argument'];
+log2 [depth=1] : ' LOG2(' ( expression['double', depth] | expression['int', depth] 30% ) ') 'error['Invalid argument'];
+lower [depth=1] : ' LOWER(' expression['text', depth] ') ';
+lpad [depth=1] : ' LPAD(' expression['text', depth] ',' int_val ',' expression['text', depth] ') ';
+md5 [depth=1] : ' MD5(' expression['text', depth] ') ';
+mod [type, depth=1] : ' MOD(' expression[type, depth] ',' expression[type, depth] ') ' error['Division by'];
+pi [depth=0] : ' PI() ';
+pow [type, depth=1] : ' POW(' error['range'] expression[type, depth] ',' expression[type, depth] ') ';
+radians [depth=1] : ' RADIANS(' expression['double', depth] ') ';
+rand [depth=1] : ' RAND(' ( expression['int', depth] )**random[0,1] ') ';
+replace [depth=1] : ' REPLACE(' expression['text', depth] ',' expression['text', depth] ',' expression['text', depth] ') ';
+right [depth=1] : ' RIGHT(' expression['text', depth] ',' expression['int', depth] ') ';
+round [type, depth=1] : ' ROUND(' expression[type, depth] ( ',' expression['int', depth] )? ') ';
+sign [depth=1] : ' SIGN(' ( expression['int', depth] | expression['double', depth] 70% ) ') ';
+sin [depth=1] : ' SIN(' ( expression['int', depth] | expression['double', depth] 70% ) ') ' error['range'];
+sqrt [depth=1] : ' SQRT(' ( expression['int', depth] | expression['double', depth] 70% ) ') ';
+tan [depth=1] : ' TAN(' ( expression['int', depth] | expression['double', depth] 70% ) ') ' error['range'];
+truncate [depth=1] : ' TRUNCATE(' expression['double', depth] ',' expression['int', depth] ') ';
+upper [depth=1] : ' UPPER(' expression['text', depth] ') ';
+
+numerical_operation [type, depth=1] : ' (' expression[type, depth] ('+' | '-' | '*' | <type!='int'> '/' error['Division by']) expression[type, depth] ') ';
+
+double_expr [depth=2] 
+    : double_val 
+    | <depth>0> ( 
+        abs[depth] 
+        | acos[depth] 
+        | asin[depth] 
+        | atan[depth] 
+        | atan2[depth] 
+        //| avg['double', depth] 
+        | cos[depth] 
+        | cot[depth] 
+        | degrees[depth] 
+        | exp[depth] 
+        | ln[depth]
+        | log[depth]
+        | log10[depth]
+        | log2[depth]
+        | mod['double', depth] 
+        | pi[depth]
+        | pow['double', depth] 
+        | radians[depth]
+        //| rand[depth]
+        | round['double', depth]
+        | sin[depth]
+        | sqrt[depth]
+        | tan[depth]
+        | truncate[depth]
+        | NULL 
+        | numerical_operation['double', depth]
+    ) ;
+double_val : (DS)**random[0, 1, '', 90] int_val ('.' int_val )? ;
+
+int_expr [depth=2] 
+    : int_val 
+    | <depth>0> ( 
+        //avg['int'] 
+        bit_count[depth] 
+        | strcmp[depth] 
+        | last_insert_id 
+        | ceil[depth] 
+        | crc32[depth] 
+        | mod['int', depth] 
+        | pow['int', depth] 
+        | round['int', depth]
+        | sign[depth]
+        | NULL 
+        | numerical_operation['int', depth]
+    );
+int_val :  (DS)**random[0, 1, '', 90] (DIGIT)**random[1, 5] ;
+
+text_expr [depth=2] 
+    : text_val 
+    | <depth>0> ( 
+        concat[depth]
+        | substr[depth] 
+        | substring[depth] 
+        | lcase[depth] 
+        | ucase[depth] 
+        | space[depth]
+        | md5[depth] 
+        | trim[depth] 
+        | left[depth]
+        | lower[depth]
+        | lpad[depth]
+        | replace[depth]
+        | right[depth]
+        | upper[depth]
+        | NULL 
+    ) error['Data too long'] error['was larger than'];
+text_val :  DQ ( (CH | DIGIT) )**random[1, 100] DQ ;
+
+db returns [d] : d=$query['SHOW DATABASES;', 'Database'] ;
+table returns [t] : ( <SCHEMA_CHANGE==1> TABLE_CACHE=$query['SHOW TABLES;', 'Tables_in_'$+DB] SCHEMA_CHANGE=$0 | <SCHEMA_CHANGE==0> '' ) t=$TABLE_CACHE ;
+//table returns [t] : t=$query['SHOW TABLES;', 'Tables_in_'$+DB] ;
+column [t] returns [c] : c=$query['SHOW COLUMNS FROM '$+t, 'Field', 'Type', 'type'];
+index [t] returns [i] : i=$query['SHOW INDEX FROM '$+t, 'Key_name'];
+
+
+    
+ifNotExists : IF NOT EXISTS;
+ifExists : IF EXISTS;
+
+ADD : SPACE A D D SPACE;
+ALGORITHM : SPACE A L G O R I T H M SPACE;
+ALL : SPACE A L L SPACE;
+ALTER : SPACE A L T E R SPACE;
+AS : SPACE A S SPACE;
+BY : SPACE B Y SPACE;
+COLUMN : SPACE C O L U M N SPACE;
+COPY : SPACE C O P Y SPACE;
+CREATE : SPACE C R E A T E SPACE;
+DATABASE : SPACE D A T A B A S E SPACE;
+DEFAULT : SPACE D E F A U L T SPACE;
+DELAYED : SPACE D E L A Y E D SPACE;
+DISTINCT : SPACE D I S T I N C T SPACE;
+DOUBLE : SPACE D O U B L E SPACE;
+DROP : SPACE D R O P SPACE;
+EXCLUSIVE : SPACE E X C L U S I V E SPACE;
+EXISTS : SPACE E X I S T S SPACE;
+FIRST : SPACE F I R S T SPACE;
+FLOAT : SPACE F L O A T SPACE;
+FROM : SPACE F R O M SPACE;
+FULLTEXT : SPACE F U L L T E X T SPACE;
+HASH : SPACE H A S H SPACE;
+HIGH_PRIORITY : SPACE H I G H US P R I O R I T Y SPACE;
+IF : SPACE I F SPACE;
+IGNORE : SPACE I G N O R E SPACE;
+IN : SPACE I N SPACE;
+INDEX : SPACE I N D E X SPACE;
+INPLACE : SPACE I N P L A C E SPACE;
+INSERT : SPACE I N S E R T SPACE;
+INT : SPACE I N T SPACE;
+INTO : SPACE I N T O SPACE;
+JOIN : SPACE J O I N SPACE;
+KEY : SPACE K E Y SPACE;
+LIKE : SPACE L I K E SPACE;
+LINEAR : SPACE L I N E A R SPACE;
+LOCK : SPACE L O C K SPACE;
+LOW_PRIORITY : SPACE L O W US P R I O R I T Y SPACE;
+NONE : SPACE N O N E SPACE;
+NOT : SPACE N O T SPACE;
+NOWAIT : SPACE N O W A I T SPACE;
+NULL : SPACE N U L L SPACE;
+OFFLINE : SPACE O F F L I N E SPACE;
+ON : SPACE O N SPACE;
+ONLINE : SPACE O N L I N E SPACE;
+PARTITION : SPACE P A R T I T I O N SPACE;
+PRIMARY : SPACE P R I M A R Y SPACE;
+RENAME : SPACE R E N A M E SPACE;
+REPLACE : SPACE R E P L A C E SPACE;
+SCHEMA : SPACE S C H E M A SPACE;
+SELECT : SPACE S E L E C T SPACE;
+SET : SPACE S E T SPACE;
+SHARED : SPACE S H A R E D SPACE;
+SPATIAL : SPACE S P A T I A L SPACE;
+TABLE : SPACE T A B L E SPACE;
+TEMPORARY : SPACE T E M P O R A R Y SPACE;
+TEXT : SPACE T E X T SPACE;
+TO : SPACE T O SPACE;
+TRUNCATE : SPACE T R U N C A T E SPACE;
+UNIQUE : SPACE U N I Q U E SPACE;
+UPDATE : SPACE U P D A T E SPACE;
+USE : SPACE U S E SPACE;
+VALUES : SPACE V A L U E S SPACE;
+VIEW : SPACE V I E W SPACE;
+WAIT : SPACE W A I T SPACE;
+WHERE : SPACE W H E R E SPACE;
+
+
+STUB : SPACE S T U B SPACE;
+
+
+
+LB : '(';
+RB : ')';
+LT : '<';
+GT : '>';
+EQ : '=';
+SC : ';';
+US : '_';
+DS : '-';
+ASTERISK : '*';
+DQ : '\"';
+COMMA : ',';
+DOT : '.';
+
+fragment DIGIT : [0-9];
+fragment SPACE : [\u0020];
+fragment NL : [\n];
+fragment A : [A];
+fragment B : [B];
+fragment C : [C];
+fragment D : [D];
+fragment E : [E];
+fragment F : [F];
+fragment G : [G];
+fragment H : [H];
+fragment I : [I];
+fragment J : [J];
+fragment K : [K];
+fragment L : [L];
+fragment M : [M];
+fragment N : [N];
+fragment O : [O];
+fragment P : [P];
+fragment Q : [Q];
+fragment R : [R];
+fragment S : [S];
+fragment T : [T];
+fragment U : [U];
+fragment V : [V];
+fragment W : [W];
+fragment X : [X];
+fragment Y : [Y];
+fragment Z : [Z];
+fragment CH : [A-Z];
+

@@ -1,0 +1,90 @@
+
+{   
+    "options" : [
+        {
+            "name" : "JDBC", 
+            "default" : "jdbc:mysql://localhost:3306/?user=sqlancer&password=sqlancer&tcpNoDelay=true",
+            "description" : "JDBC URL to the target DBMS, replace with actual info" 
+        },
+        {
+            "name" : "JDBC_CLASS", 
+            "default" : "com.mysql.cj.jdbc.Driver"
+        }
+    ],
+    "stages" : [
+    	{
+            "name" : "dropDatabase",
+            "rules" : [
+                "dropDatabase"
+            ],
+            "min" : 1,
+            "max" : 1
+        },
+        {
+            "name" : "dropSchema",
+            "rules" : [
+                "dropSchema"
+            ],
+            "min" : 1,
+            "max" : 1
+        },
+        {
+            "name" : "createDatabase",
+            "rules" : [
+                "createDatabase"
+            ],
+            "min" : 1,
+            "max" : 1
+        },
+        {
+            "name" : "useDatabase",
+            "rules" : [
+                "useDatabase"
+            ],
+            "min" : 1,
+            "max" : 1
+        },
+    	{
+            "name" : "create",
+            "rules" : [
+                "createTable"
+            ],
+            "min" : 10,
+            "max" : 15
+        },
+   		{
+            "name" : "insert",
+            "rules" : [
+                "insertStatement"
+            ],
+            "min" : 300,
+            "max" : 1000
+        },
+        {
+            "name" : "update",
+            "rules" : [
+                "updateStatement"
+            ],
+            "min" : 50,
+            "max" : 100
+        },
+        {
+            "name" : "mix",
+            "rules" : [
+                "alterTable",
+                "createTable",
+                "insertStatement",
+                "updateStatement",
+                "truncateTable",
+                "dropTable",
+                "createIndex",
+                "selectStatement"
+            ],
+            "weights" : [
+                10, 2, 50, 5, 1, 1, 1, 250
+            ],
+            "min" : 3000,
+            "max" : 5000
+        }
+    ]
+}

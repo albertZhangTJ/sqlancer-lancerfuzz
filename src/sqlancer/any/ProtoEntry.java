@@ -85,10 +85,10 @@ public class ProtoEntry {
                         stmt_count_case++;
                         stmt_count_total++;
                         // compensating for the TLP-ed ones
-                        // one return is actually 4 SELECT statements
+                        // one return is actually 3 SELECT statements
                         if (next.startsWith(" SELECT")){
-                            stmt_count_case+=3;
-                            stmt_count_total+=3;
+                            stmt_count_case+=2;
+                            stmt_count_total+=2;
                         }
                         test = test + next + "\n";
                         if (next.startsWith("-- [Expected Error]:")){

@@ -15,7 +15,8 @@ echo "Building SQLancer" && \
 mvn clean package -Dskip.SGL=true -DskipTests && \
 cd target && \
 echo "Starting SQLancer" && \
-java -XX:+FlightRecorder -XX:StartFlightRecording=duration=2h,filename=profile.jfr,settings=profile -jar sqlancer-jar-with-dependencies.jar -g && \
+java -jar sqlancer-jar-with-dependencies.jar -g && \
+# java -XX:+FlightRecorder -XX:StartFlightRecording=duration=2h,filename=profile.jfr,settings=profile -jar sqlancer-jar-with-dependencies.jar -g && \
 cd .. && \
 echo "Finished, cleaning up" && \
 cp src/sqlancer/any/Fuzzer.java.template.txt src/sqlancer/any/Fuzzer.java
