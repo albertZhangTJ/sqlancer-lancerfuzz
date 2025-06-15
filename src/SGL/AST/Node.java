@@ -115,20 +115,6 @@ public class Node {
     //for example. schedule nodes and quantifier nodes
     //otherwise, the specific type of nodes should inherent this and provide their own implementation
     public void post_process(){
-        for (int i=0; i<this.get_outward_edges().size(); i++){
-            Node child = this.get_outward_edges().get(i).get_dest();
-            if (child instanceof QuantifierNode){
-                QuantifierNode q = (QuantifierNode)child;
-                if (q.get_type()==3 && !q.arged()){ //post-processing is only needed for type 3, ** 
-                    if (i==this.get_outward_edges().size()-1){
-                        Utils.panic("Node::post_process : A quantifier node with operator ** expects a variable (or an expression that evaluates to a variable) after it, line: "+q.lines);
-                    }
-                    if (q.set_param((this.get_outward_edges().get(i+1).get_dest()))){
-                        this.outward_edges.remove(i+1);
-                    }
-                }
-            }
-        }
         //post processing logic for schedule node
         int schedule_points = 0;
         for (Edge e : this.get_outward_edges()){
@@ -169,6 +155,20 @@ public class Node {
                 }
             }
             this.outward_edges = updated_outwards;
+        }
+        for (int i=0; i<this.get_outward_edges().size(); i++){
+            Node child = this.get_outward_edges().get(i).get_dest();
+            if (child instanceof QuantifierNode){
+                QuantifierNode q = (QuantifierNode)child;
+                if (q.get_type()==3 && !q.arged()){ //post-processing is only needed for type 3, ** 
+                    if (i==this.get_outward_edges().size()-1){
+                        Utils.panic("Node::post_process : A quantifier node with operator ** expects a variable (or an expression that evaluates to a variable) after it, line: "+q.lines);
+                    }
+                    if (q.set_param((this.get_outward_edges().get(i+1).get_dest()))){
+                        this.outward_edges.remove(i+1);
+                    }
+                }
+            }
         }
     }
     //This is just a placeholder for render function

@@ -1,27 +1,3 @@
-/*
-MySQL (Positive Technologies) grammar
-The MIT License (MIT).
-Copyright (c) 2015-2017, Ivan Kochurkin (kvanttt@gmail.com), Positive Technologies.
-Copyright (c) 2017, Ivan Khudyashev (IHudyashov@ptsecurity.com)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-*/
 grammar postgres;
 
 // PostgresAggregate.java
@@ -74,7 +50,9 @@ binary_range_comp_op
     ;
 
 // PostgresCastOperation.java
-// TODO
+cast_op
+    : '::'
+    ;
 
 // PostgresCollate.java
 collate_op
@@ -104,284 +82,147 @@ const
 
 boolean_const : ' TRUE ' | ' FALSE ' ;
 null_const : ' NULL ';
+str_const :  DQ ( (CH | DIGIT) )**random[1, 100] DQ ;
+int_const : (DS)**random[0, 1, 90] (DIGIT)**random[1, 5] ;
+float_const : (DS)**random[0, 1, '', 90] int_val ('.' int_val )? ;
+double_const : float_const;
+dec_const [ts=4, ds=2] : (DS)**random[0, 1, '', 90] gs=$ts$-ds DIGIT**gs ( '.' DIGIT**ds )? ;
+bit_const [size=8] : ' B(\'' ( '0' | '1' )**random[1,size] '\')';
+range_const : ('(' | '[' ) int_const ',' int_const (']' | ')' ) '::int4range';
 
+abs [type] : ' ABS(' expr[type] ') ';
+upper : ' UPPER(' str_expr ') ';
+lower : ' LOWER(' str_expr ') ';
+length : ' LENGTH(' str_expr ') ';
+num_nonnulls : ' NUM_NONNULLS(' expr**random[1, 10, ','] ') ';
+num_nulls : ' NUM_NULLS(' expr**random[1, 10, ','] ') ';
 
-alterTable
-    : error['exist'] ALTER TABLE t = table.any c=$column[t]
-     ( alterSpecification )**random[1, 6, ',', 75] SCHEMA_CHANGE=$1 SC
+data_types : 'INT' | 'BOOLEAN' | 'TEXT' | 'DECIMAL' | 'FLOAT' | 'REAL' | 'RANGE' | 'MONEY' | 'BIT' | 'INET' ;
+
+fragment alterColumn : ALTER COLUMN? columns[t].any ' ';
+
+alterTable [view=false]
+    : ALTER ( VIEW view=$true| TABLE (ONLY error['cannot use ONLY for foreign key on partitioned table'])? ) 
+      (t=views.any <view==true> | t=tables.any <view==false> )
+      (
+        DROP (IF EXISTS)? columns[t].any ( RESTRICT | CASCADE )? error['because other objects depend on it', 'does not exist', 'cannot drop column', 'cannot drop inherited column']
+        | alterColumn (SET DATA)? TYPE data_types error[
+            'cannot alter type of a column used by a view or rule',
+            'cannot convert infinity to numeric', 'is duplicated', 
+            'cannot be cast automatically', 'is an identity column',
+            'identity column type must be smallint, integer, or bigint',
+            'out of range',
+            'cannot alter type of column named in partition key',
+            'cannot alter type of column referenced in partition key expression',
+            'because it is part of the partition key of relation',
+            'argument of CHECK must be type boolean',
+            'operator does not exist',
+            'must be type',
+            'You might need to add explicit type casts',
+            'cannot cast type',
+            'foreign key constrain',
+            'division by zero',
+            'value too long for type character varying',
+            'cannot drop index',
+            'cannot alter inherited column',
+            'must be changed in child tables too',
+            'could not determine which collation to use for index expression',
+            'bit string too long for type bit varying',
+            'cannot alter type of a column used by a generated column'
+          ]
+        | alterColumn ( DROP DEFAULT | SET DEFAULT expr[columns[t].any] error['is out of range', 'but default expression is of type', 'cannot cast']) error['is a generated column', 'is an identity column']
+        | alterColumn ( SET NOT NULL error['contains null values'] | DROP NOT NULL error['is in a primary key', 'is an identity column', 'is in index used as replica identity'])
+        | alterColumn SET STATISTICS random[0,10000,0]
+        | alterColumn SET '( n_distinct = ' ( '-0.' '0'* random[1,90] | random[1,200])  ') '
+        | alterColumn RESET '( n_distinct ) '
+        | alterColumn SET STORAGE ( PLAIN | EXTERNAL | EXTENDED | MAIN ) error['can only have storage', 'is an identity column']
+        | alterColumn DROP EXPRESSION ifExists error[
+            'is not a generated column','is not a stored generated column',
+            'cannot drop expression from inherited column','cannot drop generation expression from inherited column',
+            'must be applied to child tables too','cannot drop expression from column'
+          ]
+        | //TODO
+      )
     ;
 
-fragment alterSpecification
-    : ( 
-        ADD COLUMN? new['column'] columnDefinition FIRST?    
-        | ADD COLUMN? '(' (new['column'] columnDefinition)**random[1, 3, ',', 75] ')' 
-        | DROP COLUMN? c.unique_any error['delete all', 'has a partitioning function dependency']
-        | DROP PRIMARY KEY error['primary']
-        | RENAME ( TO | AS ) new['table']
-        | RENAME COLUMN c.unique_any TO new['column'] error['has a partitioning function dependency and cannot be dropped or renamed']
-        | ALGORITHM '=' ( 'INSTANT' | 'INPLACE' | 'COPY' | 'DEFAULT' ) error['is not supported']
-    )
+analyze : ANALYZE ( ' ( SKIP_LOCKED ) ' | ' ( VERBOSE ) ' )? ( t=tables.any ' ('(  cc=$columns[t] (cc.unique_any)**random[1,cc.len, ',']  ' )')? )? error['deadlock'];
+
+cluster 
+    : CLUSTER ( t=tables.any ( <indexes[t].len>0> USING indexes[t].any error['cannot cluster on partial index'] | ' ' )? )? 
+    error['there is no previously clustered index for table', 'cannot cluster a partitioned table', 'access method does not support clustering']
     ;
 
-fragment columnDefinition
-    : ' DOUBLE ' | ' INT ' | ' TEXT '
+comment
+    : COMMENT ON (
+        INDEX indexes[tables.any].any
+        | COLUMN t=tables.any DOT columns[t].any
+        | STATISTICS statistics[tables.any].any
+        | TABLE tables.any
+    ) IS ( NULL | str_const )
     ;
 
-dropDatabase
-    : DROP DATABASE ifExists DB ='database1' SC
+// TODO: PostgresCommon
+
+delete
+    : DELETE FROM ONLY? t=tables.any wherePredicate[t]? (RETURNING expr)? error['out of range', 'cannot cast', 'invalid input syntax for', 'division by zero']
     ;
 
-dropSchema
-    : DROP SCHEMA ifExists DB SC
+discard
+    : DISCARD (<tables.filter['type','==', 'BASE TABLE'].len>0> (ALL | TEMPORARY | TEMP) | PLANS | SEQUENCES ) error['cannot run inside a transaction block']
     ;
 
-
-createDatabase
-    : CREATE (DATABASE | SCHEMA) ifNotExists? DB SCHEMA_CHANGE=$1 SC
+dropIndex 
+    : DROP INDEX (ifExists new['index'] <indexes.len==0> | ifExists? i=$indexes i.unique_any**random[1, i.len, ',', 95] ) ( CASCADE | RESTRICT )? 
+    error['cannot drop desired object(s) because other objects depend on them', 'cannot drop index', 'does not exist']
     ;
 
-useDatabase
-    : USE DB SC
+explain : EXPLAIN ' (FORMAT JSON) ' select;
+
+// TODO: Expression generator
+
+op_classes : 'abstime_ops' | 'bit_ops' | 'bool_ops' | 'box_ops' | 'bpchar_ops' | 'bpchar_pattern_ops' | 'bytea_ops' | 'char_ops' | 'cidr_ops' | 'circle_ops' 
+    | 'date_ops' | 'float4_ops' | 'float8_ops' | 'inet_ops' | 'int2_ops' | 'int4_ops' | 'int8_ops' | 'interval_ops' | 'line_ops' | 'lseg_ops' | 'macaddr_ops' | 'macaddr8_ops' 
+    | 'money_ops' | 'name_ops' | 'numeric_ops' | 'oid_ops' | 'path_ops' | 'point_ops' | 'polygon_ops' | 'text_ops' | 'text_pattern_ops' | 'tid_ops' | 'time_ops' 
+    | 'timestamp_ops' | 'timestamptz_ops' | 'timetz_ops' | 'uuid_ops' | 'varbit_ops' | 'varchar_ops' | 'varchar_pattern_ops' | 'array_ops' | 'jsonb_ops' 
+    | 'jsonb_path_ops' | 'tsvector_ops' | 'tsquery_ops' | 'int2_hash_ops' | 'int4_hash_ops' | 'int8_hash_ops' | 'float4_hash_ops' | 'float8_hash_ops' | 'numeric_hash_ops' 
+    | 'bool_hash_ops' | 'char_hash_ops' | 'name_hash_ops' | 'text_hash_ops' | 'bpchar_hash_ops' | 'varchar_hash_ops' | 'bytea_hash_ops' | 'oid_hash_ops' | 'abstime_hash_ops' 
+    | 'date_hash_ops' | 'time_hash_ops' | 'timetz_hash_ops' | 'timestamp_hash_ops' | 'timestamptz_ops' | 'interval_hash_ops' | 'macaddr_hash_ops' 
+    | 'macaddr8_hash_ops' | 'inet_hash_ops' | 'cidr_hash_ops' | 'uuid_hash_ops' | 'pg_lsn_ops' | 'pg_lsn_hash_ops'
     ;
 
-createTable
-    : CREATE error['A BLOB field is not allowed in partition function', 'is of a not allowed type for this type of partitioning'] 
-      ( 90% ' '  | TEMPORARY error['Cannot create temporary table with partitions'] error['Cannot create FULLTEXT index on temporary InnoDB table'] ) TABLE 
-        ifNotExists? new['table']
-        (
-            80% LB ( cn+=new['column'] columnDefinition)**random[5, 10, ',', 30] RB 
-            ( 60% ' '  |
-                    ' ENGINE ' EQ (' MyISAM ' | ' InnoDB ' ) |
-                    PARTITION BY (LINEAR)? error['allowed type']
-                    ( 
-                        'HASH(' cn.any ')' |
-                        ' KEY ' ( 'ALGORITHM=' ('1'|'2'))? '(' cn.any ')'
-                    )
-            )
-            | LIKE table.any
-        )  SCHEMA_CHANGE=$1 SC
+createIndex [ih=false]
+    : CREATE UNIQUE? INDEX new['index'] ON ONLY? t=tables.any c=$columns[t] ( USING ( ' BTREE ' | ' HASH ' ih=$true | ' GIST ' | ' GIN' ))? 
+    ' (' ( c.any | <ih!=true> ((c.any | expr) SPACE (op_classes error['does not accept', 'does not exist for access method'])**random[0,1,99] ( ASC | DESC )? ( ' NULLS FIRST ' | ' NULLS LAST ' )**random[0,1.99] )**random[1, 3, ','] ) ') '
+    ( INCLUDE '(' c.unique_any**random[1, c.len, ','] ')' <ih!=true> | ' ') wherePredicate[t]?
+    error['already contains data', 'You might need to add explicit type casts', ' collations are not supported', 
+        'because it has pending trigger events', 'could not determine which collation to use for index expression', 'could not determine which collation to use for string comparison', 
+        'is duplicated', 'access method \"gin\" does not support unique indexes', 'access method \"hash\" does not support unique indexes', 'already exists', 
+        'could not create unique index', 'has no default operator class', 'does not support', 'cannot cast', 'unsupported UNIQUE constraint with partition key definition', 
+        'insufficient columns in UNIQUE constraint definition', 'invalid input syntax for', 'must be type ', 'integer out of range', 'division by zero', 'out of range', 
+        'functions in index predicate must be marked IMMUTABLE', 'functions in index expression must be marked IMMUTABLE', 
+        'result of range difference would not be contiguous', 'which is part of the partition key'
+    ]
     ;
 
-createIndex
-    : error['used in key specification without a key length']  error['Too many key parts specified'] CREATE  
-    ((
-       49% UNIQUE error['Duplicate', 'A UNIQUE INDEX must include all columns in the '] | 
-        49% FULLTEXT error['cannot be part of',' support FULLTEXT indexes'] | 
-        error['A SPATIAL index may only contain a geometrical type column']  SPATIAL
-    ) )**random[0, 1, 90]
-    INDEX new['index']
-    ON t=table.any c=$column[t] '(' ( c.unique_any (( ' ASC ' | ' DESC ' ) error['support'] error['explicit index order'] )? )**random[1, 6, ',', 90] ')'
-    (
-        ALGORITHM EQ (DEFAULT | INPLACE | COPY)
-        | LOCK EQ (DEFAULT | NONE | SHARED | EXCLUSIVE)
-    ) error['is not supported'] SCHEMA_CHANGE=$1 
-    SC
+tables returns [t] : t=$query['SELECT table_name AS name, table_type AS type, table_schema FROM information_schema.tables WHERE table_schema NOT IN (\'information_schema\', \'pg_catalog\');', 'name', 'type', 'type'].filter['type','!=','VIEW'];
+views returns [v] : v=$query['SELECT table_name AS name, table_type AS type, table_schema FROM information_schema.tables WHERE table_schema NOT IN (\'information_schema\', \'pg_catalog\');', 'name', 'type', 'type'].filter['type','==','VIEW'];
+indexes [t=''] returns [i] 
+    : <t==''> i=$query['SELECT indexname FROM pg_indexes WHERE schemaname NOT IN (\'information_schema\', \'pg_catalog\')', 'indexname']
+    | <t!=''> i=$query['SELECT indexname FROM pg_indexes WHERE tablename = \''+$ t +$'\''', 'indexname']
+    ;
+columns [t] returns [c] 
+    : c=$query[
+        'SELECT column_name AS name, data_type AS type, numeric_precision AS precision, numeric_scale AS scale, character_maximum_length AS length FROM information_schema.columns  WHERE table_name = \''+$ t +$ '\' AND table_schema = \'public\'', 
+        'name',
+        'type', 'type',
+        'precision', 'precision',
+        'scale', 'scale',
+        'length', 'length'
+    ];
+statistics [t] returns [s]
+    : s=$query[ 'SELECT n.nspname as s_name, s.stxname as name FROM pg_statistic_ext s JOIN pg_class c ON c.oid = s.stxrelid JOIN pg_namespace n ON n.oid = s.stxnamespace WHERE c.relname = \'' +$ t +$ '\'', 'name']
     ;
 
-truncateTable : TRUNCATE TABLE table.any SCHEMA_CHANGE=$1 SC ;
-    
-insertStatement
-    : (REPLACE | INSERT ((LOW_PRIORITY | DELAYED | HIGH_PRIORITY))? IGNORE? ) INTO? error['Duplicate'] t=table.any
-    '(' cl=$column[t] ( c+=cl.unique_any )**random[1, 6, ',', 75] ')' 
-    VALUES '(' ( expression[c.next.type]  )**random[c.len,','] ')'
-    SC
-    ;
-
-updateStatement
-    : UPDATE error['Duplicate'] LOW_PRIORITY? IGNORE? t=table.any
-    SET (cc=column[t].any '=' expression[cc.type])**random[1, 6, ',', 75] (WHERE (NOT)? cc=column[t].any '=' expression[cc.type])? SC
-    ;
-
-expression [type, depth=2]
-    : error['out of range'] error['Out of range value']
-    (int_expr[depth$-1] <type=='int'>
-    | text_expr[depth$-1] <type=='text'> 
-    | double_expr[depth$-1] <type=='double'>
-    | 5% <depth>1> (
-        least[type, depth$-1] 
-        | greatest[type, depth$-1] 
-        | if_func[type, depth$-1]
-    )
-    ) 
-    ;
-
-selectStatement [outmost=1, rep=random[1,5,',']] returns [c] :
-    @2
-	SELECT (DISTINCT <outmost==0> | ALL)? error['is ambiguous'] error['Duplicate column name'] (
-        90% ( (tt=t.any DOT | tt=$t.any) c+=tt.c.unique_any )**rep
-        | ASTERISK ( tt=$t.next (c+=$tt.c.next)**tt.c.len )**t.len
-    ) 
-    @1
-    at=$table
-	FROM ( tt=at.unique_any tt.c=$column[tt] t+=$tt | 30% '(' cc=$selectStatement[0] ')' AS tt=new['table'] tt.c=$cc t+=$tt)
-	//no separate needed since it is directly positioned after the FROM clause
-    (
-		JOIN error['reopen'] ( tt=at.unique_any tt.c=$column[tt] t+=$tt | 10% '(' cc=$selectStatement[0] ')' AS tt=new['table'] tt.c=$cc t+=$tt)
-	)?
-    @3
-    ( ' /*BEGIN_COND*/ ' <outmost==1> | ' ' <outmost==0>)
-    ( where_predicate[t, c, outmost] | ' ' <outmost==0> )
-    (' /*END_COND*/ ' <outmost==1> | ' ' <outmost==0>)
-	//( ( UNION | INTERSECT )  selectStatement[0, random[c.len,',']] )?
-    (SC <outmost==1> | ' ' <outmost==0> )
-	;
-	
-where_predicate [t, c, outmost]:
-	WHERE 
-    ( ' /*BEGIN_PRED*/ ' <outmost==1> | ' ' <outmost==0> )
-    ( 
-        60% predicate[t, c]
-	    | c.any IN '(' selectStatement[0, random[1,',']] ')' error['Operand should contain 1 column(s)']
-	    | NOT? EXISTS '(' selectStatement[0] ')'
-    )
-    ( ' /*END_PRED*/ ' <outmost==1> | ' ' <outmost==0> )
-	;
-
-predicate [t, c]: ( 50%'(' pivot=$t.any.c.any ( expression[pivot.type] | (tt=t.any DOT | tt=$t.any )  cc=tt.c.filter['type', '==', pivot.type].any ) 
-                    comparison 
-                    ( expression[pivot.type] | (tt=t.any DOT | tt=$t.any )  cc=tt.c.filter['type', '==', pivot.type].any ) ')' 
-            | 30% ifnull[t.any.c.any.type, 1]
-            | if_func[t.any.c.any.type, 1])
-        ;
-
-comparison : ( LT | GT | EQ | LT EQ | GT EQ );
-
-waitNowaitClause
-    : WAIT double_val
-    | NOWAIT
-    ;
-
-abs [depth] : ' ABS(' ( expression['int', depth] | expression['double', depth] 70% ) ')' ;
-bit_count [depth] : ' BIT_COUNT(' expression['int', depth] ')';
-//coalesce  : ' COALESCE(' expression ( ',' expression )* ')';
-if_func [type, depth] : ' IF(' ( expression[type, depth] comparison expression[type, depth] | ifnull[type, depth] ) ', ' expression[type, depth] ', ' expression[type, depth] ') '; 
-ifnull [type, depth] : ' IFNULL(' expression[type, depth] ', ' expression[type, depth] ') ';
-greatest [type, depth] : ' GREATEST(' expression[type, depth] ( ', ' expression[type, depth] )+ ') ';
-least [type, depth] : ' LEAST(' expression[type, depth] ( ', ' expression[type, depth] )+ ') ';
-strcmp [depth] : ' STRCMP(' expression['text', depth] ', ' expression['text', depth] ') ';
-substr [depth] : ' SUBSTR(' expression['text', depth] ', ' expression['int', depth] ', ' expression['int', depth] ') ';
-substring [depth] : ' SUBSTRING(' expression['text', depth] ', ' expression['int', depth] ', ' expression['int', depth] ') ';
-trim [depth] : ' TRIM(' expression['text', depth]') ';
-lcase [depth] : ' LCASE(' expression['text', depth] ') ';
-ucase [depth] : ' UCASE(' expression['text', depth] ') ';
-space [depth] : ' SPACE(' expression['int', depth] ') ' error['was larger than'];
-last_insert_id : ' LAST_INSERT_ID() ';
-acos [depth=1] : ' ACOS(' ( expression['int', depth] | expression['double', depth] 70% ) ') ';
-asin [depth=1]: ' ASIN(' ( expression['int', depth] | expression['double', depth] 70% ) ') ';
-atan [depth=1] : ' ATAN(' ( expression['int', depth] | expression['double', depth] 70% )**random[1,2,','] ') ';
-atan2 [depth=1] : ' ATAN2(' ( expression['int', depth] | expression['double', depth] 70% )**random[2,','] ') ';
-avg [type, depth=1] : ' AVG(' expression[type, depth] ') ';
-ceil [depth=1] : ( ' CEIL(' | ' CEILING(' ) ( expression['int', depth] | expression['double', depth] 70% ) ') ';
-concat [depth=1] : ' CONCAT(' ( expression['text', depth] | expression['int', depth] 20% | expression['double', depth] 10% )**random[2,5,','] ') ';
-cos [depth=1] : ' COS(' ( expression['int', depth] | expression['double', depth] 70% ) ') ' error['range'];
-cot [depth=1] : ' COT(' ( expression['int', depth] | expression['double', depth] 70% ) ') ' error['range'];
-crc32 [depth=1] : ' CRC32(' ( expression['int', depth] | expression['text', depth] 70% | expression['double', depth] ) ')/4 '; //divided by 4 to avoid overflow
-degrees [depth=1] : ' DEGREES(' ( expression['int', depth] | expression['double', depth] 70% ) ') ';
-exp [depth=1] : ' EXP(' ( expression['int', depth] | expression['double', depth] 70% ) ') ';
-left [depth=1] : ' LEFT(' expression['text', depth] ',' expression['int', depth] ') ';
-ln [depth=1] : ' LN(' ( expression['double', depth] | expression['int', depth] 30% ) ') 'error['Invalid argument'];
-log [depth=1] : ' LOG(' ( expression['double', depth] | expression['int', depth] 30% )**random[1,2,','] ') 'error['Invalid argument'];
-log10 [depth=1] : ' LOG10(' ( expression['double', depth] | expression['int', depth] 30% ) ') 'error['Invalid argument'];
-log2 [depth=1] : ' LOG2(' ( expression['double', depth] | expression['int', depth] 30% ) ') 'error['Invalid argument'];
-lower [depth=1] : ' LOWER(' expression['text', depth] ') ';
-lpad [depth=1] : ' LPAD(' expression['text', depth] ',' int_val ',' expression['text', depth] ') ';
-md5 [depth=1] : ' MD5(' expression['text', depth] ') ';
-mod [type, depth=1] : ' MOD(' expression[type, depth] ',' expression[type, depth] ') ' error['Division by'];
-pi [depth=0] : ' PI() ';
-pow [type, depth=1] : ' POW(' error['range'] expression[type, depth] ',' expression[type, depth] ') ';
-radians [depth=1] : ' RADIANS(' expression['double', depth] ') ';
-rand [depth=1] : ' RAND(' ( expression['int', depth] )**random[0,1] ') ';
-replace [depth=1] : ' REPLACE(' expression['text', depth] ',' expression['text', depth] ',' expression['text', depth] ') ';
-right [depth=1] : ' RIGHT(' expression['text', depth] ',' expression['int', depth] ') ';
-round [type, depth=1] : ' ROUND(' expression[type, depth] ( ',' expression['int', depth] )? ') ';
-sign [depth=1] : ' SIGN(' ( expression['int', depth] | expression['double', depth] 70% ) ') ';
-sin [depth=1] : ' SIN(' ( expression['int', depth] | expression['double', depth] 70% ) ') ' error['range'];
-sqrt [depth=1] : ' SQRT(' ( expression['int', depth] | expression['double', depth] 70% ) ') ';
-tan [depth=1] : ' TAN(' ( expression['int', depth] | expression['double', depth] 70% ) ') ' error['range'];
-truncate [depth=1] : ' TRUNCATE(' expression['double', depth] ',' expression['int', depth] ') ';
-upper [depth=1] : ' UPPER(' expression['text', depth] ') ';
-
-numerical_operation [type, depth=1] : ' (' expression[type, depth] ('+' | '-' | '*' | <type!='int'> '/' error['Division by']) expression[type, depth] ') ';
-
-double_expr [depth=2] 
-    : double_val 
-    | <depth>0> ( 
-        abs[depth] 
-        | acos[depth] 
-        | asin[depth] 
-        | atan[depth] 
-        | atan2[depth] 
-        //| avg['double', depth] 
-        | cos[depth] 
-        | cot[depth] 
-        | degrees[depth] 
-        | exp[depth] 
-        | ln[depth]
-        | log[depth]
-        | log10[depth]
-        | log2[depth]
-        | mod['double', depth] 
-        | pi[depth]
-        | pow['double', depth] 
-        | radians[depth]
-        //| rand[depth]
-        | round['double', depth]
-        | sin[depth]
-        | sqrt[depth]
-        | tan[depth]
-        | truncate[depth]
-        | NULL 
-        | numerical_operation['double', depth]
-    ) ;
-double_val : (DS)**random[0, 1, '', 90] int_val ('.' int_val )? ;
-
-int_expr [depth=2] 
-    : int_val 
-    | <depth>0> ( 
-        //avg['int'] 
-        bit_count[depth] 
-        | strcmp[depth] 
-        | last_insert_id 
-        | ceil[depth] 
-        | crc32[depth] 
-        | mod['int', depth] 
-        | pow['int', depth] 
-        | round['int', depth]
-        | sign[depth]
-        | NULL 
-        | numerical_operation['int', depth]
-    );
-int_val :  (DS)**random[0, 1, '', 90] (DIGIT)**random[1, 5] ;
-
-text_expr [depth=2] 
-    : text_val 
-    | <depth>0> ( 
-        concat[depth]
-        | substr[depth] 
-        | substring[depth] 
-        | lcase[depth] 
-        | ucase[depth] 
-        | space[depth]
-        | md5[depth] 
-        | trim[depth] 
-        | left[depth]
-        | lower[depth]
-        | lpad[depth]
-        | replace[depth]
-        | right[depth]
-        | upper[depth]
-        | NULL 
-    ) error['Data too long'] error['was larger than'];
-text_val :  DQ ( (CH | DIGIT) )**random[1, 100] DQ ;
-
-db returns [d] : d=$query['SHOW DATABASES;', 'Database'] ;
-table returns [t] : ( <SCHEMA_CHANGE==1> TABLE_CACHE=$query['SHOW TABLES;', 'Tables_in_'$+DB] SCHEMA_CHANGE=$0 | <SCHEMA_CHANGE==0> '' ) t=$TABLE_CACHE ;
-//table returns [t] : t=$query['SHOW TABLES;', 'Tables_in_'$+DB] ;
-column [t] returns [c] : c=$query['SHOW COLUMNS FROM '$+t, 'Field', 'Type', 'type'];
-index [t] returns [i] : i=$query['SHOW INDEX FROM '$+t, 'Key_name'];
-
-
-    
 ifNotExists : IF NOT EXISTS;
 ifExists : IF EXISTS;
 
@@ -392,11 +233,13 @@ ALTER : SPACE A L T E R SPACE;
 AS : SPACE A S SPACE;
 BY : SPACE B Y SPACE;
 COLUMN : SPACE C O L U M N SPACE;
+COMMENT : SPACE C O M M E N T SPACE;
 COPY : SPACE C O P Y SPACE;
 CREATE : SPACE C R E A T E SPACE;
 DATABASE : SPACE D A T A B A S E SPACE;
 DEFAULT : SPACE D E F A U L T SPACE;
 DELAYED : SPACE D E L A Y E D SPACE;
+DISCARD : SPACE D I S C A R D SPACE;
 DISTINCT : SPACE D I S T I N C T SPACE;
 DOUBLE : SPACE D O U B L E SPACE;
 DROP : SPACE D R O P SPACE;
