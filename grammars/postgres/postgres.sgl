@@ -204,6 +204,130 @@ createIndex [ih=false]
     ]
     ;
 
+createInsert
+    : INSERT INTO t=tables.any c=$columns[t] ' ( ' (cc+=c.unique_any)**random[1, c.len, ','] ' ) ' ( OVERRIDING (SYSTEM | USER ) VALUE )**random[0,1,99] VALUES 
+    ' ( ' ( ' ( ' ( expr[cc.next] | DEFAULT )**random[1,cc.len, ','] ' ) ')**random[1,',',75] ' ) '
+    ( ON CONFLICT ( columns[t].any error['there is no unique or exclusion constraint matching the ON CONFLICT specification'])? DO NOTHING )**random[0,1,90]
+    error[
+        'multiple assignments to same column',
+        'violates foreign key constraint',
+        'value too long for type character varying',
+        'conflicting key value violates exclusion constraint',
+        'violates not-null constraint',
+        'current transaction is aborted',
+        'bit string too long',
+        'new row violates check option for view',
+        'reached maximum value of sequence',
+        'but expression is of type',
+        'duplicate key value violates unique constraint',
+        'identity column defined as GENERATED ALWAYS',
+        'out of range',
+        'violates check constraint',
+        'no partition of relation',
+        'invalid input syntax',
+        'division by zero',
+        'violates foreign key constraint',
+        'data type unknown'
+    ];
+
+channel : 'asdf' | 'test';
+
+notify : NOTIFY channel ', \'' str_const '\'' ;
+
+listen : LISTEN channel;
+
+unlisten : UNLISTEN ( channel | ASTERISK );
+
+reindex
+    : error['could not create unique index'] REINDEX 
+    ( INDEX CONCURRENTLY? indexes.any | TABLE CONCURRENTLY? tables.any | DATABASE CONCURRENTLY? DB ) error['does not exist', 'REINDEX is not yet implemented for partitioned indexes', 'could not create unique index'];
+
+createSequence
+    : CREATE ( TEMPORARY | TEMP )? SEQUENCE ifNotExists ' seq ' ( AS ( ' smallint ' | ' integer ' | ' bigint '))?
+    (INCREMENT BY? random[1, 75])? (( MINVALUE random[1,75] | NO MINVALUE ) error['must be less than MAXVALUE'])?
+    (( MAXVALUE random[1,75] | NO MAXVALUE ) error['must be less than MAXVALUE'])? 
+    (START WITH? random[1,75] error['cannot be less than MINVALUE', 'cannot be greater than MAXVALUE'])?
+    (CACHE random[1,75])? (NO? CYCLE)? (OWNED BY NONE)? error['is out of range']
+    ;
+
+configOptions 
+    : ' synchronous_commit = ' ( DEFAULT |  (' remote_apply ' | ' remote_write ' | ' local ' | ' off ' ))
+    | ' wal_compression = ' ( DEFAULT |  ( ' 1 ' | ' 0 ' ))
+    | ' commit_delay = ' ( DEFAULT |  random[1, 10000])
+    | ' commit_siblings = ' ( DEFAULT |  random[1, 10000])
+    | ' track_activities = ' ( DEFAULT |  (' 1 ' | ' 0 '))
+    | ' track_counts = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' track_io_timing = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' track_functions = ' ( DEFAULT |  ('\'none\'' | '\'pl\'' | '\'all\''))
+    | ' vacuum_freeze_table_age = ' ( DEFAULT |  ( ' 0 ' | ' 5 ' | ' 10 ' | ' 100 ' | ' 500 ' | ' 2000000000 ' ))
+    | ' vacuum_freeze_min_age = ' ( DEFAULT |  ( ' 0 ' | ' 5 ' | ' 10 ' | ' 100 ' | ' 500 ' | ' 2000000000 ' ))
+    | ' vacuum_multixact_freeze_table_age = ' ( DEFAULT |  ( ' 0 ' | ' 5 ' | ' 10 ' | ' 100 ' | ' 500 ' | ' 2000000000 ' ))
+    | ' vacuum_multixact_freeze_min_age = ' ( DEFAULT |  ( ' 0 ' | ' 5 ' | ' 10 ' | ' 100 ' | ' 500 ' | ' 2000000000 ' ))
+    | ' gin_fuzzy_search_limit = ' ( DEFAULT |  random[1, 10000])
+    //| ' default_with_oids ' (' 1 ' | ' 0 ' )
+    | ' synchronize_seqscans = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_bitmapscan = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_gathermerge = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_hashjoin = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_indexscan = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_indexonlyscan = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_material = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_mergejoin = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_nestloop = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_parallel_append = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_parallel_hash = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_partition_pruning = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_partitionwise_join = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_partitionwise_aggregate = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_seqscan = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_sort = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_tidscan = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' seq_page_cost = ' ( DEFAULT |  (' 0.0 ' | ' 0.00001 ' | ' 0.05 ' | ' 0.1 ' | ' 1 ' | ' 10 ' | ' 10000 ' ))
+    | ' random_page_cost = ' ( DEFAULT |  (' 0.0 ' | ' 0.00001 ' | ' 0.05 ' | ' 0.1 ' | ' 1 ' | ' 10 ' | ' 10000 ' ))
+    | ' cpu_tuple_cost = ' ( DEFAULT |  (' 0.0 ' | ' 0.00001 ' | ' 0.05 ' | ' 0.1 ' | ' 1 ' | ' 10 ' | ' 10000 ' ))
+    | ' cpu_index_tuple_cost = ' ( DEFAULT |  (' 0.0 ' | ' 0.00001 ' | ' 0.05 ' | ' 0.1 ' | ' 1 ' | ' 10 ' | ' 10000 ' ))
+    | ' cpu_operator_cost = ' ( DEFAULT |  (' 0.0 ' | ' 0.00001 ' | ' 0.05 ' | ' 0.1 ' | ' 1 ' | ' 10 ' | ' 10000 ' ))
+    | ' parallel_setup_cost = ' ( DEFAULT |  random[1, 10000])
+    | ' parallel_tuple_cost = ' ( DEFAULT |  random[1, 10000] )
+    | ' min_parallel_table_scan_size = ' ( DEFAULT |  random[1, 10000])
+    | ' min_parallel_index_scan_size = ' ( DEFAULT |  random[1, 10000])
+    | ' effective_cache_size = ' ( DEFAULT |  random[1, 10000])
+    | ' jit_above_cost = ' ( DEFAULT |  ( ' -1 ' | random[0, 10000] ))
+    | ' jit_inline_above_cost = ' ( DEFAULT |  ( ' -1 ' | random[0, 10000] ))
+    | ' jit_optimize_above_cost = ' ( DEFAULT |  ( ' -1 ' | random[0, 10000] ))
+    | ' geqo = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' geqo_threshold = ' ( DEFAULT |  random[1, 10000])
+    | ' geqo_effort = ' ( DEFAULT |  random[1, 10000])
+    | ' geqo_pool_size = ' ( DEFAULT |  random[1, 10000])
+    | ' geqo_generations = ' ( DEFAULT |  random[1, 10000])
+    | ' geqo_selection_bias = ' ( DEFAULT |  (' 1.5 ' | ' 1.8 ' | ' 2.0 ' ))
+    | ' geqo_seed = ' ( DEFAULT |  ( ' 0 ' | ' 0.5 ' | ' 1 ' ))
+    | ' default_statistics_target = ' ( DEFAULT |  random[1, 10000])
+    | ' constraint_exclusion = ' ( DEFAULT |  ( ' on ' | ' off ' | ' partition '))
+    | ' cursor_tuple_fraction = ' ( DEFAULT |  ( ' 0.0 ' | ' 0.1 ' | ' 0.000001 ' | ' 1 ' | ' 0.5 ' | ' 0.9999999 ' ))
+    | ' from_collapse_limit = ' ( DEFAULT |  random[1, 10000])
+    | ' jit = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' join_collapse_limit = ' ( DEFAULT |  random[1, 10000])
+    | ' parallel_leader_participation = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' plan_cache_mode = ' ( DEFAULT |  (' auto ' | ' force_generic_plan ' | ' force_custom_plan '))
+    ;
+
+createSet : SET ( SESSION | LOCAL )? configOptions;
+
+createStatistics
+    : CREATE STATISTICS ifNotExists? t=$tables.any c=$columns[t] ( <c.len>=2> | <c.len>=2>) ' ' new['statistics']
+    ( sts+=$' n_distinct ' sts+=$' dependencies ' sts+=$' mcv ' '(' sts.unique_any**random[1,sts.len, ', '] ')' )?
+    ON c.unique_any**random[2,c.len,','] FROM t error['cannot have more than 8 columns in statistics']
+    ;
+
+dropStatistics : DROP STATISTICS statistics[tables.any].any ;
+
+alterStatistics : ALTER STATISTICS statistics[tables.any].any SET STATISTICS (' -1 ' |random[0,10000]);
+
+createTable : CREATE (TEMPORARY | TEMP | UNLOGGED)? TABLE ifNotExists? new['table'] (
+        //TODO
+    );
+
 tables returns [t] : t=$query['SELECT table_name AS name, table_type AS type, table_schema FROM information_schema.tables WHERE table_schema NOT IN (\'information_schema\', \'pg_catalog\');', 'name', 'type', 'type'].filter['type','!=','VIEW'];
 views returns [v] : v=$query['SELECT table_name AS name, table_type AS type, table_schema FROM information_schema.tables WHERE table_schema NOT IN (\'information_schema\', \'pg_catalog\');', 'name', 'type', 'type'].filter['type','==','VIEW'];
 indexes [t=''] returns [i] 
