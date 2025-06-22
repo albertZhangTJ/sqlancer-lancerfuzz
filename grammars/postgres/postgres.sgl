@@ -180,7 +180,7 @@ explain : EXPLAIN ' (FORMAT JSON) ' select;
 
 // TODO: Expression generator
 
-op_classes : 'abstime_ops' | 'bit_ops' | 'bool_ops' | 'box_ops' | 'bpchar_ops' | 'bpchar_pattern_ops' | 'bytea_ops' | 'char_ops' | 'cidr_ops' | 'circle_ops' 
+fragment op_classes : 'abstime_ops' | 'bit_ops' | 'bool_ops' | 'box_ops' | 'bpchar_ops' | 'bpchar_pattern_ops' | 'bytea_ops' | 'char_ops' | 'cidr_ops' | 'circle_ops' 
     | 'date_ops' | 'float4_ops' | 'float8_ops' | 'inet_ops' | 'int2_ops' | 'int4_ops' | 'int8_ops' | 'interval_ops' | 'line_ops' | 'lseg_ops' | 'macaddr_ops' | 'macaddr8_ops' 
     | 'money_ops' | 'name_ops' | 'numeric_ops' | 'oid_ops' | 'path_ops' | 'point_ops' | 'polygon_ops' | 'text_ops' | 'text_pattern_ops' | 'tid_ops' | 'time_ops' 
     | 'timestamp_ops' | 'timestamptz_ops' | 'timetz_ops' | 'uuid_ops' | 'varbit_ops' | 'varchar_ops' | 'varchar_pattern_ops' | 'array_ops' | 'jsonb_ops' 
@@ -250,7 +250,7 @@ createSequence
     (CACHE random[1,75])? (NO? CYCLE)? (OWNED BY NONE)? error['is out of range']
     ;
 
-configOptions 
+fragment configOptions 
     : ' synchronous_commit = ' ( DEFAULT |  (' remote_apply ' | ' remote_write ' | ' local ' | ' off ' ))
     | ' wal_compression = ' ( DEFAULT |  ( ' 1 ' | ' 0 ' ))
     | ' commit_delay = ' ( DEFAULT |  random[1, 10000])
@@ -322,10 +322,58 @@ createStatistics
 
 dropStatistics : DROP STATISTICS statistics[tables.any].any ;
 
-alterStatistics : ALTER STATISTICS statistics[tables.any].any SET STATISTICS (' -1 ' |random[0,10000]);
+alterStatistics : ALTER STATISTICS statistics[tables.any].any SET STATISTICS (' -1 ' | random[0,10000]);
 
+fragment storageParameters 
+    : ' fillfactor = ' random[10, 100]
+    | ' parallel_workers = ' random[0, 1024]
+    | ' autovacuum_enabled = ' ( ' 0 ' | ' 1 ')
+    | ' autovacuum_vacuum_threshold = ' random[0,10000]
+    //| ' oids = ' ( ' 0 ' | ' 1 ')
+    | ' autovacuum_vacuum_scale_factor = ' ( ' 0 ' | ' 0.00001 ' | ' 0.01 ' | ' 0.1' | ' 0.2 ' | ' 0.5 ' | ' 0.8 ' | ' 0.9 ' | ' 1 ' )
+    | ' autovacuum_analyze_threshold = ' random[0,10000]
+    | ' autovacuum_analyze_scale_factor = ' ( ' 0 ' | ' 0.00001 ' | ' 0.01 ' | ' 0.1' | ' 0.2 ' | ' 0.5 ' | ' 0.8 ' | ' 0.9 ' | ' 1 ' )
+    | ' autovacuum_vacuum_cost_delay = ' random[1,100]
+    | ' autovacuum_vacuum_cost_limit = ' random[1,10000]
+    | ' autovacuum_freeze_min_age = ' random[0, 1000000000]
+    | ' autovacuum_freeze_max_age = ' random[100000, 2000000000]
+    | ' autovacuum_freeze_table_age = ' random[0, 2000000000]
+    ;
+
+fragment appendIndexParam
+    : (WITH '(' storageParameters error['unrecognized parameter', 'ALTER TABLE / ADD CONSTRAINT USING INDEX is not supported on partitioned tables'] ')' )? //todo allow repetition
+    ;
+
+fragment deleteOrUpdateAction : NO ACTION | RESTRICT | CASCADE | SET NULL | SET DEFAULT ;
+
+fragment appendExcludeElement : ( c.any | '(' expr ')' ) op_classes? (ASC | DESC)? (NULLS (FIRST | LAST))?;
+
+fragment tableConstriants 
+    : CHECK '(' boolean_expr ')' error['constraint must be added to child tables too', 'missing FROM-clause entry for table'] 
+    | UNIQUE '(' (c.unique_any)**random[1, c.len, ',', 95] ')' appendIndexParam
+    | PRIMARY_KEY '(' (c.unique_any)**random[1, c.len, ',', 95] ')' appendIndexParam
+    | FOREIGN_KEY '(' (cl+=c.unique_any)**random[1, c.len, ',', 95] ')' REFERENCES tt=tables.any cc=$columns[tt] '(' (cc.unique_any)**random[cl.len, ','] ')'
+      ( MATCH FULL | MATCH SIMPLE )?  ( ON DELETE deleteOrUpdateAction error['ERROR: invalid ON DELETE action for foreign key constraint containing generated column'] )?
+      ( ON UPDATE deleteOrUpdateAction error['invalid ON UPDATE action for foreign key constraint containing generated column'] )?
+      ( DEFERRABLE (INITIALLY DEFERRED | INITIALLY IMMEDIATE ) | NOT DEFERRABLE )?
+    | EXCLUDE '(' (appendExcludeElement WITH binary_comp_op)**random[1, ',', 99] ')' appendIndexParam wherePredicate?
+      error['is not valid', 'no operator matches', 'operator does not exist', 'unknown has no default operator class',
+          'exclusion constraints are not supported on partitioned tables', 'The exclusion operator must be related to the index operator class for the constraint',
+          'could not create exclusion constraint'
+      ]
+    ;
+
+fragment generateInherits
+    : INHERITS t=$tables '(' t.unique_any**random[1, t.len, ',', 90] ')'
 createTable : CREATE (TEMPORARY | TEMP | UNLOGGED)? TABLE ifNotExists? new['table'] (
-        //TODO
+        '(' (c+=new['columns'])**random[3,',' 50] (tableConstriants
+            error['constraints on temporary tables may reference only temporary tables','constraints on unlogged tables may reference only permanent or unlogged tables',
+                'constraints on permanent tables may reference only permanent tables', 'cannot be implemented', 'there is no unique constraint matching given keys for referenced table',
+                'cannot reference partitioned table', 'unsupported ON COMMIT and foreign key combination', 'ERROR: invalid ON DELETE action for foreign key constraint containing generated column',
+                'exclusion constraints are not supported on partitioned tables'
+            ]
+        )?  ')'
+
     );
 
 tables returns [t] : t=$query['SELECT table_name AS name, table_type AS type, table_schema FROM information_schema.tables WHERE table_schema NOT IN (\'information_schema\', \'pg_catalog\');', 'name', 'type', 'type'].filter['type','!=','VIEW'];

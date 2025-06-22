@@ -61,6 +61,34 @@ public class Fuzzer{
         public static int random(int min, int max){
             return (int)(min + (max-min+1)*Math.random());
         }
+        public static boolean get_boolean(){
+            return Math.random()>=0.5;
+        }
+        public static <T> List<T> subset(List<T> raw){
+            List<T> l = new ArrayList<>();
+            while (l.size()==0){
+                for (int idx=0; idx<raw.size(); idx++){
+                    if (Math.random()>=0.5){
+                        l.add(raw.get(idx));
+                    }
+                }
+            }
+            return l;
+        }
+        public static <T> List<T> subset(List<T> raw, int size){
+            if (raw.size()<size){
+                throw new UnavailableException("", false, true, false);
+            }
+            List<T> l = new ArrayList<>();
+            List<Integer> indexes = new ArrayList<>();
+            for (int i = 0; i < raw.size(); i++) {
+                indexes.add(i);
+            }
+            while (l.size()<size){
+                l.add(raw.get(indexes.remove(random_from_list(indexes))));
+            }
+            return l;
+        }
     }
 
     public static class Buffer {
@@ -575,7 +603,7 @@ public class Fuzzer{
         private int cursor; //non-decreasing, modulus entries.size() will be used for extracting index 
         private boolean isUninitialized;
 
-        public static final List<String> RESERVED_ATTR = Collections.unmodifiableList(Arrays.asList("new", "any", "next", "len", "unique_any", "query", "filter", "cur"));
+        public static final List<String> RESERVED_ATTR = Collections.unmodifiableList(Arrays.asList("new", "any", "next", "len", "unique_any", "subset", "query", "filter", "cur"));
         
         private Variable(){
             this.isSingleValued = false;
@@ -720,6 +748,31 @@ public class Fuzzer{
                 int idx = Rand.random_from_list(avail_idx);
                 this.uniqueUsageCount.set(idx, 1);
                 return this.entries.get(idx);
+            }
+            else if (name.equals("subset")){
+                if (this.isSingleValued){
+                    throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: attribute subset is not applicable to single-valued variables");
+                }
+                // TODO: Semantics design decision: shall we allow empty subset or not?
+                if (this.entries.size()==0){
+                    throw new UnavailableException("", false, true, false);
+                }
+                Variable v = Variable.factory();
+                List<Variable> l = new ArrayList<>();
+                if (args==null ||args.size()==0){
+                    l = Rand.subset(this.entries);
+                }
+                else {
+                    int target_size = args.get(0).getNumerical();
+                    if (target_size>this.entries.size()){
+                        throw new UnavailableException("", false, true, false);
+                    }
+                    l = Rand.subset(this.entries, target_size);
+                }
+                for (Variable var: l){
+                    v.addEntry(var);
+                }
+                return v;
             }
             else if (name.equals("len")){
                 if (this.isSingleValued){
