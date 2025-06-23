@@ -363,8 +363,23 @@ fragment tableConstriants
       ]
     ;
 
+fragment columnConstraints
+    : //todo
+    ;
+
 fragment generateInherits
     : INHERITS t=$tables '(' t.unique_any**random[1, t.len, ',', 90] ')'
+      error['has a type conflict', 'has a generation conflict', 'cannot create partitioned table as inheritance child', 'cannot inherit from temporary relation', 
+      'cannot inherit from partitioned table', 'has a collation conflict', 'inherits conflicting default values', 'specifies generation expression']
+    ;
+
+fragment generatePartitionBy [n=1]
+    : PARTITION BY ( RANGE | LIST n=$3 | HASH ) error['unrecognized parameter', 'cannot use constant expression', 'cannot add NO INHERIT constraint to partitioned table', 
+      'unrecognized parameter', 'unsupported PRIMARY KEY constraint with partition key definition', 'which is part of the partition key.', 
+      'unsupported UNIQUE constraint with partition key definition', 'does not accept data type'
+    ] '(' ('(' ')')**random[1, n, ','] ')' //todo
+    ;
+
 createTable : CREATE (TEMPORARY | TEMP | UNLOGGED)? TABLE ifNotExists? new['table'] (
         '(' (c+=new['columns'])**random[3,',' 50] (tableConstriants
             error['constraints on temporary tables may reference only temporary tables','constraints on unlogged tables may reference only permanent or unlogged tables',
@@ -372,9 +387,48 @@ createTable : CREATE (TEMPORARY | TEMP | UNLOGGED)? TABLE ifNotExists? new['tabl
                 'cannot reference partitioned table', 'unsupported ON COMMIT and foreign key combination', 'ERROR: invalid ON DELETE action for foreign key constraint containing generated column',
                 'exclusion constraints are not supported on partitioned tables'
             ]
-        )?  ')'
-
+        )?  ')' generateInherits? generatePartitionBy?
+    //todo
     );
+
+transaction : BEGIN ISOLATION LEVEL ( error['SET TRANSACTION ISOLATION LEVEL must be called before any query'] ( SERIALIZABLE | REPEATABLE READ | READ COMMITED | READ UNCOMMITED ))?;
+
+truncate : TRUNCATE TABLE? t=$tables t.unique_any**random[1, t.len, ',', 95] (RESTART IDENTITY | CONTINUE IDENTITY)? (CASCADE | RESTRICT)? error['cannot truncate a table referenced in a foreign key constraint', 'is not a table', 'is not distributed'];
+
+fragment commonInsertUpdateErrors : error['value too long for type character', 'cannot insert a non-DEFAULT value into column', 'not found in view targetlist'];
+
+update 
+    : error['conflicting key value violates exclusion constraint', 'reached maximum value of sequence', 'violates foreign key constraint', 
+      'violates not-null constraint', 'violates unique constraint', 'out of range', 'cannot cast', 'must be type boolean', 'is not unique', 
+      ' bit string too long', 'can only be updated to DEFAULT', 'division by zero', 'You might need to add explicit type casts.',
+      'invalid regular expression', 'View columns that are not columns of their base relation are not updatable','multiple assignments to same column', 
+      'new row violates check option for view', 'invalid input syntax for ', 'operator does not exist: text = boolean', 
+      'violates check constraint', 'could not determine which collation to use for string comparison', 'but expression is of type'
+    ] commonInsertUpdateErrors UPDATE t=tables.any c=$columns[t].subset SET (c.next '=' (const[c.cur] | DEFAULT | '(' expr[c.cur] ')') )**random[c.len, ','] wherePredicate**random[0,1,90]
+    ;
+
+fragment vacuumOption : ' FULL ' | ' FREEZE ' | ' ANALYZE ' | ' VERBOSE ' | ' DISABLE_PAGE_SKIPPING ' | ' SKIP_LOCKED ' | ' INDEX_CLEANUP ' | ' TRUNCATE ';
+
+fragment tablesAndColumns
+    : t=tables.any (c=$columns[t] '(' c.unique_any**random[1, c.len, ','] ')')? 
+    ;
+
+vacuum : VACUUM 
+    ( '(' (vacuumOption (' 0 ' | ' 1 ')?)**random[1,3,','] ')' tablesAndColumns?
+      | ( ' FULL ' | ' FREEZE ' | ' VERBOSE ' ) ( ANALYZE tablesAndColumns | tables.any )
+    ) error['VACUUM cannot run inside a transaction block', 'deadlock', 'ERROR: ANALYZE option must be specified when a column list is provided', 'VACUUM option DISABLE_PAGE_SKIPPING cannot be used with FULL'] 
+    ;
+
+fragment groupingErrors : error['non-integer constant in GROUP BY', 'must appear in the GROUP BY clause or be used in an aggregate function', 'is not in select list', 'aggregate functions are not allowed in GROUP BY'];
+
+view [n_mat = true, n_rec = true]
+    : CREATE (MATERIALIZED n_mat=$false | (OR REPLACE)? (TEMP | TEMPORARY)? ( RECURSIVE n_rec=$false)? ) VIEW new['view'] '(' (c+=new['column'])**random[1, 3, ',', 95] ')'
+      AS '(' select[c.len] ')' ( <n_mat> ( <n_rec> WITH ( CASCADED | LOCAL ) CHECK OPTION  | ' ')| ' ') groupingErrors 
+      error['already exists', 'cannot drop columns from view', 'non-integer constant in ORDER BY', 'for SELECT DISTINCT, ORDER BY expressions must appear in select list', 'cannot change data type of view column', 
+        'specified more than once', 'materialized views must not use temporary tables or views', 
+        'does not have the form non-recursive-term', 'is not a view', 'non-integer constant in DISTINCT ON', 'SELECT DISTINCT ON expressions must match initial ORDER BY expressions'
+      ]
+    ; 
 
 tables returns [t] : t=$query['SELECT table_name AS name, table_type AS type, table_schema FROM information_schema.tables WHERE table_schema NOT IN (\'information_schema\', \'pg_catalog\');', 'name', 'type', 'type'].filter['type','!=','VIEW'];
 views returns [v] : v=$query['SELECT table_name AS name, table_type AS type, table_schema FROM information_schema.tables WHERE table_schema NOT IN (\'information_schema\', \'pg_catalog\');', 'name', 'type', 'type'].filter['type','==','VIEW'];
