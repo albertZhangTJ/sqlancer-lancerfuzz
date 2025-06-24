@@ -395,8 +395,6 @@ transaction : BEGIN ISOLATION LEVEL ( error['SET TRANSACTION ISOLATION LEVEL mus
 
 truncate : TRUNCATE TABLE? t=$tables t.unique_any**random[1, t.len, ',', 95] (RESTART IDENTITY | CONTINUE IDENTITY)? (CASCADE | RESTRICT)? error['cannot truncate a table referenced in a foreign key constraint', 'is not a table', 'is not distributed'];
 
-fragment commonInsertUpdateErrors : error['value too long for type character', 'cannot insert a non-DEFAULT value into column', 'not found in view targetlist'];
-
 update 
     : error['conflicting key value violates exclusion constraint', 'reached maximum value of sequence', 'violates foreign key constraint', 
       'violates not-null constraint', 'violates unique constraint', 'out of range', 'cannot cast', 'must be type boolean', 'is not unique', 
@@ -404,7 +402,7 @@ update
       'invalid regular expression', 'View columns that are not columns of their base relation are not updatable','multiple assignments to same column', 
       'new row violates check option for view', 'invalid input syntax for ', 'operator does not exist: text = boolean', 
       'violates check constraint', 'could not determine which collation to use for string comparison', 'but expression is of type'
-    ] commonInsertUpdateErrors UPDATE t=tables.any c=$columns[t].subset SET (c.next '=' (const[c.cur] | DEFAULT | '(' expr[c.cur] ')') )**random[c.len, ','] wherePredicate**random[0,1,90]
+    ] commonInsertUpdateErr UPDATE t=tables.any c=$columns[t].subset SET (c.next '=' (const[c.cur] | DEFAULT | '(' expr[c.cur] ')') )**random[c.len, ','] wherePredicate**random[0,1,90]
     ;
 
 fragment vacuumOption : ' FULL ' | ' FREEZE ' | ' ANALYZE ' | ' VERBOSE ' | ' DISABLE_PAGE_SKIPPING ' | ' SKIP_LOCKED ' | ' INDEX_CLEANUP ' | ' TRUNCATE ';
@@ -419,16 +417,39 @@ vacuum : VACUUM
     ) error['VACUUM cannot run inside a transaction block', 'deadlock', 'ERROR: ANALYZE option must be specified when a column list is provided', 'VACUUM option DISABLE_PAGE_SKIPPING cannot be used with FULL'] 
     ;
 
-fragment groupingErrors : error['non-integer constant in GROUP BY', 'must appear in the GROUP BY clause or be used in an aggregate function', 'is not in select list', 'aggregate functions are not allowed in GROUP BY'];
-
 view [n_mat = true, n_rec = true]
     : CREATE (MATERIALIZED n_mat=$false | (OR REPLACE)? (TEMP | TEMPORARY)? ( RECURSIVE n_rec=$false)? ) VIEW new['view'] '(' (c+=new['column'])**random[1, 3, ',', 95] ')'
-      AS '(' select[c.len] ')' ( <n_mat> ( <n_rec> WITH ( CASCADED | LOCAL ) CHECK OPTION  | ' ')| ' ') groupingErrors 
+      AS '(' select[c.len] ')' ( <n_mat> ( <n_rec> WITH ( CASCADED | LOCAL ) CHECK OPTION  | ' ')| ' ') groupingErr
       error['already exists', 'cannot drop columns from view', 'non-integer constant in ORDER BY', 'for SELECT DISTINCT, ORDER BY expressions must appear in select list', 'cannot change data type of view column', 
         'specified more than once', 'materialized views must not use temporary tables or views', 
         'does not have the form non-recursive-term', 'is not a view', 'non-integer constant in DISTINCT ON', 'SELECT DISTINCT ON expressions must match initial ORDER BY expressions'
-      ]
+      ] commonExprErr
     ; 
+
+fragment funcErr : error['out of valid range', 'cannot take logarithm of a negative number', 'cannot take logarithm of zero', 'requested character too large for encoding', 
+                'null character not permitted', 'requested character not valid for encoding', 
+                'requested length too large', 'invalid memory alloc request size', 'negative substring length not allowed', 'invalid mask length'];
+fragment bitStrOpErr : error['cannot XOR bit strings of different sizes', 'cannot AND bit strings of different sizes', 
+                'cannot OR bit strings of different sizes', 'must be type boolean, not type text'];
+fragment toCharFuncErr : error['multiple decimal points', 'and decimal point together', 'multiple decimal points', 'cannot use "S" twice', 'must be ahead of "PR"', 
+                'cannot use "S" and "PL"/"MI"/"SG"/"PR" together', 'cannot use "S" and "SG" together', 'cannot use "S" and "MI" together', 
+                'cannot use "S" and "PL" together', 'cannot use "PR" and "S"/"PL"/"MI"/"SG" together', 'is not a number'];
+fragment groupingErr : error['non-integer constant in GROUP BY', 'must appear in the GROUP BY clause or be used in an aggregate function', 
+                'is not in select list', 'aggregate functions are not allowed in GROUP BY'];
+fragment commonInsertUpdateErr : error['value too long for type character', 'cannot insert a non-DEFAULT value into column', 'not found in view targetlist'];
+fragment commonRangeExpressionErr : error['range lower bound must be less than or equal to range upper bound', 'result of range difference would not be contiguous', 
+            'out of range', 'malformed range literal', 'result of range union would not be contiguous'];
+fragment commonRegexExpressionErr : error['is not a valid hexadecimal digit'];
+fragment funcRegexErr : error['encoding conversion from', 'not supported'];
+fragment commonExpressionRegexErr : error['cannot convert infinity to '];
+fragment commonExprErr 
+    : error['You might need to add explicit type casts', 'invalid regular expression', 'could not determine which collation to use', 'invalid regular expression', 
+    'operator does not exist', 'quantifier operand invalid', 'collation mismatch', 'collations are not supported', 'operator is not unique', 'is not a valid binary digit', 
+    'invalid hexadecimal digit', 'invalid hexadecimal data: odd number of digits', 'zero raised to a negative power is undefined', 'division by zero', 'invalid input syntax for type money', 
+    'invalid input syntax for type', 'cannot cast type', 'value overflows numeric format', 'LIKE pattern must not end with escape character', 
+    'is of type boolean but expression is of type text', 
+    'a negative number raised to a non-integer power yields a complex result', 'could not determine polymorphic type because input has type unknown', 'character number must be positive']
+    toCharFuncErr bitStrOpErr funcErr commonRangeExpressionErr commonRegexExpressionErr;
 
 windowFunctionNames : ' row_number ' | ' rank ' | ' dense_rank ' | ' percent_rank ' | ' cume_dist ' | ' ntile ' | ' lag ' | ' lead ' | ' first_value ' | ' last_value ' | ' nth_value ';
 
