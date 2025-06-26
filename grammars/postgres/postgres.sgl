@@ -131,6 +131,26 @@ real_func
     | ' atanh(' real_expr ') '
     ;
 
+range_expr : range_const 95% | range_func;
+
+range_const : ('(' | '[' ) int_const ',' int_const (']' | ')' ) '::int4range';
+
+range_func : ' range_merge(' range_expr ', ' range_expr ') ';
+
+boolean_expr : boolean_const 95% | boolean_func ;
+
+boolean_const : TRUE | FALSE;
+
+boolean_func
+    : ' inet_same_family(' inet_expr ', ' inet_expr ') '
+    | ' pg_jit_available() '
+    | ' lower_inc(' range_expr ') '
+    | ' lower_inf(' range_expr ') '
+    | ' upper_inc(' range_expr ') '
+    | ' upper_inf(' range_expr ') '
+    | ' isempty(' range_expr ') '
+    ;
+
 int_expr : int_const 95% | int_func;
 
 int_const : DS**random[0,1,90] DIGIT+;
@@ -196,20 +216,16 @@ const
     | null_const
     | text_const
     | int_const
-    | float_const
-    | double_const
+    | real_const
     | dec_const
     | bit_const
     | range_const
     ;
 
-boolean_const : ' TRUE ' | ' FALSE ' ;
 null_const : ' NULL ';
-float_const : (DS)**random[0, 1, '', 90] int_val ('.' int_val )? ;
-double_const : float_const;
 dec_const [ts=4, ds=2] : (DS)**random[0, 1, '', 90] gs=$ts$-ds DIGIT**gs ( '.' DIGIT**ds )? ;
 bit_const [size=8] : ' B(\'' ( '0' | '1' )**random[1,size] '\')';
-range_const : ('(' | '[' ) int_const ',' int_const (']' | ')' ) '::int4range';
+
 
 //abs [type] : ' ABS(' expr[type] ') ';
 //upper : ' UPPER(' str_expr ') ';
@@ -655,6 +671,7 @@ EXPLAIN : SPACE E X P L A I N SPACE;
 EXPRESSION : SPACE E X P R E S S I O N SPACE;
 EXTENDED : SPACE E X T E N D E D SPACE;
 EXTERNAL : SPACE E X T E R N A L SPACE;
+FALSE : SPACE F A L S E SPACE;
 FIRST : SPACE F I R S T SPACE;
 FLOAT : SPACE F L O A T SPACE;
 FOREIGN_KEY : SPACE F O R E I G N '_' K E Y SPACE;
@@ -746,6 +763,7 @@ TEMP : SPACE T E M P SPACE;
 TEMPORARY : SPACE T E M P O R A R Y SPACE;
 TEXT : SPACE T E X T SPACE;
 TO : SPACE T O SPACE;
+TRUE : SPACE T R U E SPACE;
 TRUNCATE : SPACE T R U N C A T E SPACE;
 TYPE : SPACE T Y P E SPACE;
 UNCOMMITED : SPACE U N C O M M I T E D SPACE;
