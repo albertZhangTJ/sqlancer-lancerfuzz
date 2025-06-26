@@ -1,7 +1,6 @@
 grammar postgres;
 
 // PostgresAggregate.java
-// TODO: maybe pass operands in instead of generating here
 aggregate_func 
     : 'AVG(' ( int_expr | float_expr | real_expr | decimal_expr )**random[1, ', '] ')' 
     | 'BIT_AND(' int_expr**random[1, ', '] ')' | 'BIT_OR(' int_expr**random[1, ', '] ')' | 'BOOL_AND(' bool_expr**random[1, ', '] ')'
@@ -62,16 +61,140 @@ collate_op
 // PostgresColumnReference.java
 // TODO
 
+postfixOperator : ' IS NULL ' | ' ISNULL ' | ' IS UNKNOWN ' | ' IS NOT NULL ' | ' NOTNULL ' | ' IS NOT UNKNOWN ' | ' IS TRUE ' | ' IS FALSE ';
+prefixOperator : ' NOT ' | ' + ' | ' - ';
+inOperator : NOT? IN;
+
+fromTable : //TODO
+    ;
+
+fragment subquery
+    : ' (' cc=$select ') ' AS tt=new['table'] tt.c=$cc t+=$tt
+    ;
+
 // PostgresConcatOperation.java
 concat_op
     : ' || '
     ;
 
+inet_expr : inet_const 95% | inet_func;
+
+inet_const : SQ random[0, 255, 0] ':' random[0, 255, 0] ':' random[0, 255, 0] ':' random[0, 255, 0] ('/' random[1,32])? SQ; 
+
+inet_func
+    : ' broadcast(' inet_expr ') '
+    | ' hostmask(' inet_expr ') '
+    | ' netmask(' inet_expr ') '
+    | ' set_masklen(' inet_expr ', ' inet_expr ') '
+    ;
+
+real_expr : real_const 95% | real_func;
+
+real_const : DS**random[0,1,90] DIGIT+ ( DOT DIGIT+ )**random[0,1,25];
+
+real_func
+    : ' abs(' real_expr ') '
+    | ' pg_notification_queue_usage() '
+    | ' cbrt(' real_expr ') '
+    | ' ceiling(' real_expr ') '
+    | ' degrees(' real_expr ') '
+    | ' exp(' real_expr ') '
+    | ' ln(' real_expr ') '
+    | ' log(' real_expr ') '
+    | ' log(' real_expr ', ' real_expr ') '
+    | ' pi() '
+    | ' power(' real_expr ', ' real_expr ') '
+    | ' trunc(' real_expr ') '
+    | ' trunc(' real_expr ', ' int_expr ') '
+    | ' floor(' real_expr ') '
+    | ' acos(' real_expr ') '
+    | ' acosd(' real_expr ') '
+    | ' asin(' real_expr ') '
+    | ' asind(' real_expr ') '
+    | ' atan(' real_expr ') '
+    | ' atand(' real_expr ') '
+    | ' atan2(' real_expr ', ' real_expr ') '
+    | ' atan2d(' real_expr ', ' real_expr ') '
+    | ' cos(' real_expr ') '
+    | ' cosd(' real_expr ') '
+    | ' cot(' real_expr ') '
+    | ' cotd(' real_expr ') '
+    | ' sin(' real_expr ') '
+    | ' sind(' real_expr ') '
+    | ' tan(' real_expr ') '
+    | ' tand(' real_expr ') '
+    | ' sinh(' real_expr ') '
+    | ' cosh(' real_expr ') '
+    | ' tanh(' real_expr ') '
+    | ' asinh(' real_expr ') '
+    | ' acosh(' real_expr ') '
+    | ' atanh(' real_expr ') '
+    ;
+
+int_expr : int_const 95% | int_func;
+
+int_const : DS**random[0,1,90] DIGIT+;
+
+int_func 
+    : ' abs(' int_expr ') '
+    | ' length(' text_expr ') '
+    | ' num_nonnulls(' rexpr**random[1, 10, ','] ') '
+    | ' num_nulls(' rexpr**random[1, 10, ','] ') '
+    | ' family(' inet_expr ') '
+    | ' masklen(' inet_expr ') '
+    | ' inet_client_port() '
+    | ' pg_backend_pid() '
+    | ' pg_trigger_depth() '
+    | ' ascii(' text_expr ') '
+    | ' strpos(' text_expr ', ' text_expr ') '
+    | ' get_bit(' text_expr '::bytea, ' int_expr ') '
+    | ' get_byte(' text_expr '::bytea, ' int_expr ') '
+    | ' lower(' range_expr ') '
+    | ' upper(' range_expr ') '
+    | ' pg_column_size(' text_expr ')  '
+    ;
+
+text_expr : text_const 95% | text_func;
+
+text_const : '\'' (CH | DIGIT)+ '\'';
+
+text_func 
+    : ' abbrev(' inet_expr ') '
+    | ' text('  inet_expr ') '
+    | ' current_database() ' 
+    | ' current_schema() '
+    | ' pg_current_logfile() '
+    | ' version() '
+    | ' to_char(' text_expr ',' text_expr ') '
+    | ' btrim(' text_expr ', ' text_expr ') '
+    | ' chr(' random[1,127] ') '
+    | ' convert_from(' text_expr ',' ( ' "UTF8" ' | ' "LATIN1" ')') '
+    | ' initcap(' text_expr ') '
+    | ' left(' text_expr ', ' int_expr ') '
+    | ' lower(' text_expr ') '
+    | ' md5(' text_expr ') '
+    | ' upper(' text_expr ') '
+    | ' quote_literal(' text_expr ') '
+    | ' quote_ident(' text_expr ') '
+    | ' regexp_replace(' text_expr ',' text_expr ',' text_expr') '
+    | ' replace(' text_expr ',' text_expr') '
+    | ' reverse(' text_expr') '
+    | ' right(' text_expr ', ' int_expr ') '
+    | ' rpad(' text_expr ', ' int_expr ', ' text_expr ') '
+    | ' rtrim(' text_expr ', ' text_expr') '
+    | ' split_part(' text_expr ', ' text_expr ', ' int_expr ') '
+    | ' substr(' text_expr ', ' int_expr ', ' int_expr ') '
+    | ' to_ascii(' text_expr ') '
+    | ' translate(' text_expr ', ' text_expr ', ' text_expr ') '
+    | ' to_hex(' int_expr ') '
+    ;
+
+
 // PostgresConstant.java
 const
     : boolean_const
     | null_const
-    | str_const
+    | text_const
     | int_const
     | float_const
     | double_const
@@ -82,20 +205,18 @@ const
 
 boolean_const : ' TRUE ' | ' FALSE ' ;
 null_const : ' NULL ';
-str_const :  DQ ( (CH | DIGIT) )**random[1, 100] DQ ;
-int_const : (DS)**random[0, 1, 90] (DIGIT)**random[1, 5] ;
 float_const : (DS)**random[0, 1, '', 90] int_val ('.' int_val )? ;
 double_const : float_const;
 dec_const [ts=4, ds=2] : (DS)**random[0, 1, '', 90] gs=$ts$-ds DIGIT**gs ( '.' DIGIT**ds )? ;
 bit_const [size=8] : ' B(\'' ( '0' | '1' )**random[1,size] '\')';
 range_const : ('(' | '[' ) int_const ',' int_const (']' | ')' ) '::int4range';
 
-abs [type] : ' ABS(' expr[type] ') ';
-upper : ' UPPER(' str_expr ') ';
-lower : ' LOWER(' str_expr ') ';
-length : ' LENGTH(' str_expr ') ';
-num_nonnulls : ' NUM_NONNULLS(' expr**random[1, 10, ','] ') ';
-num_nulls : ' NUM_NULLS(' expr**random[1, 10, ','] ') ';
+//abs [type] : ' ABS(' expr[type] ') ';
+//upper : ' UPPER(' str_expr ') ';
+//lower : ' LOWER(' str_expr ') ';
+//length : ' LENGTH(' str_expr ') ';
+//num_nonnulls : ' NUM_NONNULLS(' expr**random[1, 10, ','] ') ';
+//num_nulls : ' NUM_NULLS(' expr**random[1, 10, ','] ') ';
 
 data_types : 'INT' | 'BOOLEAN' | 'TEXT' | 'DECIMAL' | 'FLOAT' | 'REAL' | 'RANGE' | 'MONEY' | 'BIT' | 'INET' ;
 
@@ -451,9 +572,21 @@ fragment commonExprErr
     'a negative number raised to a non-integer power yields a complex result', 'could not determine polymorphic type because input has type unknown', 'character number must be positive']
     toCharFuncErr bitStrOpErr funcErr commonRangeExpressionErr commonRegexExpressionErr;
 
+setConstraints : SET CONSTRAINTS ALL ( DEFERRED | IMMEDIATE );
+resetRole : RESET ROLE;
+resetAll : RESET ALL;
+
 windowFunctionNames : ' row_number ' | ' rank ' | ' dense_rank ' | ' percent_rank ' | ' cume_dist ' | ' ntile ' | ' lag ' | ' lead ' | ' first_value ' | ' last_value ' | ' nth_value ';
 
 //todo window function generation
+funcArgs [fn=''] 
+    : ( <fn==' ntile '> int_const
+      | <fn!=' ntile '> 
+        ( <fn==''
+        |
+        )
+      )
+    ;
 
 tables returns [t] : t=$query['SELECT table_name AS name, table_type AS type, table_schema FROM information_schema.tables WHERE table_schema NOT IN (\'information_schema\', \'pg_catalog\');', 'name', 'type', 'type'].filter['type','!=','VIEW'];
 views returns [v] : v=$query['SELECT table_name AS name, table_type AS type, table_schema FROM information_schema.tables WHERE table_schema NOT IN (\'information_schema\', \'pg_catalog\');', 'name', 'type', 'type'].filter['type','==','VIEW'];
@@ -496,6 +629,8 @@ COMMENT : SPACE C O M M E N T SPACE;
 COMMITED : SPACE C O M M I T E D SPACE;
 CONCURRENTLY : SPACE C O N C U R R E N T L Y SPACE;
 CONFLICT : SPACE C O N F L I C T SPACE;
+CONSTRAINT : SPACE C O N S T R A I N T SPACE;
+CONSTRAINTS : SPACE C O N S T R A I N T S SPACE;
 CONTINUE : SPACE C O N T I N U E SPACE;
 COPY : SPACE C O P Y SPACE;
 CREATE : SPACE C R E A T E SPACE;
@@ -590,6 +725,7 @@ RESET : SPACE R E S E T SPACE;
 RESTART : SPACE R E S T A R T SPACE;
 RESTRICT : SPACE R E S T R I C T SPACE;
 RETURNING : SPACE R E T U R N I N G SPACE;
+ROLE : SPACE R O L E SPACE;
 SCHEMA : SPACE S C H E M A SPACE;
 SELECT : SPACE S E L E C T SPACE;
 SEQUENCE : SPACE S E Q U E N C E SPACE;
@@ -640,37 +776,38 @@ US : '_';
 DS : '-';
 ASTERISK : '*';
 DQ : '\"';
+SQ : '\'';
 COMMA : ',';
 DOT : '.';
 
 fragment DIGIT : [0-9];
 fragment SPACE : [\u0020];
 fragment NL : [\n];
-fragment A : [A];
-fragment B : [B];
-fragment C : [C];
-fragment D : [D];
-fragment E : [E];
-fragment F : [F];
-fragment G : [G];
-fragment H : [H];
-fragment I : [I];
-fragment J : [J];
-fragment K : [K];
-fragment L : [L];
-fragment M : [M];
-fragment N : [N];
-fragment O : [O];
-fragment P : [P];
-fragment Q : [Q];
-fragment R : [R];
-fragment S : [S];
-fragment T : [T];
-fragment U : [U];
-fragment V : [V];
-fragment W : [W];
-fragment X : [X];
-fragment Y : [Y];
-fragment Z : [Z];
-fragment CH : [A-Z];
+fragment A : [A,a];
+fragment B : [B,b];
+fragment C : [C,c];
+fragment D : [D,d];
+fragment E : [E,e];
+fragment F : [F,f];
+fragment G : [G,g];
+fragment H : [H,h];
+fragment I : [I,i];
+fragment J : [J,j];
+fragment K : [K,k];
+fragment L : [L,l];
+fragment M : [M,m];
+fragment N : [N,n];
+fragment O : [O,o];
+fragment P : [P,p];
+fragment Q : [Q,q];
+fragment R : [R,r];
+fragment S : [S,s];
+fragment T : [T,t];
+fragment U : [U,u];
+fragment V : [V,v];
+fragment W : [W,w];
+fragment X : [X,x];
+fragment Y : [Y,y];
+fragment Z : [Z,z];
+fragment CH : [A-Z, a-z];
 

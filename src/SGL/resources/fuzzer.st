@@ -75,7 +75,7 @@ public class Fuzzer{
             }
             return l;
         }
-        public static <T> List<T> subset(List<T> raw, int size){
+        public static <T> List<T> subset(List<T> raw, int size) throws UnavailableException{
             if (raw.size()<size){
                 throw new UnavailableException("", false, true, false);
             }
@@ -85,7 +85,9 @@ public class Fuzzer{
                 indexes.add(i);
             }
             while (l.size()<size){
-                l.add(raw.get(indexes.remove(random_from_list(indexes))));
+                int index = random_from_list(indexes);
+                indexes.remove(index);
+                l.add(raw.get(index));
             }
             return l;
         }
