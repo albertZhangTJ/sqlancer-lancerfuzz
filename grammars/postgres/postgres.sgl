@@ -2,11 +2,11 @@ grammar postgres;
 
 // PostgresAggregate.java
 aggregate_func 
-    : 'AVG(' ( int_expr | float_expr | real_expr | decimal_expr )**random[1, ', '] ')' 
-    | 'BIT_AND(' int_expr**random[1, ', '] ')' | 'BIT_OR(' int_expr**random[1, ', '] ')' | 'BOOL_AND(' bool_expr**random[1, ', '] ')'
-    | 'BOOL_AND(' bool_expr**random[1, ', '] ')' | 'COUNT(' int_expr**random[1, ', '] ')' | 'EVERY(' bool_expr**random[1, ', '] ')'
+    : 'AVG(' ( int_expr | real_expr )**random[1, ', '] ')' 
+    | 'BIT_AND(' int_expr**random[1, ', '] ')' | 'BIT_OR(' int_expr**random[1, ', '] ')' | 'BOOL_AND(' boolean_expr**random[1, ', '] ')'
+    | 'BOOL_AND(' boolean_expr**random[1, ', '] ')' | 'COUNT(' int_expr**random[1, ', '] ')' | 'EVERY(' boolean_expr**random[1, ', '] ')'
     | 'MAX(' any_expr**random[1, ', '] ')' | 'MIN(' any_expr**random[1, ', '] ')'
-    | 'SUM(' ( int_expr | float_expr | real_expr | decimal_expr )**random[1, ', '] ')' 
+    | 'SUM(' ( int_expr | real_expr )**random[1, ', '] ')' 
     ;
 
 // PostgresAlias.java
@@ -39,8 +39,8 @@ binary_logical_op
     : ' AND ' | ' OR ' 
     ;
 
-// PostgresBinaryRangeOperation.java
-binary_range_op
+// PostgresBinaryRangeOperation.java.utf8
+ binary_range_op
     : '+' | '-' | '*' 
     ;
 
@@ -55,7 +55,7 @@ cast_op
 
 // PostgresCollate.java
 collate_op
-    : ' COLLATE '
+    : ' COLLATE ' collates.any
     ;
 
 // PostgresColumnReference.java
@@ -77,6 +77,29 @@ concat_op
     : ' || '
     ;
 
+expr [type] : et=type_matching[type]
+    ( <et=='INT'> int_expr
+    | <et=='BOOLEAN'> boolean_expr
+    | <et=='TEXT'> text_expr
+    | <et=='REAL'> real_expr
+    | <et=='INET'> inet_expr
+    | <et=='RANGE'> range_expr
+    | <et=='MONEY'> money_expr
+    | <et=='BIT'> bit_expr
+    );
+
+any_expr
+    : int_expr
+    | boolean_expr
+    | text_expr
+    | real_expr
+    | inet_expr
+    | range_expr
+    | money_expr
+    | bit_expr
+    | aggregate_func
+    ;
+
 inet_expr : inet_const 95% | inet_func;
 
 inet_const : SQ random[0, 255, 0] ':' random[0, 255, 0] ':' random[0, 255, 0] ':' random[0, 255, 0] ('/' random[1,32])? SQ; 
@@ -88,7 +111,9 @@ inet_func
     | ' set_masklen(' inet_expr ', ' inet_expr ') '
     ;
 
-real_expr : real_const 95% | real_func;
+real_expr : real_const 90% | real_func | real_operation;
+
+real_operation : real_expr binary_arith_op real_expr;
 
 real_const : DS**random[0,1,90] DIGIT+ ( DOT DIGIT+ )**random[0,1,25];
 
@@ -131,15 +156,23 @@ real_func
     | ' atanh(' real_expr ') '
     ;
 
-range_expr : range_const 95% | range_func;
+range_expr : range_const 90% | range_func | range_operation ;
+
+range_operation : range_expr binary_range_op range_expr;
 
 range_const : ('(' | '[' ) int_const ',' int_const (']' | ')' ) '::int4range';
 
 range_func : ' range_merge(' range_expr ', ' range_expr ') ';
 
-boolean_expr : boolean_const 95% | boolean_func ;
+boolean_expr : boolean_const 90% | boolean_func | boolean_operation ;
 
 boolean_const : TRUE | FALSE;
+
+boolean_operation 
+    : boolean_expr binary_logical_op boolean_expr
+    | real_expr binary_comp_op real_expr
+    | range_expr binary_range_comp_op range_expr
+    ;
 
 boolean_func
     : ' inet_same_family(' inet_expr ', ' inet_expr ') '
@@ -151,7 +184,9 @@ boolean_func
     | ' isempty(' range_expr ') '
     ;
 
-int_expr : int_const 95% | int_func;
+int_expr : int_const 90% | int_func | int_operation;
+
+int_operation : int_expr binary_arith_op int_expr;
 
 int_const : DS**random[0,1,90] DIGIT+;
 
@@ -174,7 +209,9 @@ int_func
     | ' pg_column_size(' text_expr ')  '
     ;
 
-text_expr : text_const 95% | text_func;
+text_expr : text_const 90% | text_func | text_operation;
+
+text_operation : text_expr concat_op text_expr;
 
 text_const : '\'' (CH | DIGIT)+ '\'';
 
@@ -211,21 +248,27 @@ text_func
 
 
 // PostgresConstant.java
-const
-    : boolean_const
-    | null_const
-    | text_const
-    | int_const
-    | real_const
-    | dec_const
-    | bit_const
-    | range_const
-    ;
+// const
+//     : boolean_const
+//     | null_const
+//     | text_const
+//     | int_const
+//     | real_const
+//     | dec_const
+//     | bit_const
+//     | range_const
+//     ;
 
 null_const : ' NULL ';
 dec_const [ts=4, ds=2] : (DS)**random[0, 1, '', 90] gs=$ts$-ds DIGIT**gs ( '.' DIGIT**ds )? ;
 bit_const [size=8] : ' B(\'' ( '0' | '1' )**random[1,size] '\')';
 
+money_expr : money_const;
+money_const : '\'' '$'? int_const '\'' cast_op 'MONEY';
+
+bit_expr : bit_const | bit_operation ;
+
+bit_operation : bit_expr binary_bit_op bit_expr;
 
 //abs [type] : ' ABS(' expr[type] ') ';
 //upper : ' UPPER(' str_expr ') ';
@@ -234,7 +277,29 @@ bit_const [size=8] : ' B(\'' ( '0' | '1' )**random[1,size] '\')';
 //num_nonnulls : ' NUM_NONNULLS(' expr**random[1, 10, ','] ') ';
 //num_nulls : ' NUM_NULLS(' expr**random[1, 10, ','] ') ';
 
-data_types : 'INT' | 'BOOLEAN' | 'TEXT' | 'DECIMAL' | 'FLOAT' | 'REAL' | 'RANGE' | 'MONEY' | 'BIT' | 'INET' ;
+data_types : SMALLINT | INTEGER | BIGINT | BOOLEAN | TEXT | CHARACTER | CHARACTER_VARYING | NAME | REGCLASS | NUMERIC | DOUBLE_PRECISION | REAL | INT4RANGE | MONEY | BIT | BIT_VARYING | INET  ;
+
+effective_data_types : 'INT' |' BOOLEAN' | 'TEXT' | 'REAL' | 'RANGE' | 'MONEY' | 'BIT' | 'INET';
+
+type_matching [type] returns [effective_type]
+    : <type=='smallint'> effective_type=$'INT'
+    | <type=='integer'> effective_type=$'INT'
+    | <type=='bigint'> effective_type=$'INT'
+    | <type=='boolean'> effective_type=$'BOOLEAN'
+    | <type=='text'> effective_type=$'TEXT'
+    | <type=='character varying'> effective_type=$'TEXT'
+    | <type=='character'> effective_type=$'TEXT'
+    | <type=='name'> effective_type=$'TEXT'
+    | <type=='regclass'> effective_type=$'TEXT'
+    | <type=='numeric'> effective_type=$'REAL'
+    | <type=='double precision'> effective_type=$'REAL'
+    | <type=='real'> effective_type=$'REAL'
+    | <type=='int4range'> effective_type=$'RANGE'
+    | <type=='money'> effective_type=$'MONEY'
+    | <type=='bit'> effective_type=$'BIT'
+    | <type=='bit varying'> effective_type=$'BIT'
+    | <type=='inet'> effective_type=$'INET'
+    ;
 
 fragment alterColumn : ALTER COLUMN? columns[t].any ' ';
 
@@ -315,7 +380,6 @@ dropIndex
 
 explain : EXPLAIN ' (FORMAT JSON) ' select;
 
-// TODO: Expression generator
 
 fragment op_classes : 'abstime_ops' | 'bit_ops' | 'bool_ops' | 'box_ops' | 'bpchar_ops' | 'bpchar_pattern_ops' | 'bytea_ops' | 'char_ops' | 'cidr_ops' | 'circle_ops' 
     | 'date_ops' | 'float4_ops' | 'float8_ops' | 'inet_ops' | 'int2_ops' | 'int4_ops' | 'int8_ops' | 'interval_ops' | 'line_ops' | 'lseg_ops' | 'macaddr_ops' | 'macaddr8_ops' 
@@ -622,6 +686,7 @@ columns [t] returns [c]
 statistics [t] returns [s]
     : s=$query[ 'SELECT n.nspname as s_name, s.stxname as name FROM pg_statistic_ext s JOIN pg_class c ON c.oid = s.stxrelid JOIN pg_namespace n ON n.oid = s.stxnamespace WHERE c.relname = \'' +$ t +$ '\'', 'name']
     ;
+collates returns [c] : c=$query['SELECT collname FROM pg_collation ORDER BY collname', 'collname'];
 
 ifNotExists : IF NOT EXISTS;
 ifExists : IF EXISTS;
@@ -635,9 +700,15 @@ ANALYZE : SPACE A N A L Y Z E SPACE;
 AS : SPACE A S SPACE;
 ASC : SPACE A S C SPACE;
 BEGIN : SPACE B E G I N SPACE;
+BIGINT : SPACE B I G I N T SPACE;
+BIT : SPACE B I T SPACE;
+BIT_VARYING : SPACE B I T SPACE V A R Y I N G SPACE;
+BOOLEAN : SPACE B O O L E A N SPACE;
 BY : SPACE B Y SPACE;
 CACHE : SPACE C A C H E SPACE;
 CASCADE : SPACE C A S C A D E SPACE;
+CHARACTER : SPACE C H A R A C T E R SPACE;
+CHARACTER_VARYING : SPACE C H A R A C T E R SPACE V A R Y I N G SPACE;
 CHECK : SPACE C H E C K SPACE;
 CLUSTER : SPACE C L U S T E R SPACE;
 COLUMN : SPACE C O L U M N SPACE;
@@ -663,6 +734,7 @@ DISCARD : SPACE D I S C A R D SPACE;
 DISTINCT : SPACE D I S T I N C T SPACE;
 DO : SPACE D O SPACE;
 DOUBLE : SPACE D O U B L E SPACE;
+DOUBLE_PRECISION : DOUBLE P R E C I S I O N SPACE;
 DROP : SPACE D R O P SPACE;
 EXCLUDE : SPACE E X C L U D E SPACE;
 EXCLUSIVE : SPACE E X C L U S I V E SPACE;
@@ -688,11 +760,14 @@ IN : SPACE I N SPACE;
 INCLUDE : SPACE I N C L U D E SPACE;
 INCREMENT : SPACE I N C R E M E N T SPACE;
 INDEX : SPACE I N D E X SPACE;
+INET : SPACE I N E T SPACE;
 INHERITS : SPACE I N H E R I T S SPACE;
 INITIALLY : SPACE I N I T I A L L Y SPACE;
 INPLACE : SPACE I N P L A C E SPACE;
 INSERT : SPACE I N S E R T SPACE;
 INT : SPACE I N T SPACE;
+INT4RANGE : SPACE I N T '4' R A N G E SPACE;
+INTEGER : SPACE I N T E G E R SPACE;
 INTO : SPACE I N T O SPACE;
 ISOLATION : SPACE I S O L A T I O N SPACE;
 JOIN : SPACE J O I N SPACE;
@@ -710,6 +785,8 @@ MATCH : SPACE M A T C H SPACE;
 MATERIALIZED : SPACE M A T E R I A L I Z E D SPACE;
 MAXVALUE : SPACE M A X V A L U E SPACE;
 MINVALUE : SPACE M I N V A L U E SPACE;
+MONEY : SPACE M O N E Y SPACE;
+NAME : SPACE N A M E SPACE;
 NO : SPACE N O SPACE;
 NONE : SPACE N O N E SPACE;
 NOT : SPACE N O T SPACE;
@@ -717,6 +794,7 @@ NOTHING : SPACE N O T H I N G SPACE;
 NOTIFY : SPACE N O T I F Y SPACE;
 NOWAIT : SPACE N O W A I T SPACE;
 NULL : SPACE N U L L SPACE;
+NUMERIC : SPACE N U M E R I C SPACE;
 OFFLINE : SPACE O F F L I N E SPACE;
 ON : SPACE O N SPACE;
 ONLINE : SPACE O N L I N E SPACE;
@@ -732,8 +810,10 @@ PRIMARY : SPACE P R I M A R Y SPACE;
 PRIMARY_KEY : SPACE P R I M A R Y '_' K E Y SPACE;
 RANGE : SPACE R A N G E SPACE;
 READ : SPACE R E A D SPACE;
+REAL : SPACE R E A L SPACE;
 RECURSIVE : SPACE R E C U R S I V E SPACE;
 REFERENCES : SPACE R E F E R E N C E S SPACE;
+REGCLASS : SPACE R E G C L A S S SPACE;
 REINDEX : SPACE R E I N D E X SPACE;
 RENAME : SPACE R E N A M E SPACE;
 REPEATABLE : SPACE R E P E A T A B L E SPACE;
@@ -752,6 +832,7 @@ SESSION : SPACE S E S S I O N SPACE;
 SET : SPACE S E T SPACE;
 SHARED : SPACE S H A R E D SPACE;
 SIMPLE : SPACE S I M P L E SPACE;
+SMALLINT : SPACE S M A L L I N T SPACE;
 SPATIAL : SPACE S P A T I A L SPACE;
 START : SPACE S T A R T SPACE;
 STATISTICS : SPACE S T A T I S T I C S SPACE;
@@ -801,31 +882,31 @@ DOT : '.';
 fragment DIGIT : [0-9];
 fragment SPACE : [\u0020];
 fragment NL : [\n];
-fragment A : [A,a];
-fragment B : [B,b];
-fragment C : [C,c];
-fragment D : [D,d];
-fragment E : [E,e];
-fragment F : [F,f];
-fragment G : [G,g];
-fragment H : [H,h];
-fragment I : [I,i];
-fragment J : [J,j];
-fragment K : [K,k];
-fragment L : [L,l];
-fragment M : [M,m];
-fragment N : [N,n];
-fragment O : [O,o];
-fragment P : [P,p];
-fragment Q : [Q,q];
-fragment R : [R,r];
-fragment S : [S,s];
-fragment T : [T,t];
-fragment U : [U,u];
-fragment V : [V,v];
-fragment W : [W,w];
-fragment X : [X,x];
-fragment Y : [Y,y];
-fragment Z : [Z,z];
-fragment CH : [A-Z, a-z];
+fragment A : [Aa];
+fragment B : [Bb];
+fragment C : [Cc];
+fragment D : [Dd];
+fragment E : [Ee];
+fragment F : [Ff];
+fragment G : [Gg];
+fragment H : [Hh];
+fragment I : [Ii];
+fragment J : [Jj];
+fragment K : [Kk];
+fragment L : [Ll];
+fragment M : [Mm];
+fragment N : [Nn];
+fragment O : [Oo];
+fragment P : [Pp];
+fragment Q : [Qq];
+fragment R : [Rr];
+fragment S : [Ss];
+fragment T : [Tt];
+fragment U : [Uu];
+fragment V : [Vv];
+fragment W : [Ww];
+fragment X : [Xx];
+fragment Y : [Yy];
+fragment Z : [Zz];
+fragment CH : [A-Za-z];
 
