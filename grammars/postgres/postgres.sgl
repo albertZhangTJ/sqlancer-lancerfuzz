@@ -58,12 +58,11 @@ collate_op
     : ' COLLATE ' collates.any
     ;
 
-// PostgresColumnReference.java
-// TODO
-
 postfixOperator : ' IS NULL ' | ' ISNULL ' | ' IS UNKNOWN ' | ' IS NOT NULL ' | ' NOTNULL ' | ' IS NOT UNKNOWN ' | ' IS TRUE ' | ' IS FALSE ';
-prefixOperator : ' NOT ' | ' + ' | ' - ';
-inOperator : NOT? IN;
+//prefixOperator : ' NOT ' | ' + ' | ' - ';
+inOperator 
+    : et=$effective_data_types.any expr[et] NOT? IN '(' (expr[et])**random[1,','] ')'
+    ;
 
 fromTable : //TODO
     ;
@@ -172,6 +171,11 @@ boolean_operation
     : boolean_expr binary_logical_op boolean_expr
     | real_expr binary_comp_op real_expr
     | range_expr binary_range_comp_op range_expr
+    | NOT boolean_expr
+    | any_expr postfixOperator
+    | text_expr SIMILAR TO text_expr
+    | text_expr LIKE text_expr
+    | inOperator
     ;
 
 boolean_func
@@ -188,7 +192,7 @@ int_expr : int_const 90% | int_func | int_operation;
 
 int_operation : int_expr binary_arith_op int_expr;
 
-int_const : DS**random[0,1,90] DIGIT+;
+int_const : ('+' | DS)**random[0,1,90] DIGIT+;
 
 int_func 
     : ' abs(' int_expr ') '
@@ -277,9 +281,11 @@ bit_operation : bit_expr binary_bit_op bit_expr;
 //num_nonnulls : ' NUM_NONNULLS(' expr**random[1, 10, ','] ') ';
 //num_nulls : ' NUM_NULLS(' expr**random[1, 10, ','] ') ';
 
-data_types : SMALLINT | INTEGER | BIGINT | BOOLEAN | TEXT | CHARACTER | CHARACTER_VARYING | NAME | REGCLASS | NUMERIC | DOUBLE_PRECISION | REAL | INT4RANGE | MONEY | BIT | BIT_VARYING | INET  ;
+data_types : SMALLINT | INTEGER | BIGINT | BOOLEAN | TEXT | CHARACTER | CHARACTER_VARYING | NAME | REGCLASS | NUMERIC | DOUBLE_PRECISION | REAL | DECIMAL | INT4RANGE | MONEY | BIT | BIT_VARYING | INET  ;
 
-effective_data_types : 'INT' |' BOOLEAN' | 'TEXT' | 'REAL' | 'RANGE' | 'MONEY' | 'BIT' | 'INET';
+effective_data_types returns [types] 
+    : types+=$'INT' types+=$'BOOLEAN' types+=$'TEXT' types+=$'REAL' types+=$'RANGE' types+=$'MONEY' types+=$'BIT' types+=$'INET'
+    ;
 
 type_matching [type] returns [effective_type]
     : <type=='smallint'> effective_type=$'INT'
@@ -294,6 +300,7 @@ type_matching [type] returns [effective_type]
     | <type=='numeric'> effective_type=$'REAL'
     | <type=='double precision'> effective_type=$'REAL'
     | <type=='real'> effective_type=$'REAL'
+    | <type=='decimal'> effective_type=$'REAL'
     | <type=='int4range'> effective_type=$'RANGE'
     | <type=='money'> effective_type=$'MONEY'
     | <type=='bit'> effective_type=$'BIT'
@@ -724,6 +731,7 @@ CREATE : SPACE C R E A T E SPACE;
 CYCLE : SPACE C Y C L E SPACE;
 DATA : SPACE D A T A SPACE;
 DATABASE : SPACE D A T A B A S E SPACE;
+DECIMAL : SPACE D E C I M A L SPACE;
 DEFAULT : SPACE D E F A U L T SPACE;
 DEFERRABLE : SPACE D E F E R R A B L E SPACE;
 DEFERRED : SPACE D E F E R R E D SPACE;
@@ -831,6 +839,7 @@ SERIALIZABLE : SPACE S E R I A L I Z A B L E SPACE;
 SESSION : SPACE S E S S I O N SPACE;
 SET : SPACE S E T SPACE;
 SHARED : SPACE S H A R E D SPACE;
+SIMILAR : SPACE S I M I L A R SPACE;
 SIMPLE : SPACE S I M P L E SPACE;
 SMALLINT : SPACE S M A L L I N T SPACE;
 SPATIAL : SPACE S P A T I A L SPACE;
