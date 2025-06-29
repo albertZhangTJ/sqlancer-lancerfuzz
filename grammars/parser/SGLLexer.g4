@@ -86,6 +86,10 @@ INT_LITERAL
    : DecDigit+
    ;
 
+BOOL_OP
+   : 'and' | 'or'
+   ;
+
 // -------------------------
 // Target Language Actions
 BEGIN_ACTION

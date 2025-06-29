@@ -169,7 +169,7 @@ public class Fuzzer{
         //private Statement stmt;
 
         //This is the list of supported operators by SGL
-        public static final List<String> OPERATORS = Collections.unmodifiableList(Arrays.asList("=", "+=", "$+", "$-", "==", "!=", ">", "<", ">=", "<="));
+        public static final List<String> OPERATORS = Collections.unmodifiableList(Arrays.asList("=", "+=", "$+", "$-", "==", "!=", ">", "<", ">=", "<=", "and", "or"));
         //used by the "new" function for making sure all symbols in the target language scope is unique
         //for example, the first call to new["table"] will return 'table1', second call will be 'table2' and so on
         private HashMap<String, Integer> idCount; 
@@ -517,7 +517,19 @@ public class Fuzzer{
                     }
                     return Variable.factory(a.getNumerical() - b.getNumerical());
                 }
-                throw new IllegalArgumentException("ERROR : Context.eval :: the operator \"-\" is not applicable when either side of the operation is not numerical");
+                throw new IllegalArgumentException("ERROR : Context.eval :: the operator \"$-\" is not applicable when either side of the operation is not numerical");
+            }
+            if (operator.equals("and")){
+                if (!a.isBoolean() || !b.isBoolean()){
+                    throw new IllegalArgumentException("ERROR : Context.eval :: the operator \"and\" is not applicable when either side of the operation is not boolean");
+                }
+                return Variable.factory(a.getBoolean() && b.getBoolean());
+            }
+            if (operator.equals("or")){
+                if (!a.isBoolean() || !b.isBoolean()){
+                    throw new IllegalArgumentException("ERROR : Context.eval :: the operator \"or\" is not applicable when either side of the operation is not boolean");
+                }
+                return Variable.factory(a.getBoolean() || b.getBoolean());
             }
             return Variable.factory(a.compare(operator, b));
         }

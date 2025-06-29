@@ -341,6 +341,18 @@ public class SGLParserBaseListener implements SGLParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterBexpr(SGLParser.BexprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitBexpr(SGLParser.BexprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterLexpr(SGLParser.LexprContext ctx) { }
 	/**
 	 * {@inheritDoc}

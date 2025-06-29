@@ -150,9 +150,9 @@ fragment NameStartChar
    // -----------------------------------
    // Types
 
-fragment Int
-   : 'int'
-   ;
+// fragment Int
+//    : 'int'
+//    ;
    // -----------------------------------
    // Symbols
 

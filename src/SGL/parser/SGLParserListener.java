@@ -278,6 +278,16 @@ public interface SGLParserListener extends ParseTreeListener {
 	 */
 	void exitMexpr_op(SGLParser.Mexpr_opContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link SGLParser#bexpr}.
+	 * @param ctx the parse tree
+	 */
+	void enterBexpr(SGLParser.BexprContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link SGLParser#bexpr}.
+	 * @param ctx the parse tree
+	 */
+	void exitBexpr(SGLParser.BexprContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link SGLParser#lexpr}.
 	 * @param ctx the parse tree
 	 */

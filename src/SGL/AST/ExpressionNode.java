@@ -4,6 +4,7 @@ import java.util.List;
 
 import SGL.parser.SGLParser.ExpressionContext;
 import SGL.parser.SGLParser.MexprContext;
+import SGL.parser.SGLParser.BexprContext;
 import SGL.parser.SGLParser.LexprContext;
 
 public class ExpressionNode extends Node {
@@ -30,18 +31,18 @@ public class ExpressionNode extends Node {
     // e.g. a=b=1 is not valid, same for a+=b=1
     public static ExpressionNode build(GrammarGraph graph, ExpressionContext expr){
         //if this happens, we have an assignment at the current level
-        if (expr.mexpr().size()>1){
+        if (expr.bexpr().size()>1){
             ExpressionNode node = new ExpressionNode(
-                ExpressionNode.build(graph, expr.mexpr().get(0)), 
+                ExpressionNode.build(graph, expr.bexpr().get(0)), 
                 expr.expr_op().ASSIGN()!=null ? "=" : "+=", 
-                ExpressionNode.build(graph, expr.mexpr().get(1)), 
+                ExpressionNode.build(graph, expr.bexpr().get(1)), 
                 expr.expr_op().DOLLAR()!=null
             );
             graph.add_node(node);
             node.lines = expr.getStart().getLine();
             return node;
         }
-        return ExpressionNode.build(graph, expr.mexpr().get(0));
+        return ExpressionNode.build(graph, expr.bexpr().get(0));
     }
     //TODO: mexpr and lexpr
     public static ExpressionNode build(GrammarGraph graph, MexprContext mexpr){
@@ -62,6 +63,27 @@ public class ExpressionNode extends Node {
             root.set_operator(mexpr.mexpr_op().get(i).getText().strip());
             graph.add_node(root);
             root.lines = mexpr.getStart().getLine();
+        }
+        return root;
+    }
+    public static ExpressionNode build(GrammarGraph graph, BexprContext bexpr){
+        if (bexpr.mexpr().size()==1){
+            return ExpressionNode.build(graph, bexpr.mexpr().get(0));
+        }
+        ExpressionNode root = new ExpressionNode();
+        for (int i=0; i<bexpr.mexpr().size()-1; i++){
+            if (i==0){
+                root.set_lhs(ExpressionNode.build(graph, bexpr.mexpr().get(i)));
+            }
+            else {
+                ExpressionNode temp = new ExpressionNode();
+                temp.set_lhs(root);
+                root = temp;
+            }
+            root.set_rhs(ExpressionNode.build(graph, bexpr.mexpr().get(i+1)));
+            root.set_operator(bexpr.BOOL_OP().get(i).getText().strip());
+            graph.add_node(root);
+            root.lines = bexpr.getStart().getLine();
         }
         return root;
     }

@@ -175,7 +175,7 @@ predicate
 //I seriously cannot think of a use case for silencing w/o assignment
 //so this shld be fine for now
 expression
-   : mexpr (expr_op mexpr)?
+   : bexpr (expr_op bexpr)?
    ;
 
 expr_op
@@ -188,6 +188,11 @@ mexpr
 
 mexpr_op
    : ASSIGN ASSIGN | NEGATE ASSIGN | GT ASSIGN | LT ASSIGN | GT | LT
+   ;
+
+
+bexpr
+   : mexpr (BOOL_OP mexpr)*
    ;
 
 lexpr
