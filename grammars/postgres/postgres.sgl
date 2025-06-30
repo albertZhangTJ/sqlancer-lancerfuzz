@@ -76,7 +76,7 @@ concat_op
     : ' || '
     ;
 
-expr [type] : et=type_matching[type]
+expr [type] : et=$type_matching[type] commonExprErr
     ( <et=='INT'> int_expr
     | <et=='BOOLEAN'> boolean_expr
     | <et=='TEXT'> text_expr
@@ -155,7 +155,7 @@ real_func
     | ' atanh(' real_expr ') '
     ;
 
-range_expr : range_const 90% | range_func | range_operation ;
+range_expr : (range_const 90% | range_func | range_operation) commonRangeExpressionErr ;
 
 range_operation : range_expr binary_range_op range_expr;
 
@@ -272,7 +272,7 @@ money_const : '\'' '$'? int_const '\'' cast_op 'MONEY';
 
 bit_expr : bit_const | bit_operation ;
 
-bit_operation : bit_expr binary_bit_op bit_expr;
+bit_operation : bit_expr binary_bit_op bit_expr bitStrOpErr;
 
 //abs [type] : ' ABS(' expr[type] ') ';
 //upper : ' UPPER(' str_expr ') ';
@@ -281,7 +281,18 @@ bit_operation : bit_expr binary_bit_op bit_expr;
 //num_nonnulls : ' NUM_NONNULLS(' expr**random[1, 10, ','] ') ';
 //num_nulls : ' NUM_NULLS(' expr**random[1, 10, ','] ') ';
 
-data_types : SMALLINT | INTEGER | BIGINT | BOOLEAN | TEXT | CHARACTER | CHARACTER_VARYING | NAME | REGCLASS | NUMERIC | DOUBLE_PRECISION | REAL | DECIMAL | INT4RANGE | MONEY | BIT | BIT_VARYING | INET  ;
+// caveat: decimal size is at this stage hard-coded
+// print the Postgres data type, return the effective type for internal processing
+data_types returns [et]
+    : ( SMALLINT | INTEGER | BIGINT ) et=$'INT'
+    | BOOLEAN et=$'BOOLEAN'
+    | ( TEXT | CHARACTER | CHARACTER_VARYING | NAME | REGCLASS ) et=$'TEXT'
+    | ( NUMERIC | DOUBLE_PRECISION | REAL | ' DECIMAL(12,6) ' ) et=$'REAL'
+    | INT4RANGE et=$'RANGE'
+    | MONEY et=$'MONEY'
+    | ( BIT | BIT_VARYING ) et=$'BIT'
+    | INET  et=$'INET'
+    ;
 
 effective_data_types returns [types] 
     : types+=$'INT' types+=$'BOOLEAN' types+=$'TEXT' types+=$'REAL' types+=$'RANGE' types+=$'MONEY' types+=$'BIT' types+=$'INET'
@@ -367,13 +378,13 @@ comment
         | COLUMN t=tables.any DOT columns[t].any
         | STATISTICS statistics[tables.any].any
         | TABLE tables.any
-    ) IS ( NULL | str_const )
+    ) IS ( NULL | text_const )
     ;
 
 // TODO: PostgresCommon
 
 delete
-    : DELETE FROM ONLY? t=tables.any wherePredicate[t]? (RETURNING expr)? error['out of range', 'cannot cast', 'invalid input syntax for', 'division by zero']
+    : DELETE FROM ONLY? t=tables.any wherePredicate[t]? (RETURNING any_expr)? error['out of range', 'cannot cast', 'invalid input syntax for', 'division by zero']
     ;
 
 discard
@@ -571,31 +582,48 @@ fragment tableConstriants
       ]
     ;
 
-fragment columnConstraints
-    : //todo
+// caveat: CHECK constraint generating a static boolean condition
+// due to the Context-Free Grammar flavor of the DSL, throwing column names in the middle is a bit clunky
+columnConstraints [type]
+    : first=$true
+    ( NOT? NULL error['conflicting NULL/NOT NULL declarations'] first=$false )**random[0,1,75]
+    ( (<first> first=$false | <first==false> ', ') UNIQUE )**random[0,1,75]
+    ( (<first> first=$false | <first==false> ', ') PRIMARY_KEY )**random[0,1,75]
+    ( (<first> first=$false | <first==false> ', ') DEFAULT '(' expr[type] ')' error['out of range', 'is a generated column'] )**random[0,1,75]
+    ( (<first> first=$false | <first==false> ', ') CHECK '(' boolean_expr ')' (NO INHERIT)? error['out of range'] )**random[0,1,99]
+    ( (<first> first=$false | <first==false> ', ') GENERATED 
+        ( 
+            ALWAYS AS '(' expr[type] ')' STORED error['A generated column cannot reference another generated column.', 'cannot use generated column in partition key', 'generation expression is not immutable', 'cannot use column reference in DEFAULT expression']
+            | ( ALWAYS | BY DEFAULT ) AS IDENTITY
+        )
+    )**random[0,1,75]
     ;
 
-fragment generateInherits
+generateInherits
     : INHERITS t=$tables '(' t.unique_any**random[1, t.len, ',', 90] ')'
       error['has a type conflict', 'has a generation conflict', 'cannot create partitioned table as inheritance child', 'cannot inherit from temporary relation', 
       'cannot inherit from partitioned table', 'has a collation conflict', 'inherits conflicting default values', 'specifies generation expression']
     ;
 
-fragment generatePartitionBy [n=1]
-    : PARTITION BY ( RANGE | LIST n=$3 | HASH ) error['unrecognized parameter', 'cannot use constant expression', 'cannot add NO INHERIT constraint to partitioned table', 
+generatePartitionBy [n=3]
+    : PARTITION BY ( RANGE | LIST n=$1 | HASH ) error['unrecognized parameter', 'cannot use constant expression', 'cannot add NO INHERIT constraint to partitioned table', 
       'unrecognized parameter', 'unsupported PRIMARY KEY constraint with partition key definition', 'which is part of the partition key.', 
       'unsupported UNIQUE constraint with partition key definition', 'does not accept data type'
-    ] '(' ('(' ')')**random[1, n, ','] ')' //todo
+    ] '(' ('(' any_expr (op_classes error['does not exist for access method'])')')**random[1, n, ','] ')'
     ;
 
-createTable : CREATE (TEMPORARY | TEMP | UNLOGGED)? TABLE ifNotExists? new['table'] (
-        '(' (c+=new['columns'])**random[3,',' 50] (tableConstriants
+generateUsing : USING tableAccessMethod.any;
+
+createTable : part=$false temp=$false CREATE (TEMPORARY temp=$true | TEMP temp=$true | UNLOGGED)? TABLE ifNotExists? new['table'] (
+        '(' (c+=new['columns'] ' ' type=$data_types (<type=='TEXT'> collate_op | '') ' ' columnConstraints[type]**random[0,1,95] )**random[3,',' 50] (tableConstriants
             error['constraints on temporary tables may reference only temporary tables','constraints on unlogged tables may reference only permanent or unlogged tables',
                 'constraints on permanent tables may reference only permanent tables', 'cannot be implemented', 'there is no unique constraint matching given keys for referenced table',
                 'cannot reference partitioned table', 'unsupported ON COMMIT and foreign key combination', 'ERROR: invalid ON DELETE action for foreign key constraint containing generated column',
                 'exclusion constraints are not supported on partitioned tables'
             ]
-        )?  ')' generateInherits? generatePartitionBy?
+        )?  ')' generateInherits? (generatePartitionBy part=$true)? generateUsing? (<part==false> appendIndexParam | '' )?
+        ( <temp> ON COMMIT ( PRESERVE ROWS | DELETE ROWS | DROP) | '' )?
+      | '( ' LIKE tables.any ( (EXCLUDING | INCLUDING ) ( DEFAULTS | CONSTRAINTS | INDEXES | STORAGE | COMMENTS | GENERATED | IDENTITY | STATISTICS | STORAGE | ALL ) )**random[0,3,' '] ')'
     //todo
     );
 
@@ -625,7 +653,7 @@ vacuum : VACUUM
     ) error['VACUUM cannot run inside a transaction block', 'deadlock', 'ERROR: ANALYZE option must be specified when a column list is provided', 'VACUUM option DISABLE_PAGE_SKIPPING cannot be used with FULL'] 
     ;
 
-view [n_mat = true, n_rec = true]
+createView [n_mat = true, n_rec = true]
     : CREATE (MATERIALIZED n_mat=$false | (OR REPLACE)? (TEMP | TEMPORARY)? ( RECURSIVE n_rec=$false)? ) VIEW new['view'] '(' (c+=new['column'])**random[1, 3, ',', 95] ')'
       AS '(' select[c.len] ')' ( <n_mat> ( <n_rec> WITH ( CASCADED | LOCAL ) CHECK OPTION  | ' ')| ' ') groupingErr
       error['already exists', 'cannot drop columns from view', 'non-integer constant in ORDER BY', 'for SELECT DISTINCT, ORDER BY expressions must appear in select list', 'cannot change data type of view column', 
@@ -663,17 +691,26 @@ setConstraints : SET CONSTRAINTS ALL ( DEFERRED | IMMEDIATE );
 resetRole : RESET ROLE;
 resetAll : RESET ALL;
 
-windowFunctionNames : ' row_number ' | ' rank ' | ' dense_rank ' | ' percent_rank ' | ' cume_dist ' | ' ntile ' | ' lag ' | ' lead ' | ' first_value ' | ' last_value ' | ' nth_value ';
+
+fragment windowColumn : fn=windowFunctionNames.any  '(' windowFuncArgs[fn] ')' OVER ;
+
+windowFunctionNames returns [fn] 
+    : fn+=$'row_number' fn+=$'rank' fn+=$'dense_rank' fn+=$'percent_rank' fn+=$'cume_dist' fn+=$'ntile' fn+=$'lag' fn+=$'lead' fn+=$'first_value' 
+    fn+=$'last_value' fn+=$'nth_value'
+    ;
 
 //todo window function generation
-funcArgs [fn=''] 
-    : ( <fn==' ntile '> int_const
-      | <fn!=' ntile '> 
-        ( <fn==''
-        |
-        )
-      )
+fragment windowFuncArgs [fn='', ae=''] 
+    : ( <fn=='ntile'> int_expr | <fn!='ntile'> '')
+    ( <fn=='lag' or fn=='lead' or fn=='nth_value'> ae.any ', ' int_expr  | <fn!='lag' and fn!='lead' and fn!='nth_value'>)
+    ( <fn=='first_value' or fn=='last_value'> ae.any | <fn!='first_value' and fn!='last_value'> )
     ;
+
+fragment forClause : FOR ( UPDATE | NO KEY UPDATE | SHARE | KEY SHARE);
+
+fragment orderBy : ORDER BY;
+
+select 
 
 tables returns [t] : t=$query['SELECT table_name AS name, table_type AS type, table_schema FROM information_schema.tables WHERE table_schema NOT IN (\'information_schema\', \'pg_catalog\');', 'name', 'type', 'type'].filter['type','!=','VIEW'];
 views returns [v] : v=$query['SELECT table_name AS name, table_type AS type, table_schema FROM information_schema.tables WHERE table_schema NOT IN (\'information_schema\', \'pg_catalog\');', 'name', 'type', 'type'].filter['type','==','VIEW'];
@@ -694,6 +731,7 @@ statistics [t] returns [s]
     : s=$query[ 'SELECT n.nspname as s_name, s.stxname as name FROM pg_statistic_ext s JOIN pg_class c ON c.oid = s.stxrelid JOIN pg_namespace n ON n.oid = s.stxnamespace WHERE c.relname = \'' +$ t +$ '\'', 'name']
     ;
 collates returns [c] : c=$query['SELECT collname FROM pg_collation ORDER BY collname', 'collname'];
+tableAccessMethod returns [am] : am=$query['SELECT amname FROM pg_am WHERE amtype = \'t\';', 'amname'];
 
 ifNotExists : IF NOT EXISTS;
 ifExists : IF EXISTS;
@@ -703,6 +741,7 @@ ADD : SPACE A D D SPACE;
 ALGORITHM : SPACE A L G O R I T H M SPACE;
 ALL : SPACE A L L SPACE;
 ALTER : SPACE A L T E R SPACE;
+ALWAYS : SPACE A L W A Y S SPACE;
 ANALYZE : SPACE A N A L Y Z E SPACE;
 AS : SPACE A S SPACE;
 ASC : SPACE A S C SPACE;
@@ -720,6 +759,7 @@ CHECK : SPACE C H E C K SPACE;
 CLUSTER : SPACE C L U S T E R SPACE;
 COLUMN : SPACE C O L U M N SPACE;
 COMMENT : SPACE C O M M E N T SPACE;
+COMMENTS : SPACE C O M M E N T S SPACE;
 COMMITED : SPACE C O M M I T E D SPACE;
 CONCURRENTLY : SPACE C O N C U R R E N T L Y SPACE;
 CONFLICT : SPACE C O N F L I C T SPACE;
@@ -733,6 +773,7 @@ DATA : SPACE D A T A SPACE;
 DATABASE : SPACE D A T A B A S E SPACE;
 DECIMAL : SPACE D E C I M A L SPACE;
 DEFAULT : SPACE D E F A U L T SPACE;
+DEFAULTS : SPACE D E F A U L T S SPACE;
 DEFERRABLE : SPACE D E F E R R A B L E SPACE;
 DEFERRED : SPACE D E F E R R E D SPACE;
 DELAYED : SPACE D E L A Y E D SPACE;
@@ -745,6 +786,7 @@ DOUBLE : SPACE D O U B L E SPACE;
 DOUBLE_PRECISION : DOUBLE P R E C I S I O N SPACE;
 DROP : SPACE D R O P SPACE;
 EXCLUDE : SPACE E X C L U D E SPACE;
+EXCLUDING : SPACE E X C L U D I N G SPACE;
 EXCLUSIVE : SPACE E X C L U S I V E SPACE;
 EXISTS : SPACE E X I S T S SPACE;
 EXPLAIN : SPACE E X P L A I N SPACE;
@@ -758,6 +800,7 @@ FOREIGN_KEY : SPACE F O R E I G N '_' K E Y SPACE;
 FROM : SPACE F R O M SPACE;
 FULL : SPACE F U L L SPACE;
 FULLTEXT : SPACE F U L L T E X T SPACE;
+GENERATED : SPACE G E N E R A T E D SPACE;
 HASH : SPACE H A S H SPACE;
 HIGH_PRIORITY : SPACE H I G H '_' P R I O R I T Y SPACE;
 IDENTITY : SPACE I D E N T I T Y SPACE;
@@ -766,9 +809,12 @@ IGNORE : SPACE I G N O R E SPACE;
 IMMEDIATE : SPACE I M M E D I A T E SPACE;
 IN : SPACE I N SPACE;
 INCLUDE : SPACE I N C L U D E SPACE;
+INCLUDING : SPACE I N C L U D I N G SPACE;
 INCREMENT : SPACE I N C R E M E N T SPACE;
 INDEX : SPACE I N D E X SPACE;
+INDEXES : SPACE I N D E X E S SPACE;
 INET : SPACE I N E T SPACE;
+INHERIT : SPACE I N H E R I T SPACE;
 INHERITS : SPACE I N H E R I T S SPACE;
 INITIALLY : SPACE I N I T I A L L Y SPACE;
 INPLACE : SPACE I N P L A C E SPACE;
@@ -815,7 +861,7 @@ PARTITION : SPACE P A R T I T I O N SPACE;
 PLAIN : SPACE P L A I N SPACE;
 PLAN : SPACE P L A N SPACE;
 PRIMARY : SPACE P R I M A R Y SPACE;
-PRIMARY_KEY : SPACE P R I M A R Y '_' K E Y SPACE;
+PRIMARY_KEY : SPACE P R I M A R Y SPACE K E Y SPACE;
 RANGE : SPACE R A N G E SPACE;
 READ : SPACE R E A D SPACE;
 REAL : SPACE R E A L SPACE;
@@ -831,6 +877,7 @@ RESTART : SPACE R E S T A R T SPACE;
 RESTRICT : SPACE R E S T R I C T SPACE;
 RETURNING : SPACE R E T U R N I N G SPACE;
 ROLE : SPACE R O L E SPACE;
+ROWS : SPACE R O W S SPACE;
 SCHEMA : SPACE S C H E M A SPACE;
 SELECT : SPACE S E L E C T SPACE;
 SEQUENCE : SPACE S E Q U E N C E SPACE;
