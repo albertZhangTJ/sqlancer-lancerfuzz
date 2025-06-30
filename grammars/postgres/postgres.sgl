@@ -692,7 +692,7 @@ resetRole : RESET ROLE;
 resetAll : RESET ALL;
 
 
-fragment windowColumn : fn=windowFunctionNames.any  '(' windowFuncArgs[fn] ')' OVER ;
+fragment windowColumn : fn=windowFunctionNames.any  '(' windowFuncArgs[fn] ')' OVER '(' orderBy t.any.c.any ( ASC | DESC ) ')' alias c+=new['column'];
 
 windowFunctionNames returns [fn] 
     : fn+=$'row_number' fn+=$'rank' fn+=$'dense_rank' fn+=$'percent_rank' fn+=$'cume_dist' fn+=$'ntile' fn+=$'lag' fn+=$'lead' fn+=$'first_value' 
@@ -710,7 +710,47 @@ fragment forClause : FOR ( UPDATE | NO KEY UPDATE | SHARE | KEY SHARE);
 
 fragment orderBy : ORDER BY;
 
-select 
+//caveat no support for distinct on clause
+select [outmost=1, rep=random[1,5,',']] returns c
+    : 
+    @2
+    SELECT (DISTINCT | ALL)? (
+        90% ( tt=t.any DOT  c+=tt.c.unique_any 90% | windowColumn )**rep
+        | ASTERISK ( tt=$t.next (c+=$tt.c.next)**tt.c.len )**t.len
+    ) 
+    @1
+    at=$tables
+	FROM ( tt=at.unique_any tt.c=$column[tt] t+=$tt | 30% '(' cc=$select[0] ')' AS tt=new['table'] tt.c=$cc t+=$tt)
+	//no separate needed since it is directly positioned after the FROM clause
+    (
+		JOIN ( tt=at.unique_any tt.c=$column[tt] t+=$tt | 5% '(' cc=$select[0] ')' AS tt=new['table'] tt.c=$cc t+=$tt)
+	)**random[0,1,90]
+    @3
+    ( ' /*BEGIN_COND*/ ' <outmost==1> | ' ' <outmost==0>)
+    ( where_predicate[t, c, outmost] | ' ' <outmost==0> )
+    (' /*END_COND*/ ' <outmost==1> | ' ' <outmost==0>)
+	//( ( UNION | INTERSECT )  selectStatement[0, random[c.len,',']] )?
+    (forClause? SC <outmost==1> | ' ' <outmost==0> )
+	;
+	
+where_predicate [t, c, outmost]:
+	WHERE 
+    ( ' /*BEGIN_PRED*/ ' <outmost==1> | ' ' <outmost==0> )
+    ( 
+        80% predicate[t, c]
+	    | c.any IN '(' select[0, random[1,',']] ')'
+	    | NOT? EXISTS '(' select[0] ')'
+    )
+    ( ' /*END_PRED*/ ' <outmost==1> | ' ' <outmost==0> )
+	;
+
+predicate [t, c]
+    : (     50%'(' pivot=$t.any.c.any ( expr[pivot.type] | tt=t.any DOT  cc=tt.c.filter['type', '==', pivot.type].any ) 
+                binary_comp_op
+                ( expr[pivot.type] 80% | tt=t.any DOT  cc=tt.c.filter['type', '==', pivot.type].any ) 
+            ')' 
+            | target=t.any.c.any between[target.type] 
+      );
 
 tables returns [t] : t=$query['SELECT table_name AS name, table_type AS type, table_schema FROM information_schema.tables WHERE table_schema NOT IN (\'information_schema\', \'pg_catalog\');', 'name', 'type', 'type'].filter['type','!=','VIEW'];
 views returns [v] : v=$query['SELECT table_name AS name, table_type AS type, table_schema FROM information_schema.tables WHERE table_schema NOT IN (\'information_schema\', \'pg_catalog\');', 'name', 'type', 'type'].filter['type','==','VIEW'];
