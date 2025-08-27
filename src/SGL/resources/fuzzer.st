@@ -119,6 +119,9 @@ public class Fuzzer{
                 return terminal;
             }
             this.children.add(new Buffer(terminal.getValue()));
+            //if (terminal.getValue().equals("INET")){
+            //    new Exception().printStackTrace();
+            //}
             return terminal;
         }
 
@@ -227,6 +230,7 @@ public class Fuzzer{
         //After completing its business, the callee will push its return value to this.result (again, think register) and restore the stack frame for caller
         //The call() function will add the returned buffer to the caller one and return this.result (so that the behavior is consistent)
         public Variable call(Buffer buf, String rule, List<Variable> args) throws Exception{
+            this.result = null;
             this.push_args(args);
             buf.add(Fuzzer.dispatch(this, rule));
             return this.result;
@@ -270,7 +274,18 @@ public class Fuzzer{
             this.args = null;
         }
 
-
+        public Variable inherit(String symbol) throws Exception{
+            Variable retv = Variable.placeholder();
+            for (int i = this.symbolStack.size() - 1; i >= 0; i--) {
+                HashMap<String, Variable> frame = this.symbolStack.get(i);
+                if (frame.containsKey(symbol)) {
+                    if (retv.inherit(frame.get(symbol))){
+                        break;
+                    }
+                }
+            }
+            return retv;
+        }
         public void ret(Variable result) throws Exception{
             //move the return value into the cache slot
             this.result= result;
@@ -299,15 +314,27 @@ public class Fuzzer{
             if (symbol.equals("new")){
                 return this.new_id(args);
             }
+            if (symbol.equals("list")){
+                return Variable.factory();
+            }
             if (rules.contains(symbol)){
-                return this.call(buf, symbol, args);
+                Variable rv = this.call(buf, symbol, args);
+                //try {
+                //    if (rv!=null && rv.getValue().equals("INET")){
+                //        new Exception().printStackTrace();
+                //    }
+                //}
+                //catch (Exception e){
+                //    
+                //}
+                return rv;
             }
             if (this.symbols.get(symbol)==null && this.globalSymbols.get(symbol)==null){
                 if (Character.isUpperCase(symbol.charAt(0))){
                     this.globalSymbols.put(symbol, Variable.placeholder());
                 }
                 else if (Character.isLowerCase(symbol.charAt(0))){
-                    this.symbols.put(symbol, Variable.placeholder());
+                    this.symbols.put(symbol, this.inherit(symbol));
                 }
                 else {
                     throw new Exception("Variable.getSymbol : a user-defined symbol must start with either lower case letter (local) or upper case letter (global)");
@@ -604,6 +631,12 @@ public class Fuzzer{
     }
 
     public static class Variable {
+        public enum State {
+            INHERITED,
+            UNINITIALIZED,
+            REGULAR
+        }
+
         public boolean isSingleValued;
         private String value;
         private int numerical;
@@ -615,7 +648,8 @@ public class Fuzzer{
         private List<Integer> uniqueUsageCount;
         private HashMap<String, Variable> attributes;
         private int cursor; //non-decreasing, modulus entries.size() will be used for extracting index 
-        private boolean isUninitialized;
+        private State state;
+
 
         public static final List<String> RESERVED_ATTR = Collections.unmodifiableList(Arrays.asList("new", "any", "next", "len", "unique_any", "subset", "query", "filter", "cur"));
         
@@ -628,7 +662,7 @@ public class Fuzzer{
             this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
             this.cursor = 0;
-            this.isUninitialized = false;
+            this.state = State.REGULAR;
         }
         private Variable(String value){
             this.value = value;
@@ -640,7 +674,7 @@ public class Fuzzer{
             this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
             this.cursor = 0;
-            this.isUninitialized = false;
+            this.state = State.REGULAR;
         }
         private Variable(int numerical){
             this.value = ""+numerical;
@@ -653,7 +687,7 @@ public class Fuzzer{
             this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
             this.cursor = 0;
-            this.isUninitialized = false;
+            this.state = State.REGULAR;
         }
         private Variable(boolean bool){
             this.value = ""+bool;
@@ -666,12 +700,12 @@ public class Fuzzer{
             this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
             this.cursor = 0;
-            this.isUninitialized = false;
+            this.state = State.REGULAR;
         }
 
         //just need a new signature, those arguments are not actually used
         private Variable(boolean placeholder, boolean p){
-            this.isUninitialized = true;
+            this.state = State.UNINITIALIZED;
         }
         //by returning this at the end of the setter, we can use this class in an FP way
         public Variable setAttr(String attr_name, Variable value) throws IllegalArgumentException{
@@ -712,10 +746,10 @@ public class Fuzzer{
         //mainly used for assignment (i.e. a=b will be context.getSymbol("a").clone(context.getSymbol("b")))
         @SuppressWarnings("unused")
         public void clone(Variable other) throws Exception{
-            if (other.isUninitialized){
-                throw new UnavailableException("An uninitialized variable should not be cloned, check your grammar file for assignments using these", false, true, false);
+            if (other.state == State.UNINITIALIZED){
+                throw new IllegalArgumentException("ERROR : Cannot clone an uninitialized variable");
             }
-            this.isUninitialized = false;
+            this.state = State.REGULAR;
             this.isSingleValued = other.isSingleValued;
             this.value = other.value;
             this.numerical = other.numerical;
@@ -724,8 +758,10 @@ public class Fuzzer{
             this.containsBoolean = other.containsBoolean;
             this.entries = copy_list(other.entries);
             this.uniqueUsageCount = new ArrayList<>();
-            for (Variable v: this.entries){
-                this.uniqueUsageCount.add(0);
+            if (this.entries!=null){
+                for (Variable v: this.entries){
+                    this.uniqueUsageCount.add(0);
+                }
             }
             this.attributes = copy_map(other.attributes);
             this.cursor = 0;
@@ -735,6 +771,9 @@ public class Fuzzer{
         // those will be implemented in the Context class
         public Variable getAttr(String name, List<Variable> args) throws Exception{
             if (name.equals("any")){
+                if (this.state == State.UNINITIALIZED){
+                    throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: attribute any is not applicable to uninitialized variables");
+                }
                 if (this.isSingleValued){
                     throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: attribute any is not applicable to single-valued variables");
                 }
@@ -744,6 +783,9 @@ public class Fuzzer{
                 return Rand.random_from_list(entries);
             }
             else if (name.equals("unique_any")){
+                if (this.state == State.UNINITIALIZED){
+                    throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: attribute unique_any is not applicable to uninitialized variables");
+                }
                 if (this.isSingleValued){
                     throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: attribute unique_any is not applicable to single-valued variables");
                 }
@@ -764,6 +806,9 @@ public class Fuzzer{
                 return this.entries.get(idx);
             }
             else if (name.equals("subset")){
+                if (this.state == State.UNINITIALIZED){
+                    throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: attribute subset is not applicable to uninitialized variables");
+                }
                 if (this.isSingleValued){
                     throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: attribute subset is not applicable to single-valued variables");
                 }
@@ -789,12 +834,18 @@ public class Fuzzer{
                 return v;
             }
             else if (name.equals("len")){
+                if (this.state == State.UNINITIALIZED){
+                    throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: attribute len is not applicable to uninitialized variables");
+                }
                 if (this.isSingleValued){
                     return new Variable(1);
                 }
                 return new Variable(this.entries.size());
             }
             else if (name.equals("next")){
+                if (this.state == State.UNINITIALIZED){
+                    throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: attribute next is not applicable to uninitialized variables");
+                }
                 if (this.isSingleValued){
                     throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: attribute next is not applicable to single-valued variables");
                 }
@@ -805,6 +856,9 @@ public class Fuzzer{
                 return this.entries.get((this.cursor-1)%this.entries.size());
             }
             else if (name.equals("cur")){
+                if (this.state == State.UNINITIALIZED){
+                    throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: attribute cur is not applicable to uninitialized variables");
+                }
                 if (this.isSingleValued){
                     throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: attribute cur is not applicable to single-valued variables");
                 }
@@ -826,6 +880,9 @@ public class Fuzzer{
 
         }
         private Variable filter(Variable attr, String comparator, Variable target) throws Exception{
+            if (this.state == State.UNINITIALIZED){
+                throw new IllegalArgumentException("Fuzzer.Variable.filter :: filter operation is not allowed on uninitialized variables");
+            }
             if (this.isSingleValued){
                 throw new IllegalArgumentException("Fuzzer.Variable.filter :: filter operation is not allowed on single-valued variables");
             }
@@ -838,13 +895,15 @@ public class Fuzzer{
             return result;
         }
         public boolean compare(String comparator, Variable other) throws Exception{
+            if (this.state == State.UNINITIALIZED || other.state == State.UNINITIALIZED){
+                throw new IllegalArgumentException("ERROR : cannot compare uninitialized variables");
+            }
             if (comparator.equals("==")){
                 return this.equals(other);
             }
             if (comparator.equals("!=")){
                 return !this.equals(other);
             }
-
             if (comparator.equals(">=")){
                 try {
                     Integer operand_a = Integer.valueOf(this.value);
@@ -899,7 +958,7 @@ public class Fuzzer{
         //getValue returns the content of the current variable regardless if it is of string type or not
         //roughly equals to toString
         public String getValue() throws Exception{
-            if (this.isUninitialized){
+            if (this.state == State.UNINITIALIZED){
                 throw new UnavailableException("Fuzzer.Variable.getValue :: the current variable is not initialized", false, true, false);
             }
             if (!this.isSingleValued){
@@ -908,60 +967,70 @@ public class Fuzzer{
             return this.value;
         }
 
-        public boolean isString() throws UnavailableException{
-            if (this.isUninitialized){
-                throw new UnavailableException("Fuzzer.Variable.isString :: the current variable is not initialized", false, true, false);
+        public boolean isString(){
+            if (this.state == State.UNINITIALIZED){
+                return false;
             }
             return this.containsString;
         }
 
         public boolean isPlaceHolder(){
-            return this.isUninitialized;
+            return this.state == State.UNINITIALIZED;
         }
-        public boolean isNumerical() throws UnavailableException{
-            if (this.isUninitialized){
-                throw new UnavailableException("Fuzzer.Variable.isNumerical :: the current variable is not initialized", false, true, false);
+        public boolean isNumerical(){
+            if (this.state == State.UNINITIALIZED){
+                return false;
             }
             return this.containsNumerical;
         }
 
         public int getNumerical() throws UnavailableException{
-            if (this.isUninitialized){
-                throw new UnavailableException("Fuzzer.Variable.getNumerical :: the current variable is not initialized", false, true, false);
+            if (this.state == State.UNINITIALIZED){
+                throw new UnavailableException("Fuzzer.Variable.getNumerical :: the current variable is null", false, true, false);
             }
             return this.numerical;
         }
         public boolean isBoolean() throws UnavailableException{
-            if (this.isUninitialized){
-                throw new UnavailableException("Fuzzer.Variable.isBoolean :: the current variable is not initialized", false, true, false);
+            if (this.state == State.UNINITIALIZED){
+                throw new UnavailableException("Fuzzer.Variable.isBoolean :: the current variable is null", false, true, false);
             }
             return this.containsBoolean;
         }
         public boolean getBoolean() throws UnavailableException{
-            if (this.isUninitialized){
-                throw new UnavailableException("Fuzzer.Variable.getBoolean :: the current variable is not initialized", false, true, false);
+            if (this.state == State.UNINITIALIZED){
+                throw new UnavailableException("Fuzzer.Variable.getBoolean :: the current variable is null", false, true, false);
             }
             if (!this.containsBoolean){
-                throw new IllegalArgumentException("Fuzzer.Variable.getBoolean :: the current variable is not a boolean one");
+                return this.state!=State.UNINITIALIZED;
             }
             return this.bool;
         }
 
+        @SuppressWarnings("unused")
+        public boolean inherit(Variable other) throws Exception{
+            if (other.state == State.UNINITIALIZED){
+                return false;
+            }
+            this.clone(other);
+            this.state = State.INHERITED;
+            return true;
+        }
+
         //by returning this at the end of the setter, we can use this class in an FP way
         public Variable addEntry(Variable v) throws Exception{
-            if (this.isUninitialized){
+            if (this.isSingleValued || this.state == State.UNINITIALIZED || this.state == State.INHERITED){
                 this.clone(factory());
             }
-            if (this.isSingleValued){
-                throw new IllegalArgumentException("Fuzzer.Variable.addEntry :: addEntry is not applicable to single-valued variable");
-            }
+            //if (this.isSingleValued){
+            //    throw new IllegalArgumentException("Fuzzer.Variable.addEntry :: addEntry is not applicable to single-valued variable");
+            //}
             this.entries.add(v);
             this.uniqueUsageCount.add(0);
             return this;
         }
         public Variable getEntry(int idx)throws Exception{
-            if (this.isUninitialized){
-                throw new UnavailableException("Fuzzer.Variable.getEntry :: the current variable is not initialized", false, true, false);
+            if (this.state == State.UNINITIALIZED){
+                throw new UnavailableException("Fuzzer.Variable.getEntry :: the current variable is null", false, true, false);
             }
             if (this.isSingleValued){
                 throw new IllegalArgumentException("Fuzzer.Variable.getEntry :: addEntry is not applicable to single-valued variable");
@@ -974,6 +1043,12 @@ public class Fuzzer{
         public boolean equals(Object another){
             if (another instanceof Variable){
                 Variable other = (Variable)another;
+                if ((this.state!=other.state)){
+                    return false;
+                }
+                if (this.state==State.UNINITIALIZED){
+                    return true;
+                }
                 if (this.value==other.value || (this.value!=null && this.value.equals(other.value))){
                     if (this.entries.size()==other.entries.size()){
                         for (int i=0; i<this.entries.size(); i++){
@@ -1076,29 +1151,50 @@ public class Fuzzer{
     public static class Options {
         private List<Integer> indices;
         private List<Double> weights;
+        private List<Integer> invalids;
         public Options(){
             this.indices = new ArrayList<>();
             this.weights = new ArrayList<>();
+            this.invalids = new ArrayList<>();
         }
         public void addOption(int index, double weight){
             this.indices.add(index);
             this.weights.add(weight);
         }
+        public void removeOption(int index) throws Exception {
+            if (index < 0 || index >= this.indices.size()) {
+                throw new IndexOutOfBoundsException("Index " + index + " is out of bounds for size " + this.indices.size());
+            }
+            this.invalids.add(index);
+        }
 
         public int randomly() throws DeadEndException{
             double total = 0;
-            if (indices.size()==0){
+            if (indices.size()==0 || indices.size()==invalids.size()){
                 throw new DeadEndException("Options::randomly : no available options");
             }
-            for (double w: this.weights){
-                total = total + w;
+            for (int i=0; i<this.weights.size(); i++){
+                if (this.invalids.contains(i)){
+                    continue;
+                }
+                total = total + this.weights.get(i);
             }
             total = total * Math.random();
             for (int i=0; i<this.indices.size(); i++){
+                if (this.invalids.contains(i)){
+                    continue;
+                }
                 if (total<this.weights.get(i)){
                     return this.indices.get(i);
                 }
                 total = total - this.weights.get(i);
+            }
+            //handle the case where FPE cause the target weight to be slightly larger than total weight
+            //return last valid entry 
+            for (int i=this.indices.size()-1; i>=0; i++){
+                if (!this.invalids.contains(i)){
+                    return this.indices.get(i);
+                }
             }
             return this.indices.get(this.indices.size()-1);
         }

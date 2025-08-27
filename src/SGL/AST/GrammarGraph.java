@@ -263,7 +263,7 @@ public class GrammarGraph{
             String handle = this.get_node_with_identifier(rule_name).render(func_list, "", false);
             String dispatch = "        if (rule.equals(\""+rule_name+"\")){\n" +
                                 "            Fuzzer.dispatch_time +=  System.currentTimeMillis() - stime;\n" +
-                                "            return "+handle+";\n" +
+                                "            return call_"+handle+";\n" +
                                 "        }\n";
             String register = "        Fuzzer.rules.add(\""+rule_name+"\");\n" +
                                 "        Context.add_rule(\""+rule_name+"\");\n";

@@ -66,6 +66,8 @@ public class ProtoEntry {
         long stmt_count_total = 0;
         int case_count = 0;
         long expected_count = 0;
+        Connection mainConnection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/postgres", "sqlancer", "sqlancer");
+        SQLConnection dbConn = null;
         while (true){
             case_count++;
             long start_time_case = System.currentTimeMillis();
@@ -74,8 +76,14 @@ public class ProtoEntry {
             String test = "";
             String ablation = "";
             long last_probe = System.currentTimeMillis();
+            String dbName = "testdatabase"+((case_count%5)+1);
             try{
-                Fuzzer.init(null);
+                Statement stmt = mainConnection.createStatement();
+                stmt.executeUpdate("DROP DATABASE IF EXISTS " + dbName);
+                stmt.executeUpdate("CREATE DATABASE " + dbName);
+                stmt.close();
+                dbConn = new SQLConnection(DriverManager.getConnection("jdbc:postgresql://localhost:5432/" + dbName, "sqlancer", "sqlancer"));
+                Fuzzer.init(dbConn);
                 while (true){
                     String next = Fuzzer.fuzz_next_and_execute();
                     if (next==null){
@@ -97,14 +105,16 @@ public class ProtoEntry {
                         }
                         
                     }
-                    if (stmt_count_case%200 == 0){
-                        System.out.println(short_stat(start_time_camp, stmt_count_total, crash_count));
-                        ablation = ablation + ((System.currentTimeMillis()-start_time_camp)/1000.0) + " " + (200/((System.currentTimeMillis()-last_probe)/1000.0)) + "\n";
-                        last_probe = System.currentTimeMillis();
-                    }
+                    // if (stmt_count_case%200 == 0){
+                    //     System.out.println(short_stat(start_time_camp, stmt_count_total, crash_count));
+                    //     ablation = ablation + ((System.currentTimeMillis()-start_time_camp)/1000.0) + " " + (200/((System.currentTimeMillis()-last_probe)/1000.0)) + "\n";
+                    //     last_probe = System.currentTimeMillis();
+                    // }
                 }
+                dbConn.close();
             }
             catch (Exception e){
+                //dbConn.close();
                 crash_count++;
                 test = test + "-- " + e.getMessage() + "\n";
                 test = test + e.getStackTrace().toString() + "\n";
