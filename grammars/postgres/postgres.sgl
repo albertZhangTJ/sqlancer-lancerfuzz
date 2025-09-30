@@ -7,11 +7,11 @@ symbols_with_type [symbols, et] returns [fs]
 
 // PostgresAggregate.java
 aggregate_func  
-    : 'AVG(' ( int_expr | real_expr )**random[1, ', '] ')' 
+    : error['aggregate functions are not allowed in'] ('AVG(' ( int_expr | real_expr )**random[1, ', '] ')' 
     | 'BIT_AND(' int_expr**random[1, ', '] ')' | 'BIT_OR(' int_expr**random[1, ', '] ')' | 'BOOL_AND(' boolean_expr**random[1, ', '] ')'
     | 'BOOL_AND(' boolean_expr**random[1, ', '] ')' | 'COUNT(' int_expr**random[1, ', '] ')' | 'EVERY(' boolean_expr**random[1, ', '] ')'
     | 'MAX(' any_expr**random[1, ', '] ')' | 'MIN(' any_expr**random[1, ', '] ')'
-    | 'SUM(' ( int_expr | real_expr )**random[1, ', '] ')' 
+    | 'SUM(' ( int_expr | real_expr )**random[1, ', '] ')'  )
     ;
 
 // PostgresAlias.java
@@ -126,9 +126,9 @@ any_constant
     | bit_const
     ;
 
-inet_expr : inet_const 95% | inet_func | <symbols!=null and symbols_with_type[symbols, 'INET'].len>0> symbols_with_type[symbols, 'INET'].any ;
+inet_expr : inet_const 95% | inet_func | <symbols and symbols_with_type[symbols, 'INET'].len>0> symbols_with_type[symbols, 'INET'].any ;
 
-inet_const : SQ random[0, 255, 0] ':' random[0, 255, 0] ':' random[0, 255, 0] ':' random[0, 255, 0] ('/' random[1,32])? SQ; 
+inet_const : SQ random[0, 255, 0] '.' random[0, 255, 0] '.' random[0, 255, 0] '.' random[0, 255, 0] ('/' random[1,32])? SQ; 
 
 inet_func
     : ' broadcast(' inet_expr ') '
@@ -141,7 +141,7 @@ real_expr : real_const 90% | real_func | real_operation | <symbols and symbols_w
 
 real_operation : real_expr binary_arith_op real_expr;
 
-real_const : DS**random[0,1,90] DIGIT+ ( DOT DIGIT+ )**random[0,1,25];
+real_const : lc=$0 ( '(' lc=$1 ('+' | DS))**random[0,1,90] DIGIT+ ( DOT DIGIT+ )**random[0,1,25] ( <lc==0> '' | <lc==1> ')' );
 
 real_func
     : ' abs(' real_expr ') '
@@ -186,7 +186,7 @@ range_expr : (range_const 90% | range_func | range_operation | <symbols and symb
 
 range_operation : range_expr binary_range_op range_expr;
 
-range_const : ('(' | '[' ) int_const ',' int_const (']' | ')' ) '::int4range';
+range_const :  'int4range(' int_const ',' int_const ',\'' ('(' | '[' ) (']' | ')' ) '\')';
 
 range_func : ' range_merge(' range_expr ', ' range_expr ') ';
 
@@ -219,13 +219,13 @@ int_expr : int_const 90% | int_func | int_operation | <symbols and symbols_with_
 
 int_operation : int_expr binary_arith_op int_expr;
 
-int_const : ('+' | DS)**random[0,1,90] DIGIT+;
+int_const : lc=$0 ( '(' lc=$1 ('+' | DS))**random[0,1,90] FDIGIT DIGIT* ( <lc==0> '' | <lc==1> ')' );
 
 int_func 
     : ' abs(' int_expr ') '
     | ' length(' text_expr ') '
-    | ' num_nonnulls(' rexpr**random[1, 10, ','] ') '
-    | ' num_nulls(' rexpr**random[1, 10, ','] ') '
+    | ' num_nonnulls(' any_expr**random[1, 10, ','] ') '
+    | ' num_nulls(' any_expr**random[1, 10, ','] ') '
     | ' family(' inet_expr ') '
     | ' masklen(' inet_expr ') '
     | ' inet_client_port() '
@@ -256,7 +256,7 @@ text_func
     | ' to_char(' text_expr ',' text_expr ') '
     | ' btrim(' text_expr ', ' text_expr ') '
     | ' chr(' random[1,127] ') '
-    | ' convert_from(' text_expr ',' ( ' \"UTF8\" ' | ' \"LATIN1\" ')') '
+    | ' convert_from(' text_expr ',' ( ' \'UTF8\' ' | ' \'LATIN1\' ')') '
     | ' initcap(' text_expr ') '
     | ' left(' text_expr ', ' int_expr ') '
     | ' lower(' text_expr ') '
@@ -292,12 +292,12 @@ text_func
 
 null_const : ' NULL ';
 dec_const [ts=4, ds=2] : (DS)**random[0, 1, '', 90] gs=$ts$-ds DIGIT**gs ( '.' DIGIT**ds )? ;
-bit_const [size=8] : ' B(\'' ( '0' | '1' )**random[1,size] '\')';
+bit_const [size=8] : ' \'' ( '0' | '1' )**random[1,size] '\'::bit';
 
 money_expr : money_const 95% | <symbols and symbols_with_type[symbols, 'MONEY'].len>0> symbols_with_type[symbols, 'MONEY'].any ;
-money_const : '\'' '$'? int_const '\'' cast_op 'MONEY';
+money_const : '\''   int_const '\'' cast_op 'MONEY';
 
-bit_expr : bit_const 95% | bit_operation | <symbols and symbols_with_type[symbols, 'BIT'].len>0> symbols_with_type[symbols, 'BIT'].any ;
+bit_expr : ( bit_const 95% | bit_operation | <symbols and symbols_with_type[symbols, 'BIT'].len>0> symbols_with_type[symbols, 'BIT'].any ) error['bit string length'];
 
 bit_operation : bit_expr binary_bit_op bit_expr bitStrOpErr;
 
@@ -313,7 +313,7 @@ bit_operation : bit_expr binary_bit_op bit_expr bitStrOpErr;
 data_types returns [et]
     : ( SMALLINT | INTEGER | BIGINT ) et=$'INT'
     | BOOLEAN et=$'BOOLEAN'
-    | ( TEXT | CHARACTER | CHARACTER_VARYING | NAME | REGCLASS ) et=$'TEXT'
+    | ( TEXT | ' character(32) ' | CHARACTER_VARYING | NAME | REGCLASS ) et=$'TEXT'
     | ( NUMERIC | DOUBLE_PRECISION | REAL | ' DECIMAL(12,6) ' ) et=$'REAL'
     | INT4RANGE et=$'RANGE'
     | MONEY et=$'MONEY'
@@ -333,8 +333,8 @@ type_matching [type] returns [effective_type]
     | <type=='text'> effective_type=$'TEXT'
     | <type=='character varying'> effective_type=$'TEXT'
     | <type=='character'> effective_type=$'TEXT'
-    | <type=='name'> effective_type=$'TEXT'
-    | <type=='regclass'> effective_type=$'TEXT'
+    | <type=='name'> effective_type=$'TEXT' 
+    | <type=='regclass'> effective_type=$'TEXT' error['does not exist']
     | <type=='numeric'> effective_type=$'REAL'
     | <type=='double precision'> effective_type=$'REAL'
     | <type=='real'> effective_type=$'REAL'
@@ -346,14 +346,14 @@ type_matching [type] returns [effective_type]
     | <type=='inet'> effective_type=$'INET'
     ;
 
-fragment alterColumn : ALTER COLUMN? columns[t].any ' ';
+fragment alterColumn : ALTER COLUMN columns[t].any ' ';
 
 alterTable [view=false]
     : ALTER ( VIEW view=$true| TABLE (ONLY error['cannot use ONLY for foreign key on partitioned table'])? ) 
       (t=views.any <view==true> | t=tables.any <view==false> )
       (
         DROP (IF EXISTS)? columns[t].any ( RESTRICT | CASCADE )? error['because other objects depend on it', 'does not exist', 'cannot drop column', 'cannot drop inherited column']
-        | alterColumn (SET DATA)? TYPE data_types error[
+        | alterColumn (SET DATA)? TYPE dummy=$data_types error[
             'cannot alter type of a column used by a view or rule',
             'cannot convert infinity to numeric', 'is duplicated', 
             'cannot be cast automatically', 'is an identity column',
@@ -383,11 +383,11 @@ alterTable [view=false]
         | alterColumn SET '( n_distinct = ' ( '-0.' '0'* random[1,90] | random[1,200])  ') '
         | alterColumn RESET '( n_distinct ) '
         | alterColumn SET STORAGE ( PLAIN | EXTERNAL | EXTENDED | MAIN ) error['can only have storage', 'is an identity column']
-        | alterColumn DROP EXPRESSION ifExists error[
-            'is not a generated column','is not a stored generated column',
-            'cannot drop expression from inherited column','cannot drop generation expression from inherited column',
-            'must be applied to child tables too','cannot drop expression from column'
-          ]
+        // | alterColumn DROP EXPRESSION ifExists error[
+        //     'is not a generated column','is not a stored generated column',
+        //     'cannot drop expression from inherited column','cannot drop generation expression from inherited column',
+        //     'must be applied to child tables too','cannot drop expression from column'
+        //   ]
         | //TODO
       )
     ;
@@ -438,7 +438,7 @@ fragment op_classes :  SPACE ('abstime_ops' | 'bit_ops' | 'bool_ops' | 'box_ops'
 
 createIndex [ih=false]
     : CREATE UNIQUE? INDEX new['index'] ON ONLY? t=tables.any c=$columns[t] ( USING ( ' BTREE ' | ' HASH ' ih=$true | ' GIST ' | ' GIN' ))? 
-    ' (' ( c.any | <ih!=true> ((c.any | any_expr) SPACE (op_classes error['does not accept', 'does not exist for access method'])**random[0,1,99] ( ASC | DESC )? ( ' NULLS FIRST ' | ' NULLS LAST ' )**random[0,1,99] )**random[1, 3, ','] ) ') '
+    ' (' ( c.any | <ih!=true> (c.any SPACE (op_classes error['does not accept', 'does not exist for access method'])**random[0,1,99] ( ASC | DESC )? ( ' NULLS FIRST ' | ' NULLS LAST ' )**random[0,1,99] )**random[1, 3, ','] ) ') '
     ( INCLUDE '(' c.unique_any**random[1, c.len, ','] ')' <ih!=true> | ' ') wherePredicate[t]?
     error['already contains data', 'You might need to add explicit type casts', ' collations are not supported', 
         'because it has pending trigger events', 'could not determine which collation to use for index expression', 'could not determine which collation to use for string comparison', 
@@ -451,8 +451,8 @@ createIndex [ih=false]
     ;
 
 createInsert
-    : INSERT INTO t=tables.any c=$columns[t] ' ( ' (cc+=c.unique_any)**random[1, c.len, ','] ' ) ' ( OVERRIDING (SYSTEM | USER ) VALUE )**random[0,1,99] VALUES 
-    ' ( ' ( ' ( ' ( 99% expr[cc.next] | DEFAULT error['DEFAULT is not allowed in this context'] )**random[cc.len, ','] ' ) ')**random[1,','] ' ) '
+    : INSERT INTO t=tables.any c=$columns[t] ' ( ' (cc+=c.unique_any)**random[1, c.len, ',', 15] ' ) ' ( OVERRIDING (SYSTEM | USER ) VALUE )**random[0,1,90] VALUES 
+     ' ( ' ( 99% expr[cc.next.type] | DEFAULT error['DEFAULT is not allowed in this context'] )**random[cc.len, ','] ' ) '
     ( ON CONFLICT (  error['there is no unique or exclusion constraint matching the ON CONFLICT specification'])? DO NOTHING )**random[0,1,90]
     error[
         'multiple assignments to same column',
@@ -605,7 +605,7 @@ fragment tableConstraints
       ( MATCH FULL | MATCH SIMPLE )?  ( ON DELETE deleteOrUpdateAction error['ERROR: invalid ON DELETE action for foreign key constraint containing generated column'] )?
       ( ON UPDATE deleteOrUpdateAction error['invalid ON UPDATE action for foreign key constraint containing generated column'] )?
       ( DEFERRABLE (INITIALLY DEFERRED | INITIALLY IMMEDIATE ) | NOT DEFERRABLE )?
-    | EXCLUDE '(' (appendExcludeElement WITH binary_comp_op)**random[1, ',', 99] ')' appendIndexParam wherePredicate? error['syntax error']
+    | EXCLUDE '(' (appendExcludeElement WITH error['is not commutative'] binary_comp_op)**random[1, ',', 99] ')' appendIndexParam wherePredicate? error['syntax error']
       error['is not valid', 'no operator matches', 'operator does not exist', 'unknown has no default operator class',
           'exclusion constraints are not supported on partitioned tables', 'The exclusion operator must be related to the index operator class for the constraint',
           'could not create exclusion constraint'
@@ -639,7 +639,7 @@ fragment generatePartitionBy
     : n=$3 PARTITION BY ( RANGE | LIST n=$1 | HASH ) error['unrecognized parameter', 'cannot use constant expression', 'cannot add NO INHERIT constraint to partitioned table', 
       'unrecognized parameter', 'unsupported PRIMARY KEY constraint with partition key definition', 'which is part of the partition key.', 
       'unsupported UNIQUE constraint with partition key definition', 'does not accept data type'
-    ] '(' ('(' c.unique_any (op_classes error['does not exist for access method', 'syntax error'])')')**random[1, n, ','] ')'
+    ] '(' ('(' c.unique_any USING (op_classes error['does not exist for access method', 'syntax error'])')')**random[1, n, ','] ')'
     ;
 
 generateUsing : USING tableAccessMethod.any;
@@ -651,9 +651,9 @@ createTable : part=$false temp=$false CREATE (TEMPORARY temp=$true | TEMP temp=$
                 'cannot reference partitioned table', 'unsupported ON COMMIT and foreign key combination', 'ERROR: invalid ON DELETE action for foreign key constraint containing generated column',
                 'exclusion constraints are not supported on partitioned tables'
             ]
-        )?  ')' generateInherits? (generatePartitionBy part=$true)**random[0,1,90] generateUsing? (<part==false> appendIndexParam | '' )?
+        )?  ')' (<temp!=true> generateinherits | '' )**random[0,1] (<temp!=true> generatePartitionBy part=$true | '' )**random[0,1] generateUsing? (<part==false> appendIndexParam | '' )?
         ( <temp> ON COMMIT ( PRESERVE ROWS | DELETE ROWS | DROP) | '' )?
-      | '( ' LIKE tables.any ( (EXCLUDING | INCLUDING ) ( DEFAULTS | CONSTRAINTS | INDEXES | STORAGE | COMMENTS | GENERATED | IDENTITY | STATISTICS | STORAGE | ALL ) )**random[0,3,' '] ')'
+      | 5% '( ' LIKE tables.any ( (EXCLUDING | INCLUDING ) ( DEFAULTS | CONSTRAINTS | INDEXES | STORAGE | COMMENTS | GENERATED | IDENTITY | STATISTICS | STORAGE | ALL ) )**random[0,3,' '] ')'
     );
 
 transaction : BEGIN ISOLATION LEVEL ( error['SET TRANSACTION ISOLATION LEVEL must be called before any query'] ( SERIALIZABLE | REPEATABLE READ | READ COMMITED | READ UNCOMMITED ))?;
@@ -667,7 +667,7 @@ createUpdate
       'invalid regular expression', 'View columns that are not columns of their base relation are not updatable','multiple assignments to same column', 
       'new row violates check option for view', 'invalid input syntax for ', 'operator does not exist: text = boolean', 
       'violates check constraint', 'could not determine which collation to use for string comparison', 'but expression is of type'
-    ] commonInsertUpdateErr UPDATE t=tables.any c=$columns[t].subset SET (c.next '=' (constant[c.cur] | DEFAULT | '(' symbols=$column[t] expr[c.cur] ')') )**random[c.len, ','] wherePredicate**random[0,1,90]
+    ] commonInsertUpdateErr UPDATE t=tables.any c=$columns[t].subset SET (c.next '=' (constant[c.cur.type] | DEFAULT | '(' symbols=$columns[t] expr[c.cur.type] ')') )**random[c.len, ','] wherePredicate**random[0,1,90]
     ;
 
 fragment vacuumOption : ' FULL ' | ' FREEZE ' | ' ANALYZE ' | ' VERBOSE ' | ' DISABLE_PAGE_SKIPPING ' | ' SKIP_LOCKED ' | ' INDEX_CLEANUP ' | ' TRUNCATE ';
@@ -713,7 +713,7 @@ fragment commonExprErr
     'invalid hexadecimal digit', 'invalid hexadecimal data: odd number of digits', 'zero raised to a negative power is undefined', 'division by zero', 'invalid input syntax for type money', 
     'invalid input syntax for type', 'cannot cast type', 'value overflows numeric format', 'LIKE pattern must not end with escape character', 
     'is of type boolean but expression is of type text', 
-    'a negative number raised to a non-integer power yields a complex result', 'could not determine polymorphic type because input has type unknown', 'character number must be positive']
+    'a negative number raised to a non-integer power yields a complex result', 'could not determine polymorphic type because input has type unknown', 'character number must be positive', 'overflow', 'too long']
     toCharFuncErr bitStrOpErr funcErr commonRangeExpressionErr commonRegexExpressionErr;
 
 setConstraints : SET CONSTRAINTS ALL ( DEFERRED | IMMEDIATE );
@@ -729,30 +729,31 @@ windowFunctionNames returns [fn]
     ;
 
 // Room for improvement: better "else"-like semantics/last resort matching
-windowFuncArgs [fn='', ae=''] 
+windowFuncArgs [fn=''] 
     : ( <fn=='ntile'> int_expr | <fn!='ntile'> '')
-    ( <fn=='lag' or fn=='lead' or fn=='nth_value'> ae.any ', ' int_expr  | <fn!='lag' and fn!='lead' and fn!='nth_value'>)
-    ( <fn=='first_value' or fn=='last_value'> ae.any | <fn!='first_value' and fn!='last_value'> )
+    ( <symbols and (fn=='lag' or fn=='lead' or fn=='nth_value')> symbols.any ', ' int_expr  | <fn!='lag' and fn!='lead' and fn!='nth_value'>)
+    ( <symbols and (fn=='first_value' or fn=='last_value')> symbols.any | <fn!='first_value' and fn!='last_value'> )
     ;
 
-fragment forClause : FOR ( UPDATE | NO KEY UPDATE | SHARE | KEY SHARE);
+fragment forClause : FOR ( UPDATE | NO KEY UPDATE | SHARE | KEY SHARE) error['not allowed with'] ;
 
 fragment orderBy : ORDER BY;
 
-//caveat no support for distinct on clause
-select [outmost=1, rep=random[1,5,',']] returns [c]
+//distinct clause needs to be disabled for TLP
+select [outmost=1, rep=random[1,5,','], type='any'] returns [c]
     : 
     @2
-    SELECT (DISTINCT | ALL)? (
+    SELECT ALL? (
         90% ( tt=t.any DOT  c+=tt.c.unique_any 90% | windowColumn )**rep
-        | ASTERISK ( tt=$t.next (c+=$tt.c.next)**tt.c.len )**t.len
+        | <outmost==1> ASTERISK ( tt=$t.next (c+=$tt.c.next)**tt.c.len )**t.len
     ) 
     @1
     at=$tables
-	FROM ( tt=at.unique_any tt.c=$column[tt] t+=$tt | 30% '(' cc=$select[0] ')' AS tt=new['table'] tt.c=$cc t+=$tt)
-	//no separate needed since it is directly positioned after the FROM clause
+	FROM ( tt=at.unique_any ( <type=='any'> tt.c=$columns[tt] | <type!='any'> tt.c=$columns[tt].filter['type', '==', type] ) t+=$tt ft=$tt | 30% '(' cc=$select[0, random[1,5,','], type] ')' AS tt=new['table'] tt.c=$cc t+=$tt ft=$tt )
+	//no separation needed since it is directly positioned after the FROM clause
     (
-		JOIN ( tt=at.unique_any tt.c=$column[tt] t+=$tt | 5% '(' cc=$select[0] ')' AS tt=new['table'] tt.c=$cc t+=$tt)
+		JOIN ( tt=at.unique_any ( <type=='any'> tt.c=$columns[tt] | <type!='any'> tt.c=$columns[tt].filter['type', '==', type] ) t+=$tt | 5% '(' cc=$select[0, random[1,5,','], type] ')' AS tt=new['table'] tt.c=$cc t+=$tt) 
+        ON pivot_type=$columns[ft].any.type ft '.' columns[ft].filter['type', '==', pivot_type].any EQ tt '.' columns[tt].filter['type', '==', pivot_type].any
 	)**random[0,1,90]
     @3
     ( ' /*BEGIN_COND*/ ' <outmost==1> | ' ' <outmost==0>)
@@ -767,18 +768,18 @@ where_predicate [t, c, outmost]:
     ( ' /*BEGIN_PRED*/ ' <outmost==1> | ' ' <outmost==0> )
     ( 
         80% predicate[t, c]
-	    | c.any IN '(' select[0, random[1,',']] ')'
-	    | NOT? EXISTS '(' select[0] ')'
+	    | cc=t.any.c.any IN '(' select[0, random[1,','], cc.type] ')'
+	    | NOT? EXISTS '(' select[0] ')' 
     )
     ( ' /*END_PRED*/ ' <outmost==1> | ' ' <outmost==0> )
 	;
 
 predicate [t, c]
-    : (     50%'(' pivot=$t.any.c.any ( symbols=$t.any.c expr[pivot.type] | tt=t.any DOT  cc=tt.c.filter['type', '==', pivot.type].any ) 
-                binary_comp_op
-                ( symbols=$t.any.c expr[pivot.type] 80% | tt=t.any DOT  cc=tt.c.filter['type', '==', pivot.type].any ) 
-            ')' 
-            | target=t.any.c.any between[target.type] 
+    : ( 50%'(' pivot=$t.any.c.any ( symbols=$t.any.c expr[pivot.type] | tt=t.any DOT  cc=tt.c.filter['type', '==', pivot.type].any ) 
+        binary_comp_op
+        ( symbols=$t.any.c expr[pivot.type] 80% | tt=t.any DOT  cc=tt.c.filter['type', '==', pivot.type].any ) 
+        ')' 
+        | target=t.any.c.any between[target.type] 
       );
 
 tables returns [t] : t=$query['SELECT table_name AS name, table_type AS type, table_schema FROM information_schema.tables WHERE table_schema NOT IN (\'information_schema\', \'pg_catalog\');', 'name', 'type', 'type'].filter['type','!=','VIEW'];
@@ -866,6 +867,7 @@ EXTERNAL : SPACE E X T E R N A L SPACE;
 FALSE : SPACE F A L S E SPACE;
 FIRST : SPACE F I R S T SPACE;
 FLOAT : SPACE F L O A T SPACE;
+FOR : SPACE F O R SPACE;
 FOREIGN_KEY : SPACE F O R E I G N SPACE K E Y SPACE;
 FROM : SPACE F R O M SPACE;
 FULL : SPACE F U L L SPACE;
@@ -925,6 +927,7 @@ ONLINE : SPACE O N L I N E SPACE;
 ONLY : SPACE O N L Y SPACE;
 OPTION : SPACE O P T I O N SPACE;
 OR : SPACE O R SPACE;
+ORDER : SPACE O R D E R SPACE;
 OVER : SPACE O V E R SPACE;
 OVERRIDING : SPACE O V E R R I D I N G SPACE;
 OWNED : SPACE O W N E D SPACE;
@@ -958,6 +961,7 @@ SEQUENCES : SPACE S E Q U E N C E S SPACE;
 SERIALIZABLE : SPACE S E R I A L I Z A B L E SPACE;
 SESSION : SPACE S E S S I O N SPACE;
 SET : SPACE S E T SPACE;
+SHARE : SPACE S H A R E SPACE;
 SHARED : SPACE S H A R E D SPACE;
 SIMILAR : SPACE S I M I L A R SPACE;
 SIMPLE : SPACE S I M P L E SPACE;
@@ -1008,6 +1012,7 @@ SQ : '\'';
 COMMA : ',';
 DOT : '.';
 
+fragment FDIGIT : [1-9];
 fragment DIGIT : [0-9];
 fragment SPACE : [\u0020];
 fragment NL : [\n];

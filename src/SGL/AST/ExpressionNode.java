@@ -140,6 +140,12 @@ public class ExpressionNode extends Node {
     @Override
     public String render(List<String> function_list, String padding, boolean print){
         String handle = "ctx.eval("+lhs.render(function_list, "", false)+", \""+operator+"\", "+rhs.render(function_list, "", false)+")";
+        if (operator.equals("and")){
+            handle = "Variable.factory("+lhs.render(function_list, "", false)+".getBoolean() &&  "+rhs.render(function_list, "", false)+".getBoolean())";
+        }
+        else if (operator.equals("or")){
+            handle = "Variable.factory("+lhs.render(function_list, "", false)+".getBoolean() ||  "+rhs.render(function_list, "", false)+".getBoolean())";
+        }
         if (print && !suppressed){
             handle = padding + this.debugging + this.lines + "\n" + padding +"buf.add("+handle+");\n";
         }

@@ -209,6 +209,7 @@ variable
    | STRING_LITERAL
    | INT_LITERAL
    | BOOL_LITERAL
+   | LPAREN expression RPAREN
    ;
 
 ebnf

@@ -101,33 +101,33 @@ public class AlternationNode extends Node {
                 code = code + indentation + indentation + "opt.addOption("+i+", "+this.weights.get(i).doubleValue()+");\n";
             }
             else {
-                code = code + indentation + indentation + "try{\n";
+                code = code + indentation + indentation + "//try{\n";
                 code = code + indentation + indentation + indentation + "if("+this.predicates.get(i).render(function_list, "", false)+".getBoolean()){\n";
                 code = code + indentation + indentation + indentation + indentation + "opt.addOption("+i+", "+this.weights.get(i).doubleValue()+");\n";
                 code = code + indentation + indentation + indentation + "}\n";
-                code = code + indentation + indentation + "}\n";
-                code = code + indentation + indentation + "catch (Exception e){\n";
-                code = code + indentation + indentation + "}\n";
+                code = code + indentation + indentation + "//}\n";
+                code = code + indentation + indentation + "//catch (Exception e){\n";
+                code = code + indentation + indentation + "//}\n";
             }
         }
-        code = code + indentation + indentation + "while(true) {\n";
+        code = code + indentation + indentation + "//while(true) {\n";
         code = code + indentation + indentation + indentation + "int index = opt.randomly();\n";
-        code = code + indentation + indentation + indentation + "boolean done = false;\n";
-        code = code + indentation + indentation + indentation + "try{\n";
+        code = code + indentation + indentation + indentation + "//boolean done = false;\n";
+        code = code + indentation + indentation + indentation + "//try{\n";
         for (int i=0; i<this.weights.size(); i++){
             code = code + indentation + indentation + indentation + indentation + "if(index=="+i+"){\n";
             code = code + this.get_outward_edges().get(i).get_dest().render(function_list, indentation+indentation+indentation+indentation+indentation, true);
-            code = code + indentation + indentation + indentation + indentation + indentation +"done = true;\n";
+            code = code + indentation + indentation + indentation + indentation + indentation +"//done = true;\n";
             code = code + indentation + indentation + indentation + indentation + "}\n";
         }
-        code = code + indentation + indentation + indentation + "}\n";
-        code = code + indentation + indentation + indentation + "catch (Exception e){\n";
-        code = code + indentation + indentation + indentation + indentation + "opt.removeOption(index);\n";
-        code = code + indentation + indentation + indentation + "}\n";
-        code = code + indentation + indentation + indentation + "if(done) {\n";
-        code = code + indentation + indentation + indentation + indentation + "break;\n";
-        code = code + indentation + indentation + indentation + "}\n";
-        code = code + indentation + indentation + "}\n";
+        code = code + indentation + indentation + indentation + "//}\n";
+        code = code + indentation + indentation + indentation + "//catch (Exception e){\n";
+        code = code + indentation + indentation + indentation + indentation + "//opt.removeOption(index);\n";
+        code = code + indentation + indentation + indentation + "//}\n";
+        code = code + indentation + indentation + indentation + "//if(done) {\n";
+        code = code + indentation + indentation + indentation + indentation + "//break;\n";
+        code = code + indentation + indentation + indentation + "//}\n";
+        code = code + indentation + indentation + "//}\n";
         code = code + indentation + indentation + "return buf;\n" + indentation + "}\n";
         function_list.add(code);
         return handle;

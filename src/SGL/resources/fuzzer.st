@@ -276,7 +276,7 @@ public class Fuzzer{
 
         public Variable inherit(String symbol) throws Exception{
             Variable retv = Variable.placeholder();
-            for (int i = this.symbolStack.size() - 1; i >= 0; i--) {
+            for (int i = this.symbolStack.size() - 1; i >= 1; i--) {
                 HashMap<String, Variable> frame = this.symbolStack.get(i);
                 if (frame.containsKey(symbol)) {
                     if (retv.inherit(frame.get(symbol))){
@@ -547,15 +547,9 @@ public class Fuzzer{
                 throw new IllegalArgumentException("ERROR : Context.eval :: the operator \"$-\" is not applicable when either side of the operation is not numerical");
             }
             if (operator.equals("and")){
-                if (!a.isBoolean() || !b.isBoolean()){
-                    throw new IllegalArgumentException("ERROR : Context.eval :: the operator \"and\" is not applicable when either side of the operation is not boolean");
-                }
                 return Variable.factory(a.getBoolean() && b.getBoolean());
             }
             if (operator.equals("or")){
-                if (!a.isBoolean() || !b.isBoolean()){
-                    throw new IllegalArgumentException("ERROR : Context.eval :: the operator \"or\" is not applicable when either side of the operation is not boolean");
-                }
                 return Variable.factory(a.getBoolean() || b.getBoolean());
             }
             return Variable.factory(a.compare(operator, b));
@@ -835,7 +829,7 @@ public class Fuzzer{
             }
             else if (name.equals("len")){
                 if (this.state == State.UNINITIALIZED){
-                    throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: attribute len is not applicable to uninitialized variables");
+                    return new Variable(0);
                 }
                 if (this.isSingleValued){
                     return new Variable(1);
@@ -998,7 +992,7 @@ public class Fuzzer{
         }
         public boolean getBoolean() throws UnavailableException{
             if (this.state == State.UNINITIALIZED){
-                throw new UnavailableException("Fuzzer.Variable.getBoolean :: the current variable is null", false, true, false);
+                return false;
             }
             if (!this.containsBoolean){
                 return this.state!=State.UNINITIALIZED;

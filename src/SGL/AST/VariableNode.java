@@ -12,7 +12,7 @@ public class VariableNode extends ExpressionNode{
     private boolean boolLiteral;
     private int type;
 
-    public static VariableNode build(GrammarGraph graph, VariableContext var){
+    public static ExpressionNode build(GrammarGraph graph, VariableContext var){
         if (var.compIdentifier()!=null){
             VariableNode node = new VariableNode(CompIdentifierNode.build(graph, var.compIdentifier(), true));
             graph.add_node(node);
@@ -36,6 +36,9 @@ public class VariableNode extends ExpressionNode{
             graph.add_node(node);
             node.lines = var.getStart().getLine();
             return node;
+        }
+        if (var.expression()!=null){
+            return ExpressionNode.build(graph, var.expression());
         }
         Utils.panic("VariableNode::build : Internal error");
         return null;
