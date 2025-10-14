@@ -97,10 +97,15 @@ public class Fuzzer{
         private String content; //only for terminals
         //only for non-terminals, or temporary leaf-nodes whose children are not yet built
         private List<Buffer> children; 
+        private Buffer parent;
+
+        //development only, trying to save as much info as possible on a crash
+        public static String DEBUG_CONTENT;
 
         public Buffer(){
             this.content = null;
             this.children = new ArrayList<>();
+            this.parent = null;
         }
 
         public Buffer(String content){
@@ -108,17 +113,23 @@ public class Fuzzer{
                 throw new IllegalArgumentException("ERROR : Buffer::Buffer : Terminal buffer nodes should not have null content. For a placeholder, use empty string \"\" instead");
             }
             this.content = content;
+            this.parent = null;
         }
 
         public void add(Buffer child){
             this.children.add(child);
+            child.parent = this;
+            back_trace_and_save(this);
         }
 
         public Variable add(Variable terminal) throws Exception{
             if (terminal==null || !terminal.isSingleValued){
                 return terminal;
             }
-            this.children.add(new Buffer(terminal.getValue()));
+            Buffer child = new Buffer(terminal.getValue());
+            this.children.add(child);
+            child.parent = this;
+            back_trace_and_save(this);
             //if (terminal.getValue().equals("INET")){
             //    new Exception().printStackTrace();
             //}
@@ -130,6 +141,8 @@ public class Fuzzer{
                 this.children.add(new Buffer());
             }
             this.children.set(index, child);
+            child.parent = this;
+            back_trace_and_save(this);
         }
 
         public int size(){
@@ -143,6 +156,7 @@ public class Fuzzer{
             if (idx>=this.children.size()){
                 throw new Exception("Buffer::remove : invalid index "+idx+", children size "+this.children.size());
             }
+            back_trace_and_save(this);
             return this.children.remove(idx);
         }
         public String toString(){
@@ -154,6 +168,12 @@ public class Fuzzer{
                 res = res + child.toString();
             }
             return res;
+        }
+        public static void back_trace_and_save(Buffer buf){
+            while (buf.parent!=null){
+                buf = buf.parent;
+            }
+            DEBUG_CONTENT = buf.toString();
         }
 
     }
@@ -310,6 +330,9 @@ public class Fuzzer{
             }
             if (symbol.equals("error")){
                 return this.addExpectedError(args);
+            }
+            if (symbol.equals("defined")){
+                return this.defined(args);
             }
             if (symbol.equals("new")){
                 return this.new_id(args);
@@ -510,6 +533,15 @@ public class Fuzzer{
                 this.errors.add(arg.getValue());
             }
             return Variable.factory("");
+        }
+
+        public Variable defined(List<Variable> args) throws Exception{
+            for (Variable arg : args){
+                if (arg.isPlaceHolder()){
+                    return Variable.factory(false);
+                }
+            }
+            return Variable.factory(true);
         }
 
         //
@@ -867,6 +899,12 @@ public class Fuzzer{
                 }
                 return this.filter(args.get(0), args.get(1).getValue(), args.get(2));
             }
+            else if (name.equals("concat")){
+                if (args.size()!=1){
+                    throw new IllegalArgumentException("Fuzzer.Variable.getAttr :: concat function expects 1 argument: the list of variables to be concated to the current list. "+args.size()+" are given");
+                }
+                return this.concat(args.get(0));
+            }
             if (this.attributes.get(name)==null){
                 this.attributes.put(name, Variable.placeholder());
             }
@@ -1018,10 +1056,31 @@ public class Fuzzer{
             //if (this.isSingleValued){
             //    throw new IllegalArgumentException("Fuzzer.Variable.addEntry :: addEntry is not applicable to single-valued variable");
             //}
+            if (v.state == State.UNINITIALIZED){
+                throw new IllegalArgumentException("Fuzzer.Variable.addEntry :: cannot add uninitialized variable to a list");
+            }
             this.entries.add(v);
             this.uniqueUsageCount.add(0);
             return this;
         }
+
+        //by returning this at the end of the setter, we can use this class in an FP way
+        public Variable concat(Variable v) throws Exception{
+            if (this.isSingleValued || this.state == State.UNINITIALIZED || this.state == State.INHERITED){
+                this.clone(factory());
+            }
+            if (v.state == State.UNINITIALIZED){
+                throw new IllegalArgumentException("Fuzzer.Variable.concat :: cannot append uninitialized variable to a list");
+            }
+            if (v.isSingleValued){
+                throw new IllegalArgumentException("Fuzzer.Variable.concat :: cannot append single-valued variable to a list");
+            }
+            for (Variable ae: v.entries){
+                this.addEntry(ae);
+            }
+            return this;
+        }
+
         public Variable getEntry(int idx)throws Exception{
             if (this.state == State.UNINITIALIZED){
                 throw new UnavailableException("Fuzzer.Variable.getEntry :: the current variable is null", false, true, false);
@@ -1067,6 +1126,19 @@ public class Fuzzer{
             }
             return res;
         }
+
+        public static List<Variable> copy_var_list(List<Variable> ori) throws Exception{
+            if (ori==null){
+                return null;
+            }
+            List<Variable> res = new ArrayList<>();
+            for (Variable item: ori){
+                Variable fresh = placeholder();
+                fresh.clone(item);
+                res.add(fresh);
+            }
+            return res;
+        }
     
         public static <T, U> HashMap<T, U> copy_map(HashMap<T, U> ori){
             if (ori==null){
@@ -1075,6 +1147,19 @@ public class Fuzzer{
             HashMap<T, U> res = new HashMap<>();
             for (HashMap.Entry<T, U> entry: ori.entrySet()){
                 res.put(entry.getKey(), entry.getValue());
+            }
+            return res;
+        }
+
+        public static HashMap<String, Variable> copy_var_map(HashMap<String, Variable> ori) throws Exception{
+            if (ori==null){
+                return null;
+            }
+            HashMap<String, Variable> res = new HashMap<>();
+            for (HashMap.Entry<String, Variable> entry: ori.entrySet()){
+                Variable fresh = placeholder();
+                fresh.clone(entry.getValue());
+                res.put(entry.getKey(), fresh);
             }
             return res;
         }
@@ -1362,73 +1447,80 @@ public class Fuzzer{
     public static String fuzz_next_and_execute() throws Exception{
         long stime = System.currentTimeMillis();
         try {
-            String stmt = "";
             try {
-                stmt = fuzz_next();
-                Fuzzer.generation_time += System.currentTimeMillis() - stime;
-            }
-            catch (Exception e){
-                Fuzzer.generation_time += System.currentTimeMillis() - stime;
-                throw e;
-            }
-            if (stmt==null || stmt.contains("-- [Internal Exception, moving on]")){
-                /**
-                String sql = "SELECT table_name, table_rows FROM information_schema.tables WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE' ORDER BY table_rows DESC;";
+                String stmt = "";
                 try {
-                    Statement statement = Fuzzer.connection.createStatement();
-                    ResultSet rs = statement.executeQuery(sql);
-                    // Print header
-                    System.out.printf("%-30s %15s%n", "Table Name", "Row Count");
-                    System.out.println("-".repeat(45));
-                    
-                    // Print results
-                    while (rs.next()) {
-                        String tableName = rs.getString("table_name");
-                        long rowCount = rs.getLong("table_rows");
-                        System.out.printf("%-30s %,15d%n", tableName, rowCount);
-                    }
-                    rs.close();
-                    statement.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-                **/
-                return stmt;
-            }
-            try {
-                try {
-                    if (stmt.contains("BEGIN_PRED")){
-                        return test_TLP(stmt);
-                    }
-                    else {
-                        Statement statement = Fuzzer.connection.createStatement();
-                        statement.setQueryTimeout(10);
-                        statement.execute(stmt);
-                        statement.close();
-                    }
+                    stmt = fuzz_next();
+                    Fuzzer.generation_time += System.currentTimeMillis() - stime;
                 }
                 catch (Exception e){
-                    throw new Exception(stmt+" -- ERROR! " + e.getMessage(), e);
+                    Fuzzer.generation_time += System.currentTimeMillis() - stime;
+                    throw e;
                 }
-                Fuzzer.context.resetError();
-                return stmt;
-            }
-            catch (Exception se){
-                //System.out.println(stmt + " -- ERROR!");
-                if (Fuzzer.context.isExpectedError(se.getMessage())){
+                if (stmt==null || stmt.contains("-- [Internal Exception, moving on]")){
+                    /**
+                    String sql = "SELECT table_name, table_rows FROM information_schema.tables WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE' ORDER BY table_rows DESC;";
+                    try {
+                        Statement statement = Fuzzer.connection.createStatement();
+                        ResultSet rs = statement.executeQuery(sql);
+                        // Print header
+                        System.out.printf("%-30s %15s%n", "Table Name", "Row Count");
+                        System.out.println("-".repeat(45));
+                        
+                        // Print results
+                        while (rs.next()) {
+                            String tableName = rs.getString("table_name");
+                            long rowCount = rs.getLong("table_rows");
+                            System.out.printf("%-30s %,15d%n", tableName, rowCount);
+                        }
+                        rs.close();
+                        statement.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                    **/
+                    return stmt;
+                }
+                try {
+                    try {
+                        if (stmt.contains("BEGIN_PRED")){
+                            return test_TLP(stmt);
+                        }
+                        else {
+                            Statement statement = Fuzzer.connection.createStatement();
+                            statement.setQueryTimeout(10);
+                            statement.execute(stmt);
+                            statement.close();
+                        }
+                    }
+                    catch (Exception e){
+                        throw new Exception(stmt+" -- ERROR! " + e.getMessage(), e);
+                    }
                     Fuzzer.context.resetError();
-                    return "-- [Expected Error]:" + se.getMessage();
+                    return stmt;
                 }
-                throw se;
+                catch (Exception se){
+                    //System.out.println(stmt + " -- ERROR!");
+                    if (Fuzzer.context.isExpectedError(se.getMessage())){
+                        Fuzzer.context.resetError();
+                        return "-- [Expected Error]:" + se.getMessage();
+                    }
+
+                    throw se;
+                }
+                finally {
+                    Fuzzer.turn_time += System.currentTimeMillis() - stime;
+                }
             }
-            finally {
-                Fuzzer.turn_time += System.currentTimeMillis() - stime;
+            catch (UnavailableException | DeadEndException ue){
+                Fuzzer.context.resetError();
+                //ue.printStackTrace();
+                return "-- [Unavailable Error]: don't worry if you see this occasionally";
             }
         }
-        catch (UnavailableException | DeadEndException ue){
-            Fuzzer.context.resetError();
-            //ue.printStackTrace();
-            return "-- [Unavailable Error]: don't worry if you see this occasionally";
+        catch (Exception e){
+            System.out.println("Before crashing, the buffer looks like: " + Buffer.DEBUG_CONTENT);
+            throw e;
         }
     }
     // at compile time, each standalone rule (without the fragment modifier)

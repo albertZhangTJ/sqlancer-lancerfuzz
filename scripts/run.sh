@@ -11,6 +11,7 @@ echo "Fuzzer generated" && \
 #cat Fuzzer.java && \
 mv Fuzzer.java src/sqlancer/any/Fuzzer.java && \
 #Second build with the real Fuzzer code, to get the sqlancer jar
+./scripts/db_setup.sh
 echo "Building SQLancer" && \
 mvn clean package -Dskip.SGL=true -DskipTests && \
 cd target && \
@@ -20,3 +21,4 @@ java -jar sqlancer-jar-with-dependencies.jar -g && \
 cd .. && \
 echo "Finished, cleaning up" && \
 cp src/sqlancer/any/Fuzzer.java.template.txt src/sqlancer/any/Fuzzer.java
+./scripts/cleanup.sh
