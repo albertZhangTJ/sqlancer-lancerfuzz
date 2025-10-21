@@ -75,7 +75,7 @@ inOperator
 fromTable : //TODO
     ;
 
-fragment subquery
+subquery
     : ' (' cc=$select ') ' AS tt=new['table'] tt.c=$cc t+=$tt
     ;
 
@@ -84,7 +84,7 @@ concat_op
     : ' || '
     ;
 
-expr [type] : et=$type_matching[type] commonExprErr
+expr [type] : et=$type_matching[type] commonExprErr error['does not exist'] // TODO: this is a bug, just sweeping it under the carpet temporarily
     ( <et=='INT'> int_expr
     | <et=='BOOLEAN'> boolean_expr
     | <et=='TEXT'> text_expr
@@ -359,7 +359,7 @@ type_matching [type] returns [effective_type]
     | <type=='INET'> effective_type=$'INET'
     ;
 
-fragment alterColumn : ALTER COLUMN columns[t].any ' ';
+alterColumn : ALTER COLUMN columns[t].any ' ';
 
 alterTable [view=false]
     : ALTER ( VIEW view=$true| TABLE (ONLY error['cannot use ONLY for foreign key on partitioned table'])? ) 
@@ -424,11 +424,11 @@ comment
 // TODO: PostgresCommon
 
 delete
-    : DELETE FROM ONLY? t=tables.any wherePredicate[t]? (RETURNING any_expr)? error['out of range', 'cannot cast', 'invalid input syntax for', 'division by zero']
+    : DELETE FROM ONLY? t=tables.any where_predicate[t, 0]? (RETURNING any_expr)? error['out of range', 'cannot cast', 'invalid input syntax for', 'division by zero']
     ;
 
 discard
-    : DISCARD (<tables.filter['type','==', 'BASE TABLE'].len>0> (ALL | TEMPORARY | TEMP) | PLANS | SEQUENCES ) error['cannot run inside a transaction block']
+    : DISCARD ( <tables.filter['type','==', 'BASE TABLE'].len>0> (ALL | TEMPORARY | TEMP) | PLANS | SEQUENCES ) error['cannot run inside a transaction block']
     ;
 
 dropIndex 
@@ -487,16 +487,16 @@ op_classes [type='any'] :
     ;
 
 createIndex [ih=false]
-    : CREATE UNIQUE? INDEX new['index'] ON ONLY? t=tables.any c=$columns[t] ( USING ( ' BTREE ' | ' HASH ' ih=$true | ' GIST ' | ' GIN' ))? 
+    : CREATE UNIQUE? INDEX new['index'] ON ONLY? t+=tables.any c=$columns[t.any] t.any.c=$c ( USING ( ' BTREE ' | ' HASH ' ih=$true | ' GIST ' | ' GIN' ))? 
     ' (' ( c.any | <ih!=true> (cc=c.any SPACE (op_classes[cc.type] error['does not accept', 'does not exist for access method'])**random[0,1,99] ( ASC | DESC )? ( ' NULLS FIRST ' | ' NULLS LAST ' )**random[0,1,99] )**random[1, 3, ','] ) ') '
-    ( INCLUDE '(' c.unique_any**random[1, c.len, ','] ')' <ih!=true> | ' ') wherePredicate[t]?
+    ( INCLUDE '(' c.unique_any**random[1, c.len, ','] ')' <ih!=true> | ' ') where_predicate[t, 0]?
     error['already contains data', 'You might need to add explicit type casts', ' collations are not supported', 
         'because it has pending trigger events', 'could not determine which collation to use for index expression', 'could not determine which collation to use for string comparison', 
         'is duplicated', 'access method \"gin\" does not support unique indexes', 'access method \"hash\" does not support unique indexes', 'already exists', 
         'could not create unique index', 'has no default operator class', 'does not support', 'cannot cast', 'unsupported UNIQUE constraint with partition key definition', 
         'insufficient columns in UNIQUE constraint definition', 'invalid input syntax for', 'must be type ', 'integer out of range', 'division by zero', 'out of range', 
         'functions in index predicate must be marked IMMUTABLE', 'functions in index expression must be marked IMMUTABLE', 
-        'result of range difference would not be contiguous', 'which is part of the partition key'
+        'result of range difference would not be contiguous', 'which is part of the partition key', 'cannot use subquery in index predicate'
     ]
     ;
 
@@ -643,9 +643,9 @@ fragment appendIndexParam
 
 fragment deleteOrUpdateAction : NO ACTION | RESTRICT | CASCADE | SET NULL | SET DEFAULT ;
 
-fragment appendExcludeElement : ( cc=c.any op_type=$cc.type | '(' op_type=$effective_data_types.any expr[op_type] ')' ) op_classes[op_type]? (ASC | DESC)? (NULLS (FIRST | LAST) error['operator'])?;
+appendExcludeElement : ( cc=c.any op_type=$cc.type | '(' op_type=$effective_data_types.any expr[op_type] ')' ) op_classes[op_type]? (ASC | DESC)? (NULLS (FIRST | LAST) error['operator'])?;
 
-fragment tableConstraints
+tableConstraints
     : ( CHECK '(' boolean_expr ')' error['constraint must be added to child tables too', 'missing FROM-clause entry for table'] 
     | UNIQUE '(' (c.unique_any)**random[1, c.len, ',', 95] ')' appendIndexParam error['appears twice in unique constraint'] //TODO: WTF
     | error['multiple primary keys'] PRIMARY_KEY '(' (c.unique_any)**random[1, c.len, ',', 95] ')' appendIndexParam
@@ -653,7 +653,7 @@ fragment tableConstraints
       ( MATCH FULL | MATCH SIMPLE )?  ( ON DELETE deleteOrUpdateAction error['ERROR: invalid ON DELETE action for foreign key constraint containing generated column'] )?
       ( ON UPDATE deleteOrUpdateAction error['invalid ON UPDATE action for foreign key constraint containing generated column'] )?
       ( DEFERRABLE (INITIALLY DEFERRED | INITIALLY IMMEDIATE ) | NOT DEFERRABLE )?
-    | EXCLUDE '(' (appendExcludeElement WITH error['is not commutative'] binary_comp_op)**random[1, ',', 99] ')' appendIndexParam wherePredicate? error['syntax error']
+    | EXCLUDE '(' (appendExcludeElement WITH error['is not commutative'] binary_comp_op)**random[1, ',', 99] ')' appendIndexParam where_predicate[t,0]? error['syntax error']
       error['is not valid', 'no operator matches', 'operator does not exist', 'unknown has no default operator class',
           'exclusion constraints are not supported on partitioned tables', 'The exclusion operator must be related to the index operator class for the constraint',
           'could not create exclusion constraint'
@@ -684,7 +684,7 @@ generateInherits
       'cannot inherit from partitioned table', 'has a collation conflict', 'inherits conflicting default values', 'specifies generation expression']
     ;
 
-fragment generatePartitionBy 
+generatePartitionBy 
     : n=$3 PARTITION BY ( RANGE | LIST n=$1 | HASH ) error['unrecognized parameter', 'cannot use constant expression', 'cannot add NO INHERIT constraint to partitioned table', 
       'unrecognized parameter', 'unsupported PRIMARY KEY constraint with partition key definition', 'which is part of the partition key.', 
       'unsupported UNIQUE constraint with partition key definition', 'does not accept data type'
@@ -693,12 +693,12 @@ fragment generatePartitionBy
 
 generateUsing : USING tableAccessMethod.any;
 
-createTable : part=$false temp=$false CREATE (TEMPORARY temp=$true | TEMP temp=$true | UNLOGGED)? TABLE ifNotExists? new['table'] (
-        '(' ((cc=new['columns'] ' ' type=$data_types cc.type=$type c+=$cc (<type=='TEXT'> collate_op error['not supported by type regclass'] | '') ' ' columnConstraints[type]**random[0,1,95] ))**random[3,',',50] (', ' tableConstraints
+createTable : part=$false temp=$false CREATE (TEMPORARY temp=$true | TEMP temp=$true | UNLOGGED)? TABLE ifNotExists? t+=new['table'] (
+        '(' ((cc=new['columns'] ' ' type=$data_types cc.type=$type t.any.c+=$cc c+=$cc (<type=='TEXT'> collate_op error['not supported by type regclass'] | '') ' ' columnConstraints[type]**random[0,1,95] ))**random[3,',',50] (', ' tableConstraints
             error['constraints on temporary tables may reference only temporary tables','constraints on unlogged tables may reference only permanent or unlogged tables',
                 'constraints on permanent tables may reference only permanent tables', 'cannot be implemented', 'there is no unique constraint matching given keys for referenced table',
                 'cannot reference partitioned table', 'unsupported ON COMMIT and foreign key combination', 'ERROR: invalid ON DELETE action for foreign key constraint containing generated column',
-                'exclusion constraints are not supported on partitioned tables'
+                'exclusion constraints are not supported on partitioned tables', 'functions in index expression must be marked IMMUTABLE'
             ]
         )?  ')' (<temp!=true> generateinherits | '' )**random[0,1] (<defined[c] and temp!=true> generatePartitionBy part=$true | '' )**random[0,1] generateUsing? (<part==false> appendIndexParam | '' )?
         ( <temp> ON COMMIT ( PRESERVE ROWS | DELETE ROWS | DROP) | '' )?
@@ -716,12 +716,12 @@ createUpdate
       'invalid regular expression', 'View columns that are not columns of their base relation are not updatable','multiple assignments to same column', 
       'new row violates check option for view', 'invalid input syntax for ', 'operator does not exist: text = boolean', 
       'violates check constraint', 'could not determine which collation to use for string comparison', 'but expression is of type'
-    ] commonInsertUpdateErr UPDATE t=tables.any c=$columns[t].subset SET (c.next '=' (constant[c.cur.type] | DEFAULT | '(' symbols=$columns[t] expr[c.cur.type] ')') )**random[c.len, ','] wherePredicate**random[0,1,90]
+    ] commonInsertUpdateErr UPDATE t+=tables.any c=$columns[t.any].subset t.any.c=$c SET (c.next '=' (constant[c.cur.type] | DEFAULT | '(' symbols=$columns[t.any] expr[c.cur.type] ')') )**random[c.len, ','] where_predicate[t,0]**random[0,1,90]
     ;
 
 fragment vacuumOption : ' FULL ' | ' FREEZE ' | ' ANALYZE ' | ' VERBOSE ' | ' DISABLE_PAGE_SKIPPING ' | ' SKIP_LOCKED ' | ' INDEX_CLEANUP ' | ' TRUNCATE ';
 
-fragment tablesAndColumns
+tablesAndColumns
     : t=tables.any (c=$columns[t] '(' c.unique_any**random[1, c.len, ','] ')')? 
     ;
 
@@ -762,7 +762,7 @@ fragment commonExprErr
     'invalid hexadecimal digit', 'invalid hexadecimal data: odd number of digits', 'zero raised to a negative power is undefined', 'division by zero', 'invalid input syntax for type money', 
     'invalid input syntax for type', 'cannot cast type', 'value overflows numeric format', 'LIKE pattern must not end with escape character', 
     'is of type boolean but expression is of type text', 'cannot convert infinity',
-    'a negative number raised to a non-integer power yields a complex result', 'could not determine polymorphic type because input has type unknown', 'character number must be positive', 'overflow', 'too long']
+    'a negative number raised to a non-integer power yields a complex result', 'could not determine polymorphic type because input has type unknown', 'character number must be positive', 'overflow', 'too long', 'invalid name syntax']
     toCharFuncErr bitStrOpErr funcErr commonRangeExpressionErr commonRegexExpressionErr;
 
 setConstraints : SET CONSTRAINTS ALL ( DEFERRED | IMMEDIATE );
@@ -770,18 +770,28 @@ resetRole : RESET ROLE;
 resetAll : RESET ALL;
 
 //bug pass in ae
-windowColumn : fn=windowFunctionNames.any  '(' windowFuncArgs[fn] ')' OVER '(' orderBy t.any.c.any ( ASC | DESC ) ')' alias c+=new['column'];
+windowColumn returns [cc]: error['must appear in the GROUP BY clause or be used in an aggregate function'] fn=windowFunctionNames  '(' st=$windowFuncArgs[fn] ( <fn.type=='polymorphic'> type=$st | <fn.type!='polymorphic'> type=$fn.type ) ')' OVER '(' orderBy t.any.c.any ( ASC | DESC ) ')' alias cc=new['columns'] cc.type=$type; 
 
 windowFunctionNames returns [fn] 
-    : fn+=$'row_number' fn+=$'rank' fn+=$'dense_rank' fn+=$'percent_rank' fn+=$'cume_dist' fn+=$'ntile' fn+=$'lag' fn+=$'lead' fn+=$'first_value' 
-    fn+=$'last_value' fn+=$'nth_value'
+    : fn=$'row_number' fn.type=$'bigint' 
+    | fn=$'rank' fn.type=$'bigint' 
+    | fn=$'dense_rank' fn.type=$'bigint' 
+    | fn=$'percent_rank' fn.type=$'double precision'
+    | fn=$'cume_dist' fn.type=$'double precision'
+    | fn=$'ntile' fn.type=$'integer' error['argument of ntile must be greater than zero']
+    | fn=$'lag' fn.type=$'polymorphic'
+    | fn=$'lead' fn.type=$'polymorphic'
+    | fn=$'first_value' fn.type=$'polymorphic'
+    | fn=$'last_value' fn.type=$'polymorphic'
+    | fn=$'nth_value' fn.type=$'polymorphic' error['argument of nth_value must be greater than zero']
     ;
 
 // Room for improvement: better "else"-like semantics/last resort matching
-windowFuncArgs [fn=''] 
-    : ( <fn=='ntile'> int_expr | <fn!='ntile'> '')
-    ( <symbols and (fn=='lag' or fn=='lead' or fn=='nth_value')> symbols.any ', ' int_expr  | <fn!='lag' and fn!='lead' and fn!='nth_value'>)
-    ( <symbols and (fn=='first_value' or fn=='last_value')> symbols.any | <fn!='first_value' and fn!='last_value'> )
+windowFuncArgs [fn=''] returns [st]
+    : ( <fn=='ntile'> int_expr  st=$'integer' | <fn!='ntile'> '')
+    ( <symbols and (fn=='lag' or fn=='lead' or fn=='nth_value')> s=symbols.any st=$s.type', ' int_expr  | <fn!='lag' and fn!='lead' and fn!='nth_value'>)
+    ( <symbols and (fn=='first_value' or fn=='last_value')> s=symbols.any st=$s.type | <fn!='first_value' and fn!='last_value'> )
+    ( <defined[st]==false> st=$'' | <defined[st]> )
     ;
 
 forClause : FOR ( UPDATE | NO KEY UPDATE | SHARE | KEY SHARE) error['not allowed with'] ;
@@ -791,40 +801,52 @@ orderBy : ORDER BY;
 //distinct clause needs to be disabled for TLP
 select [outmost=1, rep=random[1,5,','], type='any'] returns [c]
     : 
-    @2
+    @3
     SELECT ALL? (
-        90% ( tt=t.any DOT  c+=tt.c.unique_any 90% | <type=='any'> windowColumn )**rep
+        90% ( tt=t.any DOT  c+=tt.c.unique_any 90% | <type=='any'> c+=$windowColumn )**rep
         | <outmost==1> ASTERISK ( tt=$t.next (c+=$tt.c.next)**tt.c.len )**t.len
     ) 
     @1
     at=$tables
-	FROM ( tt=at.unique_any ( <type=='any'> tt.c=$columns[tt] | <type!='any'> tt.c=$columns[tt].filter['type', '==', type] ) t+=$tt ft=$tt symbols.concat[tt.c] | 30% '(' cc=$select[0, random[1,5,','], type] ')' AS tt=new['table'] tt.c=$cc t+=$tt ft=$tt symbols.concat[cc] )
+	FROM ( 
+        (
+            tt=at.unique_any ( <type=='any'> tt.c=$columns[tt] cc=$tt.c | <type!='any'> tt.c=$columns[tt].filter['type', '==', type] cc=$tt.c ) t+=$tt ft=$tt 
+            | 30% '(' cc=$select[0, random[1,5,','], type] ')' AS tt=new['table'] tt.c=$cc 
+        )
+        t+=$tt ft=$tt symbols.concat[cc] 
+    )
 	//no separation needed since it is directly positioned after the FROM clause
     (
-		JOIN ( tt=at.unique_any ( <type=='any'> tt.c=$columns[tt] | <type!='any'> tt.c=$columns[tt].filter['type', '==', type] ) t+=$tt symbols.concat[tt.c] | 5% '(' cc=$select[0, random[1,5,','], type] ')' AS tt=new['table'] tt.c=$cc t+=$tt symbols.concat[cc]) 
-        ON pivot_type=$columns[ft].any.type ft '.' columns[ft].filter['type', '==', pivot_type].any EQ tt '.' columns[tt].filter['type', '==', pivot_type].any
+		JOIN error['ambiguous'] ( 
+            (
+                tt=at.unique_any ( <type=='any'> tt.c=$columns[tt] cc=$tt.c | <type!='any'> tt.c=$columns[tt].filter['type', '==', type] cc=$tt.c ) t+=$tt 
+                | 5% '(' cc=$select[0, random[1,5,','], type] ')' AS tt=new['table'] tt.c=$cc
+            ) t+=$tt symbols.concat[cc]
+        ) ON pivot_type=$ft.c.any.type ft '.' ft.c.filter['type', '==', pivot_type].any EQ tt '.' tt.c.filter['type', '==', pivot_type].any
 	)**random[0,1,90]
-    @3
+    @2
     ( ' /*BEGIN_COND*/ ' <outmost==1> | ' ' <outmost==0>)
-    ( where_predicate[t, c, outmost] | ' ' <outmost==0> )
+    ( where_predicate[t, outmost] | ' ' <outmost==0> )
     (' /*END_COND*/ ' <outmost==1> | ' ' <outmost==0>)
 	//( ( UNION | INTERSECT )  selectStatement[0, random[c.len,',']] )?
-    (forClause? SC <outmost==1> | ' ' <outmost==0> )
+    (forClause? SC  <outmost==1> | ' ' <outmost==0> )
+     
 	;
 	
-where_predicate [t, c, outmost]:
+where_predicate [t, outmost]:
 	WHERE
     ( ' /*BEGIN_PRED*/ ' <outmost==1> | ' ' <outmost==0> )
     ( 
-        80% predicate[t, c]
-	    | cc=c.any IN '(' select[0, random[1,','], cc.type] ')'
+        80% predicate[t]
+	    | cc=t.any.c.any IN '(' select[0, random[1,','], cc.type] ')'
 	    | NOT? EXISTS '(' select[0] ')' 
     )
     ( ' /*END_PRED*/ ' <outmost==1> | ' ' <outmost==0> )
 	;
 
-predicate [t, c]
-    : ( 50%'(' pivot=$t.any.c.any ( symbols=$t.any.c expr[pivot.type] | tt=t.any DOT  cc=tt.c.filter['type', '==', pivot.type].any ) 
+predicate [t]
+    : ( 
+        50%'(' pivot=$t.any.c.any ( symbols=$t.any.c expr[pivot.type] | tt=t.any DOT  cc=tt.c.filter['type', '==', pivot.type].any ) 
         binary_comp_op
         ( symbols=$t.any.c expr[pivot.type] 80% | tt=t.any DOT  cc=tt.c.filter['type', '==', pivot.type].any ) 
         ')' 

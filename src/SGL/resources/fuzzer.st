@@ -3,14 +3,24 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-
+import java.util.Random;
 import java.util.Arrays;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.sql.ResultSetMetaData;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import java.lang.IllegalArgumentException;
 import java.lang.NumberFormatException;
 import sqlancer.SQLConnection;
 import java.sql.*;
 public class Fuzzer{
+
+    public static Random seeded_random;
+
+    public static int QUERY_LOG_CNT = 0;
+    public static String QUERY_LOG;
 
     public static long query_time = 0;
     public static long dispatch_time = 0;
@@ -27,6 +37,12 @@ public class Fuzzer{
             this.isUninitialized = isUninitialized;
             this.isOut = isOut;
         }
+        public UnavailableException(String message, UnavailableException cause){
+            super(message, cause);
+            this.isUndefined = cause.isUndefined;
+            this.isUninitialized = cause.isUninitialized;
+            this.isOut = cause.isOut;
+        }
     }
 
     public static class DeadEndException extends Exception {
@@ -34,11 +50,14 @@ public class Fuzzer{
         public DeadEndException(String message){
             super(message);
         }
+        public DeadEndException(String message, DeadEndException cause){
+            super(message, cause);
+        }
     }
 
     public static class Rand{
         public static <T> T random_from_list(List<T> l){
-            int idx = (int)(Math.random()*l.size());
+            int idx = (int)(Fuzzer.seeded_random.nextDouble()*l.size());
             return l.get(idx);
         }
         public static <T> T random_from_list_weighted(List<T> l, List<Integer> weights) throws DeadEndException{
@@ -49,7 +68,7 @@ public class Fuzzer{
             for (int w: weights){
                 total = total + w;
             }
-            total = (int)(total * Math.random());
+            total = (int)(total * Fuzzer.seeded_random.nextDouble());
             for (int i=0; i<l.size(); i++){
                 if (total<weights.get(i)){
                     return l.get(i);
@@ -59,16 +78,16 @@ public class Fuzzer{
             return l.get(l.size()-1);
         }
         public static int random(int min, int max){
-            return (int)(min + (max-min+1)*Math.random());
+            return (int)(min + (max-min+1)*Fuzzer.seeded_random.nextDouble());
         }
         public static boolean get_boolean(){
-            return Math.random()>=0.5;
+            return Fuzzer.seeded_random.nextDouble()>=0.5;
         }
         public static <T> List<T> subset(List<T> raw){
             List<T> l = new ArrayList<>();
             while (l.size()==0){
                 for (int idx=0; idx<raw.size(); idx++){
-                    if (Math.random()>=0.5){
+                    if (Fuzzer.seeded_random.nextDouble()>=0.5){
                         l.add(raw.get(idx));
                     }
                 }
@@ -394,7 +413,7 @@ public class Fuzzer{
                         double dr = 0.5;
                         int val = min;
                         while (true){
-                            if (Math.random()<dr){
+                            if (Fuzzer.seeded_random.nextDouble()<dr){
                                 break;
                             }
                             val++;
@@ -421,7 +440,7 @@ public class Fuzzer{
                         int val = min;
                         double dr = ds/100.0;
                         while (true){
-                            if (Math.random()<dr){
+                            if (Fuzzer.seeded_random.nextDouble()<dr){
                                 break;
                             }
                             val++;
@@ -441,11 +460,11 @@ public class Fuzzer{
                         int val = min;
                         double dr = ds/100.0;
                         if (ds==0){
-                            val += (int)((max-min+1)*Math.random());
+                            val += (int)((max-min+1)*Fuzzer.seeded_random.nextDouble());
                         }
                         else {
                             while (true){
-                                if (Math.random()<dr){
+                                if (Fuzzer.seeded_random.nextDouble()<dr){
                                     break;
                                 }
                                 val++;
@@ -466,7 +485,7 @@ public class Fuzzer{
                         int val = min;
                         double dr = 0.75;
                         while (true){
-                            if (Math.random()<dr){
+                            if (Fuzzer.seeded_random.nextDouble()<dr){
                                 break;
                             }
                             val++;
@@ -491,12 +510,12 @@ public class Fuzzer{
                         }
                         int val = min;
                         if (ds==0){
-                            val += (int)((max-min+1)*Math.random());
+                            val += (int)((max-min+1)*Fuzzer.seeded_random.nextDouble());
                         }
                         else {
                             double dr = ds/100.0;
                             while (true){
-                                if (Math.random()<dr){
+                                if (Fuzzer.seeded_random.nextDouble()<dr){
                                     break;
                                 }
                                 val++;
@@ -605,22 +624,87 @@ public class Fuzzer{
         }
         //requires 2 or more arguments
         //the 
+        //public Variable query(List<Variable> args) throws Exception{
+        //    long stime = System.currentTimeMillis();
+        //    try {
+        //        Statement stmt = Fuzzer.connection.createStatement();
+        //        stmt.setQueryTimeout(10);
+        //        //if (this.stmt==null){
+        //        //    throw new IllegalArgumentException("ERROR : Fuzzer.Context.query :: JDBC Connection to target DBMS is not set or set to null, query function not available");
+        //        //}
+        //        if (args.size()<2){
+        //            throw new IllegalArgumentException("ERROR : Fuzzer.Context.query :: a call to the query function must contain at least 2 arguments: query and column name");
+        //        }
+        //        String query = args.get(0).getValue();
+        //        String col = args.get(1).getValue();
+        //        Variable v = Variable.factory();
+        //        ResultSet rs = stmt.executeQuery(query);
+        //        while (rs.next()){
+        //            Variable r = Variable.factory(rs.getString(col));
+        //            for (int i=2; i<args.size(); i=i+2){
+        //                String attrCol = args.get(i).getValue();
+        //                String attr = args.get(i+1).getValue();
+        //                r.setAttr(attr, Variable.factory(rs.getString(attrCol)));
+        //            }
+        //            v.addEntry(r);
+        //        }
+        //        rs.close();
+        //        stmt.close();
+        //        return v;
+        //    }
+        //    catch (Exception e){
+        //        throw e;
+        //    }
+        //    finally {
+        //        Fuzzer.query_time += System.currentTimeMillis()-stime;
+        //    }
+        //}
+
         public Variable query(List<Variable> args) throws Exception{
             long stime = System.currentTimeMillis();
             try {
                 Statement stmt = Fuzzer.connection.createStatement();
                 stmt.setQueryTimeout(10);
-                //if (this.stmt==null){
-                //    throw new IllegalArgumentException("ERROR : Fuzzer.Context.query :: JDBC Connection to target DBMS is not set or set to null, query function not available");
-                //}
+                
                 if (args.size()<2){
                     throw new IllegalArgumentException("ERROR : Fuzzer.Context.query :: a call to the query function must contain at least 2 arguments: query and column name");
                 }
+                
                 String query = args.get(0).getValue();
                 String col = args.get(1).getValue();
+                
+                // Log the query
+                logToFile("=== QUERY ===\n" + query + "\n");
+                
                 Variable v = Variable.factory();
                 ResultSet rs = stmt.executeQuery(query);
+                
+                // Capture result set for logging
+                ResultSetMetaData rsmd = rs.getMetaData();
+                int columnCount = rsmd.getColumnCount();
+                List<String> loggedRows = new ArrayList<>();
+                
+                // Build header for log
+                StringBuilder header = new StringBuilder();
+                for (int i = 1; i <= columnCount; i++) {
+                    if (i > 1) header.append(" | ");
+                    header.append(rsmd.getColumnName(i));
+                }
+                loggedRows.add(header.toString());
+                loggedRows.add("-".repeat(header.length()));
+                
+                // Process results
                 while (rs.next()){
+                    // Build log row
+                    StringBuilder logRow = new StringBuilder();
+                    for (int i = 1; i <= columnCount; i++) {
+                        if (i > 1) logRow.append(" | ");
+                        String value = rs.getString(i);
+                        logRow.append(value != null ? value : "NULL");
+                    }
+                    loggedRows.add(logRow.toString());
+                    
+                    // Original functionality
                     Variable r = Variable.factory(rs.getString(col));
                     for (int i=2; i<args.size(); i=i+2){
                         String attrCol = args.get(i).getValue();
@@ -629,17 +713,50 @@ public class Fuzzer{
                     }
                     v.addEntry(r);
                 }
+                
+                // Log the response
+                StringBuilder response = new StringBuilder("=== RESPONSE ===\n");
+                if (loggedRows.size() > 2) {
+                    for (String row : loggedRows) {
+                        response.append(row).append("\n");
+                    }
+                    response.append("Total rows: ").append(loggedRows.size() - 2).append("\n");
+                } else {
+                    response.append("No rows returned\n");
+                }
+                response.append("\n");
+                logToFile(response.toString());
+                
                 rs.close();
                 stmt.close();
                 return v;
             }
             catch (Exception e){
+                // Log the exception
+                logToFile("=== ERROR ===\n" + e.getClass().getName() + ": " + e.getMessage() + "\n\n");
                 throw e;
             }
             finally {
                 Fuzzer.query_time += System.currentTimeMillis()-stime;
             }
         }
+
+        private void logToFile(String message) {
+            try (FileWriter fw = new FileWriter(Fuzzer.QUERY_LOG, true);
+                PrintWriter pw = new PrintWriter(fw)) {
+                
+                // Add timestamp
+                String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
+                pw.println("[" + timestamp + "]");
+                pw.print(message);
+                pw.flush();
+                
+            } catch (Exception e) {
+                // Silently fail - don't break query execution due to logging issues
+                System.err.println("Warning: Failed to write to query log: " + e.getMessage());
+            }
+        }
+
         //for the "new" built-in function 
         public Variable new_id(List<Variable> args) throws Exception{
             if (args.size()!=1){
@@ -790,7 +907,7 @@ public class Fuzzer{
                 }
             }
             this.attributes = copy_map(other.attributes);
-            this.cursor = 0;
+            this.cursor = -1;
         }
         
         // new, query, getColumn, withColumnAsAttr will not be handled as those are not attributes but functions
@@ -879,7 +996,7 @@ public class Fuzzer{
                     throw new UnavailableException("", false, true, false);
                 }
                 this.cursor += 1;
-                return this.entries.get((this.cursor-1)%this.entries.size());
+                return this.entries.get((this.cursor)%this.entries.size());
             }
             else if (name.equals("cur")){
                 if (this.state == State.UNINITIALIZED){
@@ -1218,12 +1335,12 @@ public class Fuzzer{
     
             //randomly select a range
             int ranges = set.size()/2;
-            int range = (int)(Math.random()*ranges);
+            int range = (int)(Fuzzer.seeded_random.nextDouble()*ranges);
             int start = set.get(range*2);
             int end = set.get(range*2+1);
     
             //return a random number from that range
-            return (int)(Math.random()*(end-start)+start);
+            return (int)(Fuzzer.seeded_random.nextDouble()*(end-start)+start);
         }
     }
 
@@ -1258,7 +1375,7 @@ public class Fuzzer{
                 }
                 total = total + this.weights.get(i);
             }
-            total = total * Math.random();
+            total = total * Fuzzer.seeded_random.nextDouble();
             for (int i=0; i<this.indices.size(); i++){
                 if (this.invalids.contains(i)){
                     continue;
@@ -1338,6 +1455,8 @@ public class Fuzzer{
             //Fuzzer.stmt.close();
             Fuzzer.connection.close();
         }
+        Fuzzer.QUERY_LOG_CNT++;
+        Fuzzer.QUERY_LOG = "query"+Fuzzer.QUERY_LOG_CNT+".log";
         if (conn != null){
             Fuzzer.connection = conn;
             //Fuzzer.stmt = conn.createStatement();
@@ -1363,17 +1482,29 @@ public class Fuzzer{
     }
 
     public static String fuzz_next() throws Exception{
+        long seed = System.nanoTime();
         try {
+            Fuzzer.seeded_random = new Random(seed);
+            // System.out.println("-- Seeding with: " + seed);
             String rule = Fuzzer.stages.get_next_rule();
             if (rule==null){
                 return null;
             }
-            //System.out.println("-- Generating for rule: " + rule);
-            return fuzz(rule);
+            String test = fuzz(rule);
+            //test = test + "  -- Statement seed: " + seed;
+            return test;
+        }
+        catch (UnavailableException e){
+            Fuzzer.context.resetError();
+            throw new UnavailableException("Statement seed: " + seed + "\n" + e.getMessage(), e);
+        }
+        catch (DeadEndException e){
+            Fuzzer.context.resetError();
+            throw new DeadEndException("Statement seed: " + seed + "\n" + e.getMessage(), e);
         }
         catch (Exception e){
             Fuzzer.context.resetError();
-            throw e;
+            throw new Exception("Statement seed: " + seed + "\n" + e.getMessage(), e);
         }
     }
 
