@@ -5,11 +5,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.Arrays;
-import java.io.FileWriter;
-import java.io.PrintWriter;
-import java.sql.ResultSetMetaData;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+//import java.io.FileWriter;
+//import java.io.PrintWriter;
+//import java.sql.ResultSetMetaData;
+//import java.text.SimpleDateFormat;
+//import java.util.Date;
 
 import java.lang.IllegalArgumentException;
 import java.lang.NumberFormatException;
@@ -19,8 +19,8 @@ public class Fuzzer{
 
     public static Random seeded_random;
 
-    public static int QUERY_LOG_CNT = 0;
-    public static String QUERY_LOG;
+    //public static int QUERY_LOG_CNT = 0;
+    //public static String QUERY_LOG;
 
     public static long query_time = 0;
     public static long dispatch_time = 0;
@@ -232,6 +232,11 @@ public class Fuzzer{
             this.symbolStack = new ArrayList<>();
             this.errors = new ArrayList<>();
             this.idCount = new HashMap<>();
+        }
+
+        public void clearStack(){
+            this.symbols = new HashMap<>();
+            this.symbolStack = new ArrayList<>();
         }
 
         public void addError(Variable v) throws Exception{
@@ -549,7 +554,9 @@ public class Fuzzer{
         //so we are using this as a placeholder
         public Variable addExpectedError(List<Variable> args) throws Exception{
             for (Variable arg : args){
-                this.errors.add(arg.getValue());
+                if (!this.errors.contains(arg.getValue())){
+                    this.errors.add(arg.getValue());
+                }
             }
             return Variable.factory("");
         }
@@ -624,42 +631,44 @@ public class Fuzzer{
         }
         //requires 2 or more arguments
         //the 
-        //public Variable query(List<Variable> args) throws Exception{
-        //    long stime = System.currentTimeMillis();
-        //    try {
-        //        Statement stmt = Fuzzer.connection.createStatement();
-        //        stmt.setQueryTimeout(10);
-        //        //if (this.stmt==null){
-        //        //    throw new IllegalArgumentException("ERROR : Fuzzer.Context.query :: JDBC Connection to target DBMS is not set or set to null, query function not available");
-        //        //}
-        //        if (args.size()<2){
-        //            throw new IllegalArgumentException("ERROR : Fuzzer.Context.query :: a call to the query function must contain at least 2 arguments: query and column name");
-        //        }
-        //        String query = args.get(0).getValue();
-        //        String col = args.get(1).getValue();
-        //        Variable v = Variable.factory();
-        //        ResultSet rs = stmt.executeQuery(query);
-        //        while (rs.next()){
-        //            Variable r = Variable.factory(rs.getString(col));
-        //            for (int i=2; i<args.size(); i=i+2){
-        //                String attrCol = args.get(i).getValue();
-        //                String attr = args.get(i+1).getValue();
-        //                r.setAttr(attr, Variable.factory(rs.getString(attrCol)));
-        //            }
-        //            v.addEntry(r);
-        //        }
-        //        rs.close();
-        //        stmt.close();
-        //        return v;
-        //    }
-        //    catch (Exception e){
-        //        throw e;
-        //    }
-        //    finally {
-        //        Fuzzer.query_time += System.currentTimeMillis()-stime;
-        //    }
-        //}
+        public Variable query(List<Variable> args) throws Exception{
+            long stime = System.currentTimeMillis();
+            try {
+                Statement stmt = Fuzzer.connection.createStatement();
+                stmt.setQueryTimeout(10);
+                //if (this.stmt==null){
+                //    throw new IllegalArgumentException("ERROR : Fuzzer.Context.query :: JDBC Connection to target DBMS is not set or set to null, query function not available");
+                //}
+                if (args.size()<2){
+                    throw new IllegalArgumentException("ERROR : Fuzzer.Context.query :: a call to the query function must contain at least 2 arguments: query and column name");
+                }
+                String query = args.get(0).getValue();
+                String col = args.get(1).getValue();
+                Variable v = Variable.factory();
+                ResultSet rs = stmt.executeQuery(query);
+                while (rs.next()){
+                    Variable r = Variable.factory(rs.getString(col));
+                    for (int i=2; i<args.size(); i=i+2){
+                        String attrCol = args.get(i).getValue();
+                        String attr = args.get(i+1).getValue();
+                        r.setAttr(attr, Variable.factory(rs.getString(attrCol)));
+                    }
+                    v.addEntry(r);
+                }
+                rs.close();
+                stmt.close();
+                return v;
+            }
+            catch (Exception e){
+                throw e;
+            }
+            finally {
+                Fuzzer.query_time += System.currentTimeMillis()-stime;
+            }
+        }
 
+        /**
+        //Debugging impl, query with logging
         public Variable query(List<Variable> args) throws Exception{
             long stime = System.currentTimeMillis();
             try {
@@ -755,7 +764,8 @@ public class Fuzzer{
                 // Silently fail - don't break query execution due to logging issues
                 System.err.println("Warning: Failed to write to query log: " + e.getMessage());
             }
-        }
+        }**/
+        
 
         //for the "new" built-in function 
         public Variable new_id(List<Variable> args) throws Exception{
@@ -1455,8 +1465,8 @@ public class Fuzzer{
             //Fuzzer.stmt.close();
             Fuzzer.connection.close();
         }
-        Fuzzer.QUERY_LOG_CNT++;
-        Fuzzer.QUERY_LOG = "query"+Fuzzer.QUERY_LOG_CNT+".log";
+        //Fuzzer.QUERY_LOG_CNT++;
+        //Fuzzer.QUERY_LOG = "query"+Fuzzer.QUERY_LOG_CNT+".log";
         if (conn != null){
             Fuzzer.connection = conn;
             //Fuzzer.stmt = conn.createStatement();
@@ -1672,6 +1682,7 @@ public class Fuzzer{
         //If the a previous statement failed on-entering
         //Its args might be carried over forever
         Fuzzer.context.args = null;
+        Fuzzer.context.clearStack();
         Buffer buf = dispatch(Fuzzer.context, rule);
         return buf.toString();
     }

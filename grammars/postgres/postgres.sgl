@@ -8,11 +8,11 @@ symbols_with_type [symbols, et] returns [fs]
 
 // PostgresAggregate.java
 aggregate_func  
-    : error['aggregate functions are not allowed in'] ('AVG(' ( int_expr | real_expr )**random[1, ', '] ')' 
-    | 'BIT_AND(' int_expr**random[1, ', '] ')' | 'BIT_OR(' int_expr**random[1, ', '] ')' | 'BOOL_AND(' boolean_expr**random[1, ', '] ')'
-    | 'BOOL_AND(' boolean_expr**random[1, ', '] ')' | 'COUNT(' int_expr**random[1, ', '] ')' | 'EVERY(' boolean_expr**random[1, ', '] ')'
+    : error['aggregate functions are not allowed in'] ('AVG(' ( expr['INT'] | expr['REAL'] )**random[1, ', '] ')' 
+    | 'BIT_AND(' expr['INT']**random[1, ', '] ')' | 'BIT_OR(' expr['INT']**random[1, ', '] ')' | 'BOOL_AND(' expr['BOOLEAN']**random[1, ', '] ')'
+    | 'BOOL_AND(' expr['BOOLEAN']**random[1, ', '] ')' | 'COUNT(' expr['INT']**random[1, ', '] ')' | 'EVERY(' expr['BOOLEAN']**random[1, ', '] ')'
     | 'MAX(' any_expr**random[1, ', '] ')' | 'MIN(' any_expr**random[1, ', '] ')'
-    | 'SUM(' ( int_expr | real_expr )**random[1, ', '] ')'  )
+    | 'SUM(' ( expr['INT'] | expr['REAL'] )**random[1, ', '] ')'  )
     ;
 
 // PostgresAlias.java
@@ -84,7 +84,7 @@ concat_op
     : ' || '
     ;
 
-expr [type] : et=$type_matching[type] commonExprErr error['does not exist'] // TODO: this is a bug, just sweeping it under the carpet temporarily
+expr [type] : et=$type_matching[type] commonExprErr 
     ( <et=='INT'> int_expr
     | <et=='BOOLEAN'> boolean_expr
     | <et=='TEXT'> text_expr
@@ -96,7 +96,7 @@ expr [type] : et=$type_matching[type] commonExprErr error['does not exist'] // T
     );
 
 any_expr 
-    : int_expr
+    : (int_expr
     | boolean_expr
     | text_expr
     | real_expr
@@ -104,7 +104,7 @@ any_expr
     | range_expr
     | money_expr
     | bit_expr
-    | aggregate_func
+    | aggregate_func) commonExprErr 
     ;
 
 constant [type] : et=$type_matching[type] commonExprErr
@@ -134,151 +134,151 @@ inet_expr : inet_const 95% | inet_func | <defined[symbols] and symbols_with_type
 inet_const : SQ random[0, 255, 0] '.' random[0, 255, 0] '.' random[0, 255, 0] '.' random[0, 255, 0] ('/' random[1,32])? SQ; 
 
 inet_func
-    : ' broadcast(' inet_expr ') '
-    | ' hostmask(' inet_expr ') '
-    | ' netmask(' inet_expr ') '
-    | ' set_masklen(' inet_expr ', ' inet_expr ') '
+    : ' broadcast(' expr['INET'] ') '
+    | ' hostmask(' expr['INET'] ') '
+    | ' netmask(' expr['INET'] ') '
+    | ' set_masklen(' expr['INET'] ', ' expr['INET'] ') '
     ;
 
 real_expr : real_const 90% | real_func | real_operation | <defined[symbols] and symbols_with_type[symbols, 'REAL'].len>0> symbols_with_type[symbols, 'REAL'].any ;
 
-real_operation : real_expr binary_arith_op real_expr;
+real_operation : expr['REAL'] binary_arith_op expr['REAL'];
 
 real_const : lc=$0 ( '(' lc=$1 ('+' | DS))**random[0,1,90] DIGIT+ ( DOT DIGIT+ )**random[0,1,25] ( <lc==0> '' | <lc==1> ')' );
 
 real_func
-    : ' abs(' real_expr ') '
+    : ' abs(' expr['REAL'] ') '
     | ' pg_notification_queue_usage() '
-    | ' cbrt(' real_expr ') '
-    | ' ceiling(' real_expr ') '
-    | ' degrees(' real_expr ') '
-    | ' exp(' real_expr ') '
-    | ' ln(' real_expr ') '
-    | ' log(' real_expr ') '
-    | ' log(' real_expr ', ' real_expr ') '
+    | ' cbrt(' expr['REAL'] ') '
+    | ' ceiling(' expr['REAL'] ') '
+    | ' degrees(' expr['REAL'] ') '
+    | ' exp(' expr['REAL'] ') '
+    | ' ln(' expr['REAL'] ') '
+    | ' log(' expr['REAL'] ') '
+    | ' log(' expr['REAL'] ', ' expr['REAL'] ') '
     | ' pi() '
-    | ' power(' real_expr ', ' real_expr ') '
-    | ' trunc(' real_expr ') '
-    | ' trunc(' real_expr ', ' int_expr ') '
-    | ' floor(' real_expr ') '
-    | ' acos(' real_expr ') '
-    | ' acosd(' real_expr ') '
-    | ' asin(' real_expr ') '
-    | ' asind(' real_expr ') '
-    | ' atan(' real_expr ') '
-    | ' atand(' real_expr ') '
-    | ' atan2(' real_expr ', ' real_expr ') '
-    | ' atan2d(' real_expr ', ' real_expr ') '
-    | ' cos(' real_expr ') '
-    | ' cosd(' real_expr ') '
-    | ' cot(' real_expr ') '
-    | ' cotd(' real_expr ') '
-    | ' sin(' real_expr ') '
-    | ' sind(' real_expr ') '
-    | ' tan(' real_expr ') '
-    | ' tand(' real_expr ') '
-    | ' sinh(' real_expr ') '
-    | ' cosh(' real_expr ') '
-    | ' tanh(' real_expr ') '
-    | ' asinh(' real_expr ') '
-    | ' acosh(' real_expr ') '
-    | ' atanh(' real_expr ') '
+    | ' power(' expr['REAL'] ', ' expr['REAL'] ') '
+    | ' trunc(' expr['REAL'] ') '
+    | ' trunc(' expr['REAL'] ', ' expr['INT'] ') '
+    | ' floor(' expr['REAL'] ') '
+    | ' acos(' expr['REAL'] ') '
+    | ' acosd(' expr['REAL'] ') '
+    | ' asin(' expr['REAL'] ') '
+    | ' asind(' expr['REAL'] ') '
+    | ' atan(' expr['REAL'] ') '
+    | ' atand(' expr['REAL'] ') '
+    | ' atan2(' expr['REAL'] ', ' expr['REAL'] ') '
+    | ' atan2d(' expr['REAL'] ', ' expr['REAL'] ') '
+    | ' cos(' expr['REAL'] ') '
+    | ' cosd(' expr['REAL'] ') '
+    | ' cot(' expr['REAL'] ') '
+    | ' cotd(' expr['REAL'] ') '
+    | ' sin(' expr['REAL'] ') '
+    | ' sind(' expr['REAL'] ') '
+    | ' tan(' expr['REAL'] ') '
+    | ' tand(' expr['REAL'] ') '
+    | ' sinh(' expr['REAL'] ') '
+    | ' cosh(' expr['REAL'] ') '
+    | ' tanh(' expr['REAL'] ') '
+    | ' asinh(' expr['REAL'] ') '
+    | ' acosh(' expr['REAL'] ') '
+    | ' atanh(' expr['REAL'] ') '
     ;
 
 range_expr : (range_const 90% | range_func | range_operation | <defined[symbols] and symbols_with_type[symbols, 'RANGE'].len>0> symbols_with_type[symbols, 'RANGE'].any ) commonRangeExpressionErr ;
 
-range_operation : range_expr binary_range_op range_expr;
+range_operation : expr['RANGE'] binary_range_op expr['RANGE'];
 
 range_const :  'int4range(' int_const ',' int_const ',\'' ('(' | '[' ) (']' | ')' ) '\')';
 
-range_func : ' range_merge(' range_expr ', ' range_expr ') ';
+range_func : ' range_merge(' expr['RANGE'] ', ' expr['RANGE'] ') ';
 
 boolean_expr : boolean_const 90% | boolean_func | boolean_operation | <defined[symbols] and symbols_with_type[symbols, 'BOOLEAN'].len>0> symbols_with_type[symbols, 'BOOLEAN'].any ;
 
 boolean_const : TRUE | FALSE;
 
 boolean_operation 
-    : '(' ( boolean_expr binary_logical_op boolean_expr
-    | real_expr binary_comp_op real_expr
-    | range_expr binary_range_comp_op range_expr
-    | NOT boolean_expr
+    : '(' ( expr['BOOLEAN'] binary_logical_op expr['BOOLEAN']
+    | expr['REAL'] binary_comp_op expr['REAL']
+    | expr['RANGE'] binary_range_comp_op expr['RANGE']
+    | NOT expr['BOOLEAN']
     | any_expr postfixOperator
-    | text_expr SIMILAR TO text_expr
-    | text_expr LIKE text_expr
+    | expr['TEXT'] SIMILAR TO expr['TEXT']
+    | expr['TEXT'] LIKE expr['TEXT']
     | inOperator
-    | boolean_expr booleanPostfixOperator ) ')'
+    | expr['BOOLEAN'] booleanPostfixOperator ) ')'
     ;
 
 boolean_func
-    : ' inet_same_family(' inet_expr ', ' inet_expr ') '
+    : ' inet_same_family(' expr['INET'] ', ' expr['INET'] ') '
     | ' pg_jit_available() '
-    | ' lower_inc(' range_expr ') '
-    | ' lower_inf(' range_expr ') '
-    | ' upper_inc(' range_expr ') '
-    | ' upper_inf(' range_expr ') '
-    | ' isempty(' range_expr ') '
+    | ' lower_inc(' expr['RANGE'] ') '
+    | ' lower_inf(' expr['RANGE'] ') '
+    | ' upper_inc(' expr['RANGE'] ') '
+    | ' upper_inf(' expr['RANGE'] ') '
+    | ' isempty(' expr['RANGE'] ') '
     ;
 
 int_expr : int_const 90% | int_func | int_operation | <defined[symbols] and symbols_with_type[symbols, 'INT'].len>0> symbols_with_type[symbols, 'INT'].any ;
 
-int_operation : int_expr binary_arith_op int_expr;
+int_operation : expr['INT'] binary_arith_op expr['INT'];
 
 int_const : lc=$0 ( '(' lc=$1 ('+' | DS))**random[0,1,90] FDIGIT DIGIT* ( <lc==0> '' | <lc==1> ')' );
 
 int_func 
-    : ' abs(' int_expr ') '
-    | ' length(' text_expr ') '
+    : ' abs(' expr['INT'] ') '
+    | ' length(' expr['TEXT'] ') '
     | ' num_nonnulls(' any_expr**random[1, 10, ','] ') '
     | ' num_nulls(' any_expr**random[1, 10, ','] ') '
-    | ' family(' inet_expr ') '
-    | ' masklen(' inet_expr ') '
+    | ' family(' expr['INET'] ') '
+    | ' masklen(' expr['INET'] ') '
     | ' inet_client_port() '
     | ' pg_backend_pid() '
     | ' pg_trigger_depth() '
-    | ' ascii(' text_expr ') ' 
-    | ' strpos(' text_expr ', ' text_expr ') '
-    | ' get_bit(' text_expr '::bytea, ' int_expr ') '
-    | ' get_byte(' text_expr '::bytea, ' int_expr ') '
-    | ' lower(' range_expr ') '
-    | ' upper(' range_expr ') '
-    | ' pg_column_size(' text_expr ')  '
+    | ' ascii(' expr['TEXT'] ') ' 
+    | ' strpos(' expr['TEXT'] ', ' expr['TEXT'] ') '
+    | ' get_bit(' expr['TEXT'] '::bytea, ' expr['INT'] ') '
+    | ' get_byte(' expr['TEXT'] '::bytea, ' expr['INT'] ') '
+    | ' lower(' expr['RANGE'] ') '
+    | ' upper(' expr['RANGE'] ') '
+    | ' pg_column_size(' expr['TEXT'] ')  '
     ;
 
 text_expr : text_const 90% | text_func | text_operation | <defined[symbols] and symbols_with_type[symbols, 'TEXT'].len>0> symbols_with_type[symbols, 'TEXT'].any ;
 
-text_operation : text_expr concat_op text_expr;
+text_operation : expr['TEXT'] concat_op expr['TEXT'];
 
 text_const : '\'' (CH | DIGIT)+ '\'';
 
 text_func 
-    : ' abbrev(' inet_expr ') '
-    | ' text('  inet_expr ') '
+    : ' abbrev(' expr['INET'] ') '
+    | ' text('  expr['INET'] ') '
     | ' current_database() ' 
     | ' current_schema() '
     | ' pg_current_logfile() '
     | ' version() '
-    | ' to_char(' text_expr ',' text_expr ') '
-    | ' btrim(' text_expr ', ' text_expr ') '
+    | ' to_char(' expr['TEXT'] ',' expr['TEXT'] ') '
+    | ' btrim(' expr['TEXT'] ', ' expr['TEXT'] ') '
     | ' chr(' random[1,127] ') '
-    | ' convert_from(' text_expr ',' ( ' \'UTF8\' ' | ' \'LATIN1\' ')') '
-    | ' initcap(' text_expr ') '
-    | ' left(' text_expr ', ' int_expr ') '
-    | ' lower(' text_expr ') '
-    | ' md5(' text_expr ') '
-    | ' upper(' text_expr ') '
-    | ' quote_literal(' text_expr ') '
-    | ' quote_ident(' text_expr ') '
-    | ' regexp_replace(' text_expr ',' text_expr ',' text_expr') '
-    | ' replace(' text_expr ',' text_expr') '
-    | ' reverse(' text_expr') '
-    | ' right(' text_expr ', ' int_expr ') '
-    | ' rpad(' text_expr ', ' int_expr ', ' text_expr ') '
-    | ' rtrim(' text_expr ', ' text_expr') '
-    | ' split_part(' text_expr ', ' text_expr ', ' int_expr ') ' error['field position must not be zero']
-    | ' substr(' text_expr ', ' int_expr ', ' int_expr ') '
-    | ' to_ascii(' text_expr ') ' error['encoding conversion from UTF8 to ASCII not supported'] //TODO some create db config to fix this?
-    | ' translate(' text_expr ', ' text_expr ', ' text_expr ') '
-    | ' to_hex(' int_expr ') '
+    | ' convert_from(' expr['TEXT'] ',' ( ' \'UTF8\' ' | ' \'LATIN1\' ')') '
+    | ' initcap(' expr['TEXT'] ') '
+    | ' left(' expr['TEXT'] ', ' expr['INT'] ') '
+    | ' lower(' expr['TEXT'] ') '
+    | ' md5(' expr['TEXT'] ') '
+    | ' upper(' expr['TEXT'] ') '
+    | ' quote_literal(' expr['TEXT'] ') '
+    | ' quote_ident(' expr['TEXT'] ') '
+    | ' regexp_replace(' expr['TEXT'] ',' expr['TEXT'] ',' expr['TEXT']') '
+    | ' replace(' expr['TEXT'] ',' expr['TEXT']') '
+    | ' reverse(' expr['TEXT']') '
+    | ' right(' expr['TEXT'] ', ' expr['INT'] ') '
+    | ' rpad(' expr['TEXT'] ', ' random[1,255] ', ' expr['TEXT'] ') '
+    | ' rtrim(' expr['TEXT'] ', ' expr['TEXT']') '
+    | ' split_part(' expr['TEXT'] ', ' expr['TEXT'] ', ' expr['INT'] ') ' error['field position must not be zero']
+    | ' substr(' expr['TEXT'] ', ' expr['INT'] ', ' expr['INT'] ') '
+    | ' to_ascii(' expr['TEXT'] ') ' error['encoding conversion from UTF8 to ASCII not supported'] //TODO some create db config to fix this?
+    | ' translate(' expr['TEXT'] ', ' expr['TEXT'] ', ' expr['TEXT'] ') '
+    | ' to_hex(' expr['INT'] ') '
     ;
 
 
@@ -303,7 +303,7 @@ money_const : '\''   int_const '\'' cast_op 'MONEY';
 
 bit_expr : ( bit_const 95% | bit_operation | <defined[symbols] and symbols_with_type[symbols, 'BIT'].len>0> symbols_with_type[symbols, 'BIT'].any ) error['bit string length'];
 
-bit_operation : bit_expr binary_bit_op bit_expr bitStrOpErr;
+bit_operation : expr['BIT'] binary_bit_op expr['BIT'] bitStrOpErr;
 
 //abs [type] : ' ABS(' expr[type] ') ';
 //upper : ' UPPER(' str_expr ') ';
@@ -362,7 +362,7 @@ type_matching [type] returns [effective_type]
 alterColumn : ALTER COLUMN columns[t].any ' ';
 
 alterTable [view=false]
-    : ALTER ( VIEW view=$true| TABLE (ONLY error['cannot use ONLY for foreign key on partitioned table'])? ) 
+    : ALTER commonExprErr ( VIEW view=$true| TABLE (ONLY error['cannot use ONLY for foreign key on partitioned table'])? ) 
       (t=views.any <view==true> | t=tables.any <view==false> )
       (
         DROP (IF EXISTS)? columns[t].any ( RESTRICT | CASCADE )? error['because other objects depend on it', 'does not exist', 'cannot drop column', 'cannot drop inherited column']
@@ -388,7 +388,8 @@ alterTable [view=false]
             'must be changed in child tables too',
             'could not determine which collation to use for index expression',
             'bit string too long for type bit varying',
-            'cannot alter type of a column used by a generated column'
+            'cannot alter type of a column used by a generated column',
+            'does not exist'
           ]
         | alterColumn ( DROP DEFAULT | SET DEFAULT symbols=$columns[t] expr[columns[t].any] error['is out of range', 'but default expression is of type', 'cannot cast']) error['is a generated column', 'is an identity column']
         | alterColumn ( SET NOT NULL error['contains null values'] | DROP NOT NULL error['is in a primary key', 'is an identity column', 'is in index used as replica identity'])
@@ -487,7 +488,7 @@ op_classes [type='any'] :
     ;
 
 createIndex [ih=false]
-    : CREATE UNIQUE? INDEX new['index'] ON ONLY? t+=tables.any c=$columns[t.any] t.any.c=$c ( USING ( ' BTREE ' | ' HASH ' ih=$true | ' GIST ' | ' GIN' ))? 
+    : CREATE error['index row requires'] UNIQUE? INDEX new['index'] ON ONLY? t+=tables.any c=$columns[t.any] t.any.c=$c ( USING ( ' BTREE ' | ' HASH ' ih=$true | ' GIST ' | ' GIN' ))? 
     ' (' ( c.any | <ih!=true> (cc=c.any SPACE (op_classes[cc.type] error['does not accept', 'does not exist for access method'])**random[0,1,99] ( ASC | DESC )? ( ' NULLS FIRST ' | ' NULLS LAST ' )**random[0,1,99] )**random[1, 3, ','] ) ') '
     ( INCLUDE '(' c.unique_any**random[1, c.len, ','] ')' <ih!=true> | ' ') where_predicate[t, 0]?
     error['already contains data', 'You might need to add explicit type casts', ' collations are not supported', 
@@ -501,8 +502,8 @@ createIndex [ih=false]
     ;
 
 createInsert
-    : INSERT INTO t=tables.any c=$columns[t] ' ( ' (cc+=c.unique_any)**random[1, c.len, ',', 15] ' ) ' ( OVERRIDING (SYSTEM | USER ) VALUE )**random[0,1,90] VALUES error['cannot insert a non-DEFAULT value into column']
-     ' ( ' ( 99% expr[cc.next.type] | DEFAULT error['DEFAULT is not allowed in this context'] )**random[cc.len, ','] ' ) '
+    : INSERT INTO t=tables.any c=$columns[t] ' ( ' (cc+=c.unique_any)**random[1, c.len, ',', 15] ' ) ' ( OVERRIDING (SYSTEM | USER ) VALUE )**random[0,1,90] VALUES error['cannot insert a non-DEFAULT value into column', 'violates check constraint', ]
+     ' ( ' ( 99% expr[cc.next.type] | temp=$cc.next DEFAULT error['DEFAULT is not allowed in this context'] )**random[cc.len, ','] ' ) '
     ( ON CONFLICT (  error['there is no unique or exclusion constraint matching the ON CONFLICT specification'])? DO NOTHING )**random[0,1,90]
     error[
         'multiple assignments to same column',
@@ -646,8 +647,8 @@ fragment deleteOrUpdateAction : NO ACTION | RESTRICT | CASCADE | SET NULL | SET 
 appendExcludeElement : ( cc=c.any op_type=$cc.type | '(' op_type=$effective_data_types.any expr[op_type] ')' ) op_classes[op_type]? (ASC | DESC)? (NULLS (FIRST | LAST) error['operator'])?;
 
 tableConstraints
-    : ( CHECK '(' boolean_expr ')' error['constraint must be added to child tables too', 'missing FROM-clause entry for table'] 
-    | UNIQUE '(' (c.unique_any)**random[1, c.len, ',', 95] ')' appendIndexParam error['appears twice in unique constraint'] //TODO: WTF
+    : ( CHECK '(' expr['BOOLEAN'] ')' error['constraint must be added to child tables too', 'missing FROM-clause entry for table'] 
+    | UNIQUE '(' (c.unique_any)**random[1, c.len, ',', 95] ')' appendIndexParam error['appears twice in unique constraint'] 
     | error['multiple primary keys'] PRIMARY_KEY '(' (c.unique_any)**random[1, c.len, ',', 95] ')' appendIndexParam
     | FOREIGN_KEY '(' (cl+=c.unique_any)**random[1, c.len, ',', 95] ')' REFERENCES tt=tables.any cc=$columns[tt] '(' (cc.unique_any)**random[cl.len, ','] ')'
       ( MATCH FULL | MATCH SIMPLE )?  ( ON DELETE deleteOrUpdateAction error['ERROR: invalid ON DELETE action for foreign key constraint containing generated column'] )?
@@ -661,15 +662,13 @@ tableConstraints
     ) error['appears twice']
     ;
 
-// caveat: CHECK constraint generating a static boolean condition
-// due to the Context-Free Grammar flavor of the DSL, throwing column names in the middle is a bit clunky
 columnConstraints [type]
     : first=$true
     ( NOT? NULL error['conflicting NULL/NOT NULL declarations'] first=$false //)**random[0,1,75]
     | (<first> first=$false | <first==false> ' ') UNIQUE //)**random[0,1,75]
     | (<first> first=$false | <first==false> ' ') PRIMARY_KEY error['multiple primary keys'] //)**random[0,1,75]
     | (<first> first=$false | <first==false> ' ') DEFAULT '(' expr[type] ')' error['out of range', 'is a generated column'] //)**random[0,1,75]
-    | (<first> first=$false | <first==false> ' ') CHECK '(' boolean_expr ')' (NO INHERIT)? error['out of range'] //)**random[0,1,99]
+    | (<first> first=$false | <first==false> ' ') CHECK '(' expr['BOOLEAN'] ')' (NO INHERIT)? error['out of range'] //)**random[0,1,99]
     | (<first> first=$false | <first==false> ' ') GENERATED 
         ( 
             ALWAYS AS '(' expr[type] ')' STORED error['A generated column cannot reference another generated column.', 'cannot use generated column in partition key', 'generation expression is not immutable', 'cannot use column reference in DEFAULT expression']
@@ -757,11 +756,12 @@ fragment commonRegexExpressionErr : error['is not a valid hexadecimal digit'];
 fragment funcRegexErr : error['encoding conversion from', 'not supported'];
 fragment commonExpressionRegexErr : error['cannot convert infinity to '];
 fragment commonExprErr 
-    : error['You might need to add explicit type casts', 'invalid regular expression', 'could not determine which collation to use', 'invalid regular expression', 
-    'operator does not exist', 'quantifier operand invalid', 'collation mismatch', 'collations are not supported', 'operator is not unique', 'is not a valid binary digit', 
+    : error['You might need to add explicit type casts', 'invalid regular expression', 'could not determine which collation to use', 'invalid regular expression', 'out of range', 'overflow', 'result of range union would not be contiguous',
+    'operator does not exist', 'quantifier operand invalid', 'collation mismatch', 'collations are not supported', 'operator is not unique', 'is not a valid binary digit', 'functions in index predicate must be marked IMMUTABLE',
     'invalid hexadecimal digit', 'invalid hexadecimal data: odd number of digits', 'zero raised to a negative power is undefined', 'division by zero', 'invalid input syntax for type money', 
-    'invalid input syntax for type', 'cannot cast type', 'value overflows numeric format', 'LIKE pattern must not end with escape character', 
-    'is of type boolean but expression is of type text', 'cannot convert infinity',
+    'invalid input syntax for type', 'cannot cast type', 'value overflows numeric format', 'LIKE pattern must not end with escape character', 'range lower bound must be less than or equal to range upper bound',
+    'numeric field overflow', 'could not determine which collation to use for string hashing', 'does not exist', // TODO: this is a bug, just sweeping it under the carpet temporarily
+    'is of type boolean but expression is of type text', 'cannot convert infinity', 'out of valid range', 'No function matches the given name and argument types', //the last one is due to large ints might overflow to become double
     'a negative number raised to a non-integer power yields a complex result', 'could not determine polymorphic type because input has type unknown', 'character number must be positive', 'overflow', 'too long', 'invalid name syntax']
     toCharFuncErr bitStrOpErr funcErr commonRangeExpressionErr commonRegexExpressionErr;
 
@@ -788,8 +788,8 @@ windowFunctionNames returns [fn]
 
 // Room for improvement: better "else"-like semantics/last resort matching
 windowFuncArgs [fn=''] returns [st]
-    : ( <fn=='ntile'> int_expr  st=$'integer' | <fn!='ntile'> '')
-    ( <symbols and (fn=='lag' or fn=='lead' or fn=='nth_value')> s=symbols.any st=$s.type', ' int_expr  | <fn!='lag' and fn!='lead' and fn!='nth_value'>)
+    : ( <fn=='ntile'> expr['INT']  st=$'integer' | <fn!='ntile'> '')
+    ( <symbols and (fn=='lag' or fn=='lead' or fn=='nth_value')> s=symbols.any st=$s.type', ' expr['INT']  | <fn!='lag' and fn!='lead' and fn!='nth_value'>)
     ( <symbols and (fn=='first_value' or fn=='last_value')> s=symbols.any st=$s.type | <fn!='first_value' and fn!='last_value'> )
     ( <defined[st]==false> st=$'' | <defined[st]> )
     ;
@@ -834,11 +834,11 @@ select [outmost=1, rep=random[1,5,','], type='any'] returns [c]
 	;
 	
 where_predicate [t, outmost]:
-	WHERE
+	WHERE error['could not determine which collation to use for string comparison']
     ( ' /*BEGIN_PRED*/ ' <outmost==1> | ' ' <outmost==0> )
     ( 
         80% predicate[t]
-	    | cc=t.any.c.any IN '(' select[0, random[1,','], cc.type] ')'
+	    | cc=t.any.c.any IN '(' select[0, random[1,','], cc.type] ')' commonExprErr
 	    | NOT? EXISTS '(' select[0] ')' 
     )
     ( ' /*END_PRED*/ ' <outmost==1> | ' ' <outmost==0> )
@@ -914,7 +914,7 @@ CYCLE : SPACE C Y C L E SPACE;
 DATA : SPACE D A T A SPACE;
 DATABASE : SPACE D A T A B A S E SPACE;
 DECIMAL : SPACE D E C I M A L SPACE;
-DEFAULT : SPACE D E F A U L T SPACE;
+DEFAULT : SPACE D E F A U L T SPACE commonExprErr;
 DEFAULTS : SPACE D E F A U L T S SPACE;
 DEFERRABLE : SPACE D E F E R R A B L E SPACE;
 DEFERRED : SPACE D E F E R R E D SPACE;
