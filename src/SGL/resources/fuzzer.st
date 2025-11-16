@@ -814,7 +814,7 @@ public class Fuzzer{
             this.entries = new ArrayList<>();
             this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
-            this.cursor = 0;
+            this.cursor = -1;
             this.state = State.REGULAR;
         }
         private Variable(String value){
@@ -826,7 +826,7 @@ public class Fuzzer{
             this.entries = new ArrayList<>();
             this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
-            this.cursor = 0;
+            this.cursor = -1;
             this.state = State.REGULAR;
         }
         private Variable(int numerical){
@@ -839,7 +839,7 @@ public class Fuzzer{
             this.entries = new ArrayList<>();
             this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
-            this.cursor = 0;
+            this.cursor = -1;
             this.state = State.REGULAR;
         }
         private Variable(boolean bool){
@@ -852,7 +852,7 @@ public class Fuzzer{
             this.entries = new ArrayList<>();
             this.uniqueUsageCount = new ArrayList<>();
             this.attributes = new HashMap<>();
-            this.cursor = 0;
+            this.cursor = -1;
             this.state = State.REGULAR;
         }
 
@@ -895,7 +895,7 @@ public class Fuzzer{
         }
         
         //make the current variable a shallow-copy of other
-        //the cursor will be set to 0
+        //the cursor will be set to -1
         //mainly used for assignment (i.e. a=b will be context.getSymbol("a").clone(context.getSymbol("b")))
         @SuppressWarnings("unused")
         public void clone(Variable other) throws Exception{
@@ -1186,7 +1186,9 @@ public class Fuzzer{
             if (v.state == State.UNINITIALIZED){
                 throw new IllegalArgumentException("Fuzzer.Variable.addEntry :: cannot add uninitialized variable to a list");
             }
-            this.entries.add(v);
+            Variable a = placeholder();
+            a.clone(v);
+            this.entries.add(a);
             this.uniqueUsageCount.add(0);
             return this;
         }

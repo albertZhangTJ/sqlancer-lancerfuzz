@@ -1,0 +1,19 @@
+grammar type_filter;
+
+symbols_with_type [symbols, et] returns [fs]
+    : ( ns=$symbols.next rt=$ns.type ets=$rt (<ets==et> fs+=$ns | <ets!=et> ) )**symbols.len
+    ;
+
+init returns [c] : 
+    cc='c1' ' ' cc.type='INT' c+=$cc '\n' 
+    cc='c2' ' ' cc.type='BOOLEAN' c+=$cc '\n' 
+    cc='c3' ' ' cc.type='TEXT' c+=$cc '\n' 
+    cc='c4' ' ' cc.type='FLOAT' c+=$cc '\n' 
+    cc='c5' ' ' cc.type='RANGE' c+=$cc '\n' 
+    cc='c6' ' ' cc.type='BIT' c+=$cc '\n' 
+    cc='c7' ' ' cc.type='MONEY' c+=$cc '\n' 
+    ;
+
+check [c, type] : 'checking for type ' type ', got entry ' cs=$symbols_with_type[c, type] (cs.next)**cs.len '\n';
+
+rule : c=$init check[c, 'INT'] check[c, 'BOOLEAN'] check[c, 'TEXT'] check[c, 'FLOAT'];

@@ -299,7 +299,7 @@ dec_const [ts=4, ds=2] : (DS)**random[0, 1, '', 90] gs=$ts$-ds DIGIT**gs ( '.' D
 bit_const [size=8] : ' \'' ( '0' | '1' )**random[1,size] '\'::bit';
 
 money_expr : money_const 95% | <defined[symbols] and symbols_with_type[symbols, 'MONEY'].len>0> symbols_with_type[symbols, 'MONEY'].any ;
-money_const : '\''   int_const '\'' cast_op 'MONEY';
+money_const : '\''   FDIGIT DIGIT* '\'' cast_op 'MONEY';
 
 bit_expr : ( bit_const 95% | bit_operation | <defined[symbols] and symbols_with_type[symbols, 'BIT'].len>0> symbols_with_type[symbols, 'BIT'].any ) error['bit string length'];
 
@@ -502,7 +502,7 @@ createIndex [ih=false]
     ;
 
 createInsert
-    : INSERT INTO t=tables.any c=$columns[t] ' ( ' (cc+=c.unique_any)**random[1, c.len, ',', 15] ' ) ' ( OVERRIDING (SYSTEM | USER ) VALUE )**random[0,1,90] VALUES error['cannot insert a non-DEFAULT value into column', 'violates check constraint', ]
+    : INSERT INTO t=tables.any c=$columns[t] ' ( ' (cc+=c.unique_any)**random[1, c.len, ',', 15] ' ) ' ( OVERRIDING (SYSTEM | USER ) VALUE )**random[0,1,90] VALUES error['cannot insert a non-DEFAULT value into column', 'violates check constraint' ]
      ' ( ' ( 99% expr[cc.next.type] | temp=$cc.next DEFAULT error['DEFAULT is not allowed in this context'] )**random[cc.len, ','] ' ) '
     ( ON CONFLICT (  error['there is no unique or exclusion constraint matching the ON CONFLICT specification'])? DO NOTHING )**random[0,1,90]
     error[

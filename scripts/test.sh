@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 mvn -DskipTests package
 for file in grammars/test/*.sgl; do
     if [ -e "$file" ]; then
