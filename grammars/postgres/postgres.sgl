@@ -76,7 +76,7 @@ fromTable : //TODO
     ;
 
 subquery
-    : ' (' cc=$select ') ' AS tt=new['table'] tt.c=$cc t+=$tt
+    : ' (' cc=$select[0] ') ' AS tt=new['table'] tt.c=$cc t+=$tt
     ;
 
 // PostgresConcatOperation.java
@@ -276,7 +276,7 @@ text_func
     | ' rtrim(' expr['TEXT'] ', ' expr['TEXT']') '
     | ' split_part(' expr['TEXT'] ', ' expr['TEXT'] ', ' expr['INT'] ') ' error['field position must not be zero']
     | ' substr(' expr['TEXT'] ', ' expr['INT'] ', ' expr['INT'] ') '
-    | ' to_ascii(' expr['TEXT'] ') ' error['encoding conversion from UTF8 to ASCII not supported'] //TODO some create db config to fix this?
+    | ' to_ascii(' expr['TEXT'] ') ' error['encoding conversion from UTF8 to ASCII not supported', 'SQL_ASCII'] //TODO some create db config to fix this?
     | ' translate(' expr['TEXT'] ', ' expr['TEXT'] ', ' expr['TEXT'] ') '
     | ' to_hex(' expr['INT'] ') '
     ;
@@ -362,7 +362,7 @@ type_matching [type] returns [effective_type]
 alterColumn : ALTER COLUMN columns[t].any ' ';
 
 alterTable [view=false]
-    : ALTER commonExprErr ( VIEW view=$true| TABLE (ONLY error['cannot use ONLY for foreign key on partitioned table'])? ) 
+    : ALTER commonExprErr ( error['cannot be performed on relation'] VIEW view=$true| TABLE (ONLY error['cannot use ONLY for foreign key on partitioned table'])? ) 
       (t=views.any <view==true> | t=tables.any <view==false> )
       (
         DROP (IF EXISTS)? columns[t].any ( RESTRICT | CASCADE )? error['because other objects depend on it', 'does not exist', 'cannot drop column', 'cannot drop inherited column']
@@ -406,11 +406,11 @@ alterTable [view=false]
       )
     ;
 
-analyze : ANALYZE ( ' ( SKIP_LOCKED ) ' | ' ( VERBOSE ) ' )? ( t=tables.any ' ('(  cc=$columns[t] (cc.unique_any)**random[1,cc.len, ',']  ' )')? )? error['deadlock'];
+analyze : ANALYZE ( ' ( SKIP_LOCKED ) ' | ' ( VERBOSE ) ' )? ( t=tables.any (' ('  cc=$columns[t] (cc.unique_any)**random[1,cc.len, ',']  ' )')? )? error['deadlock'];
 
 cluster 
     : CLUSTER ( t=tables.any ( <indexes[t].len>0> USING indexes[t].any error['cannot cluster on partial index'] | ' ' )? )? 
-    error['there is no previously clustered index for table', 'cannot cluster a partitioned table', 'access method does not support clustering']
+    error['there is no previously clustered index for table', 'cannot cluster a partitioned table', 'access method does not support clustering', 'cannot run inside a transaction block']
     ;
 
 comment
@@ -425,7 +425,7 @@ comment
 // TODO: PostgresCommon
 
 delete
-    : DELETE FROM ONLY? t=tables.any where_predicate[t, 0]? (RETURNING any_expr)? error['out of range', 'cannot cast', 'invalid input syntax for', 'division by zero']
+    : DELETE FROM ONLY? t+=tables.any c=$columns[t.next] t.cur.c=$c where_predicate[t, 0]? (RETURNING any_expr)? error['out of range', 'cannot cast', 'invalid input syntax for', 'division by zero']
     ;
 
 discard
@@ -434,10 +434,10 @@ discard
 
 dropIndex 
     : DROP INDEX (ifExists new['index'] <indexes.len==0> | ifExists? i=$indexes i.unique_any**random[1, i.len, ',', 95] ) ( CASCADE | RESTRICT )? 
-    error['cannot drop desired object(s) because other objects depend on them', 'cannot drop index', 'does not exist']
+    error['cannot drop desired object(s) because other objects depend on them', 'cannot drop index', 'does not exist', 'transaction is aborted']
     ;
 
-explain : EXPLAIN ' (FORMAT JSON) ' select;
+explain : EXPLAIN ' (FORMAT JSON) ' select[0];
 
 
 // fragment op_classes :  SPACE ('abstime_ops' | 'bit_ops' | 'bool_ops' | 'box_ops' | 'bpchar_ops' | 'bpchar_pattern_ops' | 'bytea_ops' | 'char_ops' | 'cidr_ops' | 'circle_ops' 
@@ -534,14 +534,14 @@ notify : NOTIFY channel ', \'' str_const '\'' ;
 
 listen : LISTEN channel;
 
-unlisten : UNLISTEN ( channel | ASTERISK );
+unlisten : UNLISTEN ( channel | ASTERISK ) error['there is no unique constraint matching given keys'];
 
 reindex
-    : error['could not create unique index'] REINDEX 
-    ( INDEX CONCURRENTLY? indexes.any | TABLE CONCURRENTLY? tables.any | DATABASE CONCURRENTLY? DB ) error['does not exist', 'REINDEX is not yet implemented for partitioned indexes', 'could not create unique index'];
+    : error['could not create unique index', 'cannot run inside a transaction block'] REINDEX 
+    ( INDEX CONCURRENTLY? indexes.any | TABLE CONCURRENTLY? tables.any | DATABASE CONCURRENTLY? DB ) error['does not exist', 'REINDEX is not yet implemented for partitioned indexes', 'could not create unique index', 'concurrent index creation for exclusion constraints is not supported'];
 
 createSequence
-    : CREATE ( TEMPORARY | TEMP )? SEQUENCE ifNotExists ' seq ' ( AS ( ' smallint ' | ' integer ' | ' bigint '))?
+    : error['aborted'] CREATE ( TEMPORARY | TEMP )? SEQUENCE ifNotExists ' seq ' ( AS ( ' smallint ' | ' integer ' | ' bigint '))?
     (INCREMENT BY? random[1, 75])? (( MINVALUE random[1,75] | NO MINVALUE ) error['must be less than MAXVALUE'])?
     (( MAXVALUE random[1,75] | NO MAXVALUE ) error['must be less than MAXVALUE'])? 
     (START WITH? random[1,75] error['cannot be less than MINVALUE', 'cannot be greater than MAXVALUE'])?
@@ -614,7 +614,7 @@ createSet : SET ( SESSION | LOCAL )? configOptions;
 
 createStatistics
     : CREATE STATISTICS ifNotExists? t=$tables.any c=$columns[t] ( <c.len>=2> | <c.len>=2>) ' ' new['statistics']
-    ( sts+=$' n_distinct ' sts+=$' dependencies ' sts+=$' mcv ' '(' sts.unique_any**random[1,sts.len, ', '] ')' )?
+    ( error['unrecognized statistics kind'] sts+=$' n_distinct ' sts+=$' dependencies ' sts+=$' mcv ' '(' sts.unique_any**random[1,sts.len, ', '] ')' )?
     ON c.unique_any**random[2,c.len,','] FROM t error['cannot have more than 8 columns in statistics']
     ;
 
@@ -704,7 +704,7 @@ createTable : part=$false temp=$false CREATE (TEMPORARY temp=$true | TEMP temp=$
       | 5% '( ' LIKE tables.any ( (EXCLUDING | INCLUDING ) ( DEFAULTS | CONSTRAINTS | INDEXES | STORAGE | COMMENTS | GENERATED | IDENTITY | STATISTICS | STORAGE | ALL ) )**random[0,3,' '] ')'
     );
 
-transaction : BEGIN ISOLATION LEVEL ( error['SET TRANSACTION ISOLATION LEVEL must be called before any query'] ( SERIALIZABLE | REPEATABLE READ | READ COMMITED | READ UNCOMMITED ))?;
+transaction : BEGIN ISOLATION LEVEL error['SET TRANSACTION ISOLATION LEVEL must be called before any query', 'current transaction is aborted'] ( SERIALIZABLE | REPEATABLE READ | READ COMMITTED | READ UNCOMMITTED );
 
 truncate : TRUNCATE TABLE? t=$tables t.unique_any**random[1, t.len, ',', 95] (RESTART IDENTITY | CONTINUE IDENTITY)? (CASCADE | RESTRICT)? error['cannot truncate a table referenced in a foreign key constraint', 'is not a table', 'is not distributed'];
 
@@ -732,7 +732,7 @@ vacuum : VACUUM
 
 createView [n_mat = true, n_rec = true]
     : CREATE (MATERIALIZED n_mat=$false | (OR REPLACE)? (TEMP | TEMPORARY)? ( RECURSIVE n_rec=$false)? ) VIEW new['view'] '(' (c+=new['column'])**random[1, 3, ',', 95] ')'
-      AS '(' select[c.len] ')' ( <n_mat> ( <n_rec> WITH ( CASCADED | LOCAL ) CHECK OPTION  | ' ')| ' ') groupingErr
+      AS '(' select[0, random[c.len, ',']] ')' ( <n_mat> ( <n_rec> WITH ( CASCADED | LOCAL ) CHECK OPTION error['is supported only on automatically updatable views'] | ' ')| ' ') groupingErr
       error['already exists', 'cannot drop columns from view', 'non-integer constant in ORDER BY', 'for SELECT DISTINCT, ORDER BY expressions must appear in select list', 'cannot change data type of view column', 
         'specified more than once', 'materialized views must not use temporary tables or views', 
         'does not have the form non-recursive-term', 'is not a view', 'non-integer constant in DISTINCT ON', 'SELECT DISTINCT ON expressions must match initial ORDER BY expressions'
@@ -758,7 +758,7 @@ fragment commonExpressionRegexErr : error['cannot convert infinity to '];
 fragment commonExprErr 
     : error['You might need to add explicit type casts', 'invalid regular expression', 'could not determine which collation to use', 'invalid regular expression', 'out of range', 'overflow', 'result of range union would not be contiguous',
     'operator does not exist', 'quantifier operand invalid', 'collation mismatch', 'collations are not supported', 'operator is not unique', 'is not a valid binary digit', 'functions in index predicate must be marked IMMUTABLE',
-    'invalid hexadecimal digit', 'invalid hexadecimal data: odd number of digits', 'zero raised to a negative power is undefined', 'division by zero', 'invalid input syntax for type money', 
+    'invalid hexadecimal digit', 'invalid hexadecimal data: odd number of digits', 'zero raised to a negative power is undefined', 'division by zero', 'invalid input syntax for type money', 'is outside the valid range for parameter',
     'invalid input syntax for type', 'cannot cast type', 'value overflows numeric format', 'LIKE pattern must not end with escape character', 'range lower bound must be less than or equal to range upper bound',
     'numeric field overflow', 'could not determine which collation to use for string hashing', 'does not exist', // TODO: this is a bug, just sweeping it under the carpet temporarily
     'is of type boolean but expression is of type text', 'cannot convert infinity', 'out of valid range', 'No function matches the given name and argument types', //the last one is due to large ints might overflow to become double
@@ -767,7 +767,7 @@ fragment commonExprErr
 
 setConstraints : SET CONSTRAINTS ALL ( DEFERRED | IMMEDIATE );
 resetRole : RESET ROLE;
-resetAll : RESET ALL;
+resetAll : RESET ALL error['because constraint'];
 
 //bug pass in ae
 windowColumn returns [cc]: error['must appear in the GROUP BY clause or be used in an aggregate function'] fn=windowFunctionNames  '(' st=$windowFuncArgs[fn] ( <fn.type=='polymorphic'> type=$st | <fn.type!='polymorphic'> type=$fn.type ) ')' OVER '(' orderBy t.any.c.any ( ASC | DESC ) ')' alias cc=new['columns'] cc.type=$type; 
@@ -853,8 +853,8 @@ predicate [t]
         | target=t.any.c.any between[target.type] 
       );
 
-tables returns [t] : t=$query['SELECT table_name AS name, table_type AS type, table_schema FROM information_schema.tables WHERE table_schema NOT IN (\'information_schema\', \'pg_catalog\');', 'name', 'type', 'type'].filter['type','!=','VIEW'];
-views returns [v] : v=$query['SELECT table_name AS name, table_type AS type, table_schema FROM information_schema.tables WHERE table_schema NOT IN (\'information_schema\', \'pg_catalog\');', 'name', 'type', 'type'].filter['type','==','VIEW'];
+tables returns [t] : t=$query['SELECT table_name AS name, table_type AS type, table_schema FROM information_schema.tables WHERE table_schema NOT IN (\'information_schema\', \'pg_catalog\') AND table_type = \'BASE TABLE\';', 'name', 'type', 'type'];
+views returns [v] : v=$query['SELECT table_name AS name, table_type AS type, table_schema FROM information_schema.tables WHERE table_schema NOT IN (\'information_schema\', \'pg_catalog\') AND table_type = \'VIEW\';', 'name', 'type', 'type'];
 indexes [t=''] returns [i] 
     : <t==''> i=$query['SELECT indexname FROM pg_indexes WHERE schemaname NOT IN (\'information_schema\', \'pg_catalog\')', 'indexname']
     | <t!=''> i=$query['SELECT indexname FROM pg_indexes WHERE tablename = \'' $+ t $+ '\'', 'indexname']
@@ -871,7 +871,7 @@ columns [t] returns [c]
 statistics [t] returns [s]
     : s=$query[ 'SELECT n.nspname as s_name, s.stxname as name FROM pg_statistic_ext s JOIN pg_class c ON c.oid = s.stxrelid JOIN pg_namespace n ON n.oid = s.stxnamespace WHERE c.relname = \'' $+ t $+ '\'', 'name']
     ;
-collates returns [c] : c=$query['SELECT collname FROM pg_collation ORDER BY collname', 'collname'];
+collates returns [c] : c=$query['SELECT collname FROM pg_collation ORDER BY collname', 'collname'] error['for encoding \"SQL_ASCII\" does not exist'];
 tableAccessMethod returns [am] : am=$query['SELECT amname FROM pg_am WHERE amtype = \'t\';', 'amname'];
 
 ifNotExists : IF NOT EXISTS;
@@ -902,7 +902,7 @@ COLUMN : SPACE C O L U M N SPACE;
 COMMENT : SPACE C O M M E N T SPACE;
 COMMENTS : SPACE C O M M E N T S SPACE;
 COMMIT : SPACE C O M M I T SPACE;
-COMMITED : SPACE C O M M I T E D SPACE;
+COMMITTED : SPACE C O M M I T T E D SPACE;
 CONCURRENTLY : SPACE C O N C U R R E N T L Y SPACE;
 CONFLICT : SPACE C O N F L I C T SPACE;
 CONSTRAINT : SPACE C O N S T R A I N T SPACE;
@@ -966,6 +966,7 @@ INT : SPACE I N T SPACE;
 INT4RANGE : SPACE I N T '4' R A N G E SPACE;
 INTEGER : SPACE I N T E G E R SPACE;
 INTO : SPACE I N T O SPACE;
+IS : SPACE I S SPACE;
 ISOLATION : SPACE I S O L A T I O N SPACE;
 JOIN : SPACE J O I N SPACE;
 KEY : SPACE K E Y SPACE;
@@ -1005,6 +1006,7 @@ OWNED : SPACE O W N E D SPACE;
 PARTITION : SPACE P A R T I T I O N SPACE;
 PLAIN : SPACE P L A I N SPACE;
 PLAN : SPACE P L A N SPACE;
+PLANS : SPACE P L A N S SPACE;
 PRESERVE : SPACE P R E S E R V E SPACE;
 PRIMARY : SPACE P R I M A R Y SPACE;
 PRIMARY_KEY : SPACE P R I M A R Y SPACE K E Y SPACE;
@@ -1052,7 +1054,7 @@ TO : SPACE T O SPACE;
 TRUE : SPACE T R U E SPACE;
 TRUNCATE : SPACE T R U N C A T E SPACE;
 TYPE : SPACE T Y P E SPACE;
-UNCOMMITED : SPACE U N C O M M I T E D SPACE;
+UNCOMMITTED : SPACE U N C O M M I T T E D SPACE;
 UNIQUE : SPACE U N I Q U E SPACE;
 UNLISTEN : SPACE U N L I S T E N SPACE;
 UNLOGGED : SPACE U N L O G G E D SPACE;

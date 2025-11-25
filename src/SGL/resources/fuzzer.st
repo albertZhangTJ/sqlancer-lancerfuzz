@@ -5,8 +5,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.Arrays;
+import java.io.StringWriter;
 //import java.io.FileWriter;
-//import java.io.PrintWriter;
+import java.io.PrintWriter;
 //import java.sql.ResultSetMetaData;
 //import java.text.SimpleDateFormat;
 //import java.util.Date;
@@ -1626,7 +1627,7 @@ public class Fuzzer{
                 }
                 try {
                     try {
-                        if (stmt.contains("BEGIN_PRED")){
+                        if (stmt.trim().toUpperCase().startsWith("SELECT")){
                             return test_TLP(stmt);
                         }
                         else {
@@ -1644,9 +1645,12 @@ public class Fuzzer{
                 }
                 catch (Exception se){
                     //System.out.println(stmt + " -- ERROR!");
-                    if (Fuzzer.context.isExpectedError(se.getMessage())){
+                    StringWriter sw = new StringWriter();
+                    se.printStackTrace(new PrintWriter(sw));
+                    String stackTrace = sw.toString();
+                    if (Fuzzer.context.isExpectedError(stackTrace)){
                         Fuzzer.context.resetError();
-                        return "-- [Expected Error]:" + se.getMessage();
+                        return "-- [Expected Error]:" + stackTrace;
                     }
 
                     throw se;
