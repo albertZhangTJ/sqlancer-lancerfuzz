@@ -534,6 +534,15 @@ notify : NOTIFY channel ', \'' str_const '\'' ;
 
 listen : LISTEN channel;
 
+uniqueConstraint
+    : UNIQUE nullsDistinctOption?
+    ;
+
+nullsDistinctOption
+    : NULLS DISTINCT
+    | NULLS NOT DISTINCT
+    ;
+
 unlisten : UNLISTEN ( channel | ASTERISK ) error['there is no unique constraint matching given keys'];
 
 reindex
@@ -615,7 +624,7 @@ createSet : SET ( SESSION | LOCAL )? configOptions;
 createStatistics
     : CREATE STATISTICS ifNotExists? t=$tables.any c=$columns[t] ( <c.len>=2> | <c.len>=2>) ' ' new['statistics']
     ( error['unrecognized statistics kind'] sts+=$' n_distinct ' sts+=$' dependencies ' sts+=$' mcv ' '(' sts.unique_any**random[1,sts.len, ', '] ')' )?
-    ON c.unique_any**random[2,c.len,','] FROM t error['cannot have more than 8 columns in statistics']
+    ON c.unique_any**random[2,c.len,','] FROM t error['cannot have more than 8 columns in statistics', 'statistics creation on virtual generated columns']
     ;
 
 dropStatistics : DROP STATISTICS statistics[tables.any].any ;
@@ -647,13 +656,13 @@ fragment deleteOrUpdateAction : NO ACTION | RESTRICT | CASCADE | SET NULL | SET 
 appendExcludeElement : ( cc=c.any op_type=$cc.type | '(' op_type=$effective_data_types.any expr[op_type] ')' ) op_classes[op_type]? (ASC | DESC)? (NULLS (FIRST | LAST) error['operator'])?;
 
 tableConstraints
-    : ( CHECK '(' expr['BOOLEAN'] ')' error['constraint must be added to child tables too', 'missing FROM-clause entry for table'] 
-    | UNIQUE '(' (c.unique_any)**random[1, c.len, ',', 95] ')' appendIndexParam error['appears twice in unique constraint'] 
+    : ( CHECK '(' expr['BOOLEAN'] ')' error['constraint must be added to child tables too', 'missing FROM-clause entry for table']  ( NOT? ENFORCED)?
+    | uniqueConstraint '(' (c.unique_any)**random[1, c.len, ',', 95] ')' appendIndexParam error['appears twice in unique constraint'] 
     | error['multiple primary keys'] PRIMARY_KEY '(' (c.unique_any)**random[1, c.len, ',', 95] ')' appendIndexParam
     | FOREIGN_KEY '(' (cl+=c.unique_any)**random[1, c.len, ',', 95] ')' REFERENCES tt=tables.any cc=$columns[tt] '(' (cc.unique_any)**random[cl.len, ','] ')'
       ( MATCH FULL | MATCH SIMPLE )?  ( ON DELETE deleteOrUpdateAction error['ERROR: invalid ON DELETE action for foreign key constraint containing generated column'] )?
       ( ON UPDATE deleteOrUpdateAction error['invalid ON UPDATE action for foreign key constraint containing generated column'] )?
-      ( DEFERRABLE (INITIALLY DEFERRED | INITIALLY IMMEDIATE ) | NOT DEFERRABLE )?
+      ( DEFERRABLE (INITIALLY DEFERRED | INITIALLY IMMEDIATE ) | NOT DEFERRABLE )? ( NOT? ENFORCED)?
     | EXCLUDE '(' (appendExcludeElement WITH error['is not commutative'] binary_comp_op)**random[1, ',', 99] ')' appendIndexParam where_predicate[t,0]? error['syntax error']
       error['is not valid', 'no operator matches', 'operator does not exist', 'unknown has no default operator class',
           'exclusion constraints are not supported on partitioned tables', 'The exclusion operator must be related to the index operator class for the constraint',
@@ -665,13 +674,13 @@ tableConstraints
 columnConstraints [type]
     : first=$true
     ( NOT? NULL error['conflicting NULL/NOT NULL declarations'] first=$false //)**random[0,1,75]
-    | (<first> first=$false | <first==false> ' ') UNIQUE //)**random[0,1,75]
+    | (<first> first=$false | <first==false> ' ') uniqueConstraint //)**random[0,1,75]
     | (<first> first=$false | <first==false> ' ') PRIMARY_KEY error['multiple primary keys'] //)**random[0,1,75]
     | (<first> first=$false | <first==false> ' ') DEFAULT '(' expr[type] ')' error['out of range', 'is a generated column'] //)**random[0,1,75]
     | (<first> first=$false | <first==false> ' ') CHECK '(' expr['BOOLEAN'] ')' (NO INHERIT)? error['out of range'] //)**random[0,1,99]
     | (<first> first=$false | <first==false> ' ') GENERATED 
         ( 
-            ALWAYS AS '(' expr[type] ')' STORED error['A generated column cannot reference another generated column.', 'cannot use generated column in partition key', 'generation expression is not immutable', 'cannot use column reference in DEFAULT expression']
+            ALWAYS AS '(' expr[type] ')' ( STORED | VIRTUAL ) error['A generated column cannot reference another generated column.', 'cannot use generated column in partition key', 'generation expression is not immutable', 'cannot use column reference in DEFAULT expression']
             | <type=='INT'> ( ALWAYS | BY DEFAULT ) AS IDENTITY
         )
     )**random[0,1,75]
@@ -708,6 +717,20 @@ transaction : BEGIN ISOLATION LEVEL error['SET TRANSACTION ISOLATION LEVEL must 
 
 truncate : TRUNCATE TABLE? t=$tables t.unique_any**random[1, t.len, ',', 95] (RESTART IDENTITY | CONTINUE IDENTITY)? (CASCADE | RESTRICT)? error['cannot truncate a table referenced in a foreign key constraint', 'is not a table', 'is not distributed'];
 
+returningClause
+    : RETURNING returningItem**random[1, c.len, ',']
+    ;
+
+returningItem
+    : (tableAlias '.')? columns[t.any].unique_any (AS new['column'])?
+    | any_expr (AS new['column'])?
+    ;
+
+tableAlias
+    : OLD
+    | NEW
+    ;
+
 createUpdate 
     : error['conflicting key value violates exclusion constraint', 'reached maximum value of sequence', 'violates foreign key constraint', 
       'violates not-null constraint', 'violates unique constraint', 'out of range', 'cannot cast', 'must be type boolean', 'is not unique', 
@@ -715,7 +738,7 @@ createUpdate
       'invalid regular expression', 'View columns that are not columns of their base relation are not updatable','multiple assignments to same column', 
       'new row violates check option for view', 'invalid input syntax for ', 'operator does not exist: text = boolean', 
       'violates check constraint', 'could not determine which collation to use for string comparison', 'but expression is of type'
-    ] commonInsertUpdateErr UPDATE t+=tables.any c=$columns[t.any].subset t.any.c=$c SET (c.next '=' (constant[c.cur.type] | DEFAULT | '(' symbols=$columns[t.any] expr[c.cur.type] ')') )**random[c.len, ','] where_predicate[t,0]**random[0,1,90]
+    ] commonInsertUpdateErr UPDATE t+=tables.any c=$columns[t.any].subset t.any.c=$c SET (c.next '=' (constant[c.cur.type] | DEFAULT | '(' symbols=$columns[t.any] expr[c.cur.type] ')') )**random[c.len, ','] where_predicate[t,0]**random[0,1,90] returningClause
     ;
 
 fragment vacuumOption : ' FULL ' | ' FREEZE ' | ' ANALYZE ' | ' VERBOSE ' | ' DISABLE_PAGE_SKIPPING ' | ' SKIP_LOCKED ' | ' INDEX_CLEANUP ' | ' TRUNCATE ';
@@ -784,6 +807,62 @@ windowFunctionNames returns [fn]
     | fn=$'first_value' fn.type=$'polymorphic'
     | fn=$'last_value' fn.type=$'polymorphic'
     | fn=$'nth_value' fn.type=$'polymorphic' error['argument of nth_value must be greater than zero']
+    ;
+
+createTablespace
+    : CREATE TABLESPACE new['tablespace']
+      ( OWNER ownerSpec )?
+      LOCATION directoryPath
+      ( WITH '(' tablespaceOptionList ')' )? error['already']
+    ;
+
+alterTablespace
+    : ALTER TABLESPACE t=tablespaces.any alterTablespaceAction
+    ;
+
+alterTablespaceAction
+    : RENAME TO new['tablespace']
+    | OWNER TO ownerSpec
+    | SET LB tablespaceOptionList RB
+    | RESET LB tablespaceOptionNameList RB
+    ;
+
+dropTablespace
+    : DROP TABLESPACE ( IF EXISTS )? tablespaces.any
+    ;
+
+
+tablespaceOptionNameList
+    : tablespaceOptionName ( COMMA tablespaceOptionName )? error['more than once']
+    ;
+
+ownerSpec
+    : CURRENT_ROLE
+    | CURRENT_USER
+    | SESSION_USER
+    ;
+
+directoryPath
+    : '\'/tmp/pg_fuzz_tablespace\''
+    ;
+
+tablespaceOptionList
+    : tablespaceOption ( COMMA tablespaceOption )? error['more than once']
+    ;
+
+tablespaceOption
+    : tablespaceOptionName EQ tablespaceOptionValue
+    ;
+
+tablespaceOptionName
+    : SEQ_PAGE_COST
+    | RANDOM_PAGE_COST
+    | EFFECTIVE_IO_CONCURRENCY
+    | MAINTENANCE_IO_CONCURRENCY
+    ;
+
+tablespaceOptionValue
+    : random[1, 10]
     ;
 
 // Room for improvement: better "else"-like semantics/last resort matching
@@ -859,6 +938,7 @@ indexes [t=''] returns [i]
     : <t==''> i=$query['SELECT indexname FROM pg_indexes WHERE schemaname NOT IN (\'information_schema\', \'pg_catalog\')', 'indexname']
     | <t!=''> i=$query['SELECT indexname FROM pg_indexes WHERE tablename = \'' $+ t $+ '\'', 'indexname']
     ;
+tablespaces returns [t] : t=$query['SELECT spcname AS name FROM pg_catalog.pg_tablespace WHERE spcname NOT LIKE \'pg_%\';', 'name'];
 columns [t] returns [c] 
     : c=$query[
         'SELECT column_name AS name, data_type AS type, numeric_precision AS precision, numeric_scale AS scale, character_maximum_length AS length FROM information_schema.columns  WHERE table_name = \''$+ t $+ '\' AND table_schema = \'public\'', 
@@ -910,6 +990,8 @@ CONSTRAINTS : SPACE C O N S T R A I N T S SPACE;
 CONTINUE : SPACE C O N T I N U E SPACE;
 COPY : SPACE C O P Y SPACE;
 CREATE : SPACE C R E A T E SPACE;
+CURRENT_ROLE : SPACE C U R R E N T '_' R O L E SPACE ;
+CURRENT_USER : SPACE C U R R E N T '_' U S E R SPACE ;
 CYCLE : SPACE C Y C L E SPACE;
 DATA : SPACE D A T A SPACE;
 DATABASE : SPACE D A T A B A S E SPACE;
@@ -927,6 +1009,8 @@ DO : SPACE D O SPACE;
 DOUBLE : SPACE D O U B L E SPACE;
 DOUBLE_PRECISION : DOUBLE P R E C I S I O N SPACE;
 DROP : SPACE D R O P SPACE;
+EFFECTIVE_IO_CONCURRENCY : SPACE E F F E C T I V E '_' I O '_' C O N C U R R E N C Y SPACE ;
+ENFORCED : SPACE E N F O R C E D SPACE;
 EXCLUDE : SPACE E X C L U D E SPACE;
 EXCLUDING : SPACE E X C L U D I N G SPACE;
 EXCLUSIVE : SPACE E X C L U S I V E SPACE;
@@ -975,16 +1059,19 @@ LIKE : SPACE L I K E SPACE;
 LINEAR : SPACE L I N E A R SPACE;
 LIST : SPACE L I S T SPACE;
 LISTEN : SPACE L I S T E N SPACE;
+LOCATION : SPACE L O C A T I O N SPACE;
 LOCAL : SPACE L O C A L SPACE;
 LOCK : SPACE L O C K SPACE;
 LOW_PRIORITY : SPACE L O W '_' P R I O R I T Y SPACE;
 MAIN : SPACE M A I N SPACE;
+MAINTENANCE_IO_CONCURRENCY : SPACE M A I N T E N A N C E '_' I O '_' C O N C U R R E N C Y SPACE ;
 MATCH : SPACE M A T C H SPACE;
 MATERIALIZED : SPACE M A T E R I A L I Z E D SPACE;
 MAXVALUE : SPACE M A X V A L U E SPACE;
 MINVALUE : SPACE M I N V A L U E SPACE;
 MONEY : SPACE M O N E Y SPACE;
 NAME : SPACE N A M E SPACE;
+NEW : SPACE N E W SPACE;
 NO : SPACE N O SPACE;
 NONE : SPACE N O N E SPACE;
 NOT : SPACE N O T SPACE;
@@ -992,8 +1079,10 @@ NOTHING : SPACE N O T H I N G SPACE;
 NOTIFY : SPACE N O T I F Y SPACE;
 NOWAIT : SPACE N O W A I T SPACE;
 NULL : SPACE N U L L SPACE;
+NULLS : SPACE N U L L S SPACE;
 NUMERIC : SPACE N U M E R I C SPACE;
 OFFLINE : SPACE O F F L I N E SPACE;
+OLD : SPACE O L D SPACE;
 ON : SPACE O N SPACE;
 ONLINE : SPACE O N L I N E SPACE;
 ONLY : SPACE O N L Y SPACE;
@@ -1003,6 +1092,7 @@ ORDER : SPACE O R D E R SPACE;
 OVER : SPACE O V E R SPACE;
 OVERRIDING : SPACE O V E R R I D I N G SPACE;
 OWNED : SPACE O W N E D SPACE;
+OWNER : SPACE O W N E R SPACE ;
 PARTITION : SPACE P A R T I T I O N SPACE;
 PLAIN : SPACE P L A I N SPACE;
 PLAN : SPACE P L A N SPACE;
@@ -1010,6 +1100,7 @@ PLANS : SPACE P L A N S SPACE;
 PRESERVE : SPACE P R E S E R V E SPACE;
 PRIMARY : SPACE P R I M A R Y SPACE;
 PRIMARY_KEY : SPACE P R I M A R Y SPACE K E Y SPACE;
+RANDOM_PAGE_COST : SPACE R A N D O M '_' P A G E '_' C O S T SPACE ;
 RANGE : SPACE R A N G E SPACE;
 READ : SPACE R E A D SPACE;
 REAL : SPACE R E A L SPACE;
@@ -1033,6 +1124,8 @@ SEQUENCE : SPACE S E Q U E N C E SPACE;
 SEQUENCES : SPACE S E Q U E N C E S SPACE;
 SERIALIZABLE : SPACE S E R I A L I Z A B L E SPACE;
 SESSION : SPACE S E S S I O N SPACE;
+SESSION_USER : SPACE S E S S I O N '_' U S E R SPACE ;
+SEQ_PAGE_COST : SPACE S E Q '_' P A G E '_' C O S T SPACE ;
 SET : SPACE S E T SPACE;
 SHARE : SPACE S H A R E SPACE;
 SHARED : SPACE S H A R E D SPACE;
@@ -1047,6 +1140,7 @@ STORED : SPACE S T O R E D SPACE;
 STUB : SPACE S T U B SPACE;
 SYSTEM : SPACE S Y S T E M SPACE;
 TABLE : SPACE T A B L E SPACE;
+TABLESPACE : SPACE T A B L E S P A C E SPACE;
 TEMP : SPACE T E M P SPACE;
 TEMPORARY : SPACE T E M P O R A R Y SPACE;
 TEXT : SPACE T E X T SPACE;
@@ -1066,6 +1160,7 @@ VACUUM : SPACE V A C U U M SPACE;
 VALUE : SPACE V A L U E SPACE;
 VALUES : SPACE V A L U E S SPACE;
 VIEW : SPACE V I E W SPACE;
+VIRTUAL : SPACE V I R T U A L SPACE;
 WAIT : SPACE W A I T SPACE;
 WHERE : SPACE W H E R E SPACE;
 WITH : SPACE W I T H SPACE;

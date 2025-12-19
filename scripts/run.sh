@@ -16,7 +16,8 @@ echo "Building SQLancer"
 mvn clean package -Dskip.SGL=true -DskipTests 
 cd target 
 echo "Starting SQLancer" 
-timeout 12h java -jar sqlancer-jar-with-dependencies.jar -g 
+java -jar sqlancer-jar-with-dependencies.jar -g 
+#timeout 24h java -jar sqlancer-jar-with-dependencies.jar -g 
 # java -XX:+FlightRecorder -XX:StartFlightRecording=duration=2h,filename=profile.jfr,settings=profile -jar sqlancer-jar-with-dependencies.jar -g && \
 cd .. 
 echo "Finished, cleaning up" 

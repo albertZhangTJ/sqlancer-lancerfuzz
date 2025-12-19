@@ -1,0 +1,81 @@
+
+{   
+    "options" : [
+        {
+            "name" : "JDBC", 
+            "default" : "jdbc:mysql://localhost:3306/?user=sqlancer&password=sqlancer&tcpNoDelay=true",
+            "description" : "JDBC URL to the target DBMS, replace with actual info" 
+        },
+        {
+            "name" : "JDBC_CLASS", 
+            "default" : "org.postgresql.Driver"
+        }
+    ],
+    "stages" : [
+    	{
+            "name" : "create",
+            "rules" : [
+                "createTable"
+            ],
+            "min" : 25,
+            "max" : 30
+        },
+   		{
+            "name" : "insert",
+            "rules" : [
+                "createInsert"
+            ],
+            "min" : 300,
+            "max" : 500
+        },
+        {
+            "name" : "update",
+            "rules" : [
+                "createUpdate"
+            ],
+            "min" : 50,
+            "max" : 100
+        },
+        {
+            "name" : "mix",
+            "rules" : [
+                "alterTable",
+                "createTable",
+                "createInsert",
+                "createUpdate",
+                "truncate",
+                "createIndex",
+                "select",
+                "analyze",
+                "cluster",
+                "comment",
+                "delete",
+                "discard",
+                "dropIndex",
+                "explain",
+                "notify",
+                "listen",
+                "unlisten",
+                "reindex",
+                "createSequence",
+                "createSet",
+                "createStatistics",
+                "dropStatistics",
+                "alterStatistics",
+                "vacuum",
+                "createView",
+                "setConstraints",
+                "resetRole",
+                "resetAll",
+                "createTablespace",
+                "alterTablespace",
+                "dropTablespace"
+            ],
+            "weights" : [
+                2, 2, 4, 2, 2, 2, 30, 2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2
+            ],
+            "min" : 1000,
+            "max" : 1500
+        }
+    ]
+}
