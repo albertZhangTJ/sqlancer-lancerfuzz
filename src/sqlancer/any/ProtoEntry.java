@@ -84,6 +84,7 @@ public class ProtoEntry {
                 stmt.close();
                 dbConn = new SQLConnection(DriverManager.getConnection("jdbc:postgresql://localhost:5432/" + dbName, "sqlancer", "sqlancer"));
                 Fuzzer.init(dbConn);
+                int cont_ee = 0;
                 while (true){
                     String next = Fuzzer.fuzz_next_and_execute();
                     if (next==null){
@@ -102,6 +103,13 @@ public class ProtoEntry {
                         if (next.startsWith("-- [Expected Error]:")){
                             expected_count++;
                             expected_count_case++;
+                            cont_ee++;
+                            if (cont_ee>10){
+                                break;
+                            }
+                        }
+                        else {
+                            cont_ee = 0;
                         }
                         
                     }

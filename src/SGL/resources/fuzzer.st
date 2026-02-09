@@ -206,6 +206,7 @@ public class Fuzzer{
         private List<HashMap<String, Variable>> symbolStack;
         public List<Variable> args;
         private List<String> errors;
+        private static List<String> global_errors = new ArrayList<>();
         //return value from a grammar function call
         private Variable result;
         //JDBC connection to the DB under test, only used by the query built-in function
@@ -255,12 +256,15 @@ public class Fuzzer{
 
         public boolean isExpectedError(String msg){
             for (String err: this.errors){
-                //System.out.println("-- Expected error: "+err);
                 if (msg.contains(err)){
                     return true;
                 }
             }
-            //System.out.println("-- Msg not found: "+msg);
+            for (String err: global_errors){
+                if (msg.contains(err)){
+                    return true;
+                }
+            }
             return false;
         }
 
@@ -355,6 +359,9 @@ public class Fuzzer{
             }
             if (symbol.equals("error")){
                 return this.addExpectedError(args);
+            }
+            if (symbol.equals("global_error")){
+                return this.addGlobalExpectedError(args);
             }
             if (symbol.equals("defined")){
                 return this.defined(args);
@@ -557,6 +564,18 @@ public class Fuzzer{
             for (Variable arg : args){
                 if (!this.errors.contains(arg.getValue())){
                     this.errors.add(arg.getValue());
+                }
+            }
+            return Variable.factory("");
+        }
+
+        //returning a variable object containing an empty string since
+        //all calls to a function is expected to return something
+        //so we are using this as a placeholder
+        public Variable addGlobalExpectedError(List<Variable> args) throws Exception{
+            for (Variable arg : args){
+                if (!global_errors.contains(arg.getValue())){
+                    global_errors.add(arg.getValue());
                 }
             }
             return Variable.factory("");
@@ -1505,6 +1524,7 @@ public class Fuzzer{
             }
             String test = fuzz(rule);
             //test = test + "  -- Statement seed: " + seed;
+            //test = test + " -- " + rule ;
             return test;
         }
         catch (UnavailableException e){
@@ -1598,7 +1618,14 @@ public class Fuzzer{
                     Fuzzer.generation_time += System.currentTimeMillis() - stime;
                 }
                 catch (Exception e){
-                    Fuzzer.generation_time += System.currentTimeMillis() - stime;
+                    StringWriter sw = new StringWriter();
+                    e.printStackTrace(new PrintWriter(sw));
+                    String stackTrace = sw.toString();
+                    if (Fuzzer.context.isExpectedError(stackTrace)){
+                        Fuzzer.context.resetError();
+                        return "-- [Expected Error]:" + stackTrace;
+                    }
+
                     throw e;
                 }
                 if (stmt==null || stmt.contains("-- [Internal Exception, moving on]")){

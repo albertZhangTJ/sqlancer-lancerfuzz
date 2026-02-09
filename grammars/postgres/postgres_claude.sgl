@@ -1,0 +1,1999 @@
+grammar postgres;
+
+globalErr : global_error['transaction', 'concurrent', 'does not exist', 'could not find', 'cannot perform', 'type', 'constraint', 'unrecognized', 'redundant'];
+
+// This function 
+symbols_with_type [symbols, et] returns [fs]
+    : ( ns=$symbols.next rt=$ns.type ets=
+    $type_matching[rt] (<ets==et> fs+=$ns | <ets!=et> ) )**symbols.len
+    ;
+
+// PostgresAggregate.java
+aggregate_func  
+    : error['aggregate functions are not allowed in'] ('AVG(' ( expr['INT'] | expr['REAL'] )**random[1, ', '] ')' 
+    | 'BIT_AND(' expr['INT']**random[1, ', '] ')' | 'BIT_OR(' expr['INT']**random[1, ', '] ')' | 'BOOL_AND(' expr['BOOLEAN']**random[1, ', '] ')'
+    | 'BOOL_AND(' expr['BOOLEAN']**random[1, ', '] ')' | 'COUNT(' expr['INT']**random[1, ', '] ')' | 'EVERY(' expr['BOOLEAN']**random[1, ', '] ')'
+    | 'MAX(' any_expr**random[1, ', '] ')' | 'MIN(' any_expr**random[1, ', '] ')'
+    | 'SUM(' ( expr['INT'] | expr['REAL'] )**random[1, ', '] ')'  )
+    ;
+
+// PostgresAlias.java
+alias
+    : ' AS '
+    ;
+
+// PostgresBetweenOperation.java
+between [type]
+    : ' BETWEEN ' ' SYMMETRIC '? expr[type] ' AND ' expr[type]
+    ;
+
+// PostgresBinaryArithmeticOperation.java
+binary_arith_op
+    : '+' | '-' | '*' | '/' | '%' | '^' 
+    ;
+
+// PostgresBinaryBitOperation.java
+binary_bit_op
+    : '||' | '&' | '|' | '#' | '<<' | '>>' 
+    ;
+
+// PostgresBinaryComparisonOperation.java
+binary_comp_op
+    : '=' | ' IS DISTINCT FROM ' | ' IS NOT DISTINCT FROM ' | '!=' | '<' | '<=' | '>' | '>=' 
+    ;
+
+// PostgresBinaryLogicalOperation.java
+binary_logical_op 
+    : ' AND ' | ' OR ' 
+    ;
+
+// PostgresBinaryRangeOperation.java.utf8
+ binary_range_op
+    : '+' | '-' | '*' 
+    ;
+
+binary_range_comp_op
+    : '@>' | '<@' | '&&' | '<<' | '>>' | '&<' | '>&' | '-|-'
+    ;
+
+// PostgresCastOperation.java
+cast_op
+    : '::'
+    ;
+
+// PostgresCollate.java
+collate_op
+    : ' COLLATE \"' collates.any '\" '
+    ;
+
+postfixOperator : ' IS NULL ' | ' ISNULL ' | ' IS NOT NULL ' | ' NOTNULL ';
+
+booleanPostfixOperator : ' IS UNKNOWN ' | ' IS TRUE ' | ' IS FALSE '  | ' IS NOT UNKNOWN ';
+//prefixOperator : ' NOT ' | ' + ' | ' - ';
+inOperator 
+    : et=$effective_data_types.any expr[et] NOT? IN '(' (expr[et])**random[1,','] ')'
+    ;
+
+fromTable : //TODO
+    ;
+
+subquery
+    : ' (' cc=$select[0] ') ' AS tt=new['table'] tt.c=$cc t+=$tt
+    ;
+
+// PostgresConcatOperation.java
+concat_op
+    : ' || '
+    ;
+
+expr [type] : et=$type_matching[type] commonExprErr 
+    ( <et=='INT'> int_expr
+    | <et=='BOOLEAN'> boolean_expr
+    | <et=='TEXT'> text_expr
+    | <et=='REAL'> real_expr
+    | <et=='INET'> inet_expr
+    | <et=='RANGE'> range_expr
+    | <et=='MONEY'> money_expr
+    | <et=='BIT'> bit_expr
+    );
+
+any_expr 
+    : (int_expr
+    | boolean_expr
+    | text_expr
+    | real_expr
+    | inet_expr
+    | range_expr
+    | money_expr
+    | bit_expr
+    | aggregate_func) commonExprErr 
+    ;
+
+constant [type] : et=$type_matching[type] commonExprErr
+    ( <et=='INT'> int_const
+    | <et=='BOOLEAN'> boolean_const
+    | <et=='TEXT'> text_const
+    | <et=='REAL'> real_const
+    | <et=='INET'> inet_const
+    | <et=='RANGE'> range_const
+    | <et=='MONEY'> money_const
+    | <et=='BIT'> bit_const
+    );
+
+any_constant
+    : int_const
+    | boolean_const
+    | text_const
+    | real_const
+    | inet_const
+    | range_const
+    | money_const
+    | bit_const
+    ;
+
+inet_expr : inet_const 95% | inet_func | <defined[symbols] and symbols_with_type[symbols, 'INET'].len>0> symbols_with_type[symbols, 'INET'].any ;
+
+inet_const : SQ random[0, 255, 0] '.' random[0, 255, 0] '.' random[0, 255, 0] '.' random[0, 255, 0] ('/' random[1,32])? SQ; 
+
+inet_func
+    : ' broadcast(' expr['INET'] ') '
+    | ' hostmask(' expr['INET'] ') '
+    | ' netmask(' expr['INET'] ') '
+    | ' set_masklen(' expr['INET'] ', ' expr['INET'] ') '
+    ;
+
+real_expr : real_const 90% | real_func | real_operation | <defined[symbols] and symbols_with_type[symbols, 'REAL'].len>0> symbols_with_type[symbols, 'REAL'].any ;
+
+real_operation : expr['REAL'] binary_arith_op expr['REAL'];
+
+real_const : lc=$0 ( '(' lc=$1 ('+' | DS))**random[0,1,90] DIGIT+ ( DOT DIGIT+ )**random[0,1,25] ( <lc==0> '' | <lc==1> ')' );
+
+real_func
+    : ' abs(' expr['REAL'] ') '
+    | ' pg_notification_queue_usage() '
+    | ' cbrt(' expr['REAL'] ') '
+    | ' ceiling(' expr['REAL'] ') '
+    | ' degrees(' expr['REAL'] ') '
+    | ' exp(' expr['REAL'] ') '
+    | ' ln(' expr['REAL'] ') '
+    | ' log(' expr['REAL'] ') '
+    | ' log(' expr['REAL'] ', ' expr['REAL'] ') '
+    | ' pi() '
+    | ' power(' expr['REAL'] ', ' expr['REAL'] ') '
+    | ' trunc(' expr['REAL'] ') '
+    | ' trunc(' expr['REAL'] ', ' expr['INT'] ') '
+    | ' floor(' expr['REAL'] ') '
+    | ' acos(' expr['REAL'] ') '
+    | ' acosd(' expr['REAL'] ') '
+    | ' asin(' expr['REAL'] ') '
+    | ' asind(' expr['REAL'] ') '
+    | ' atan(' expr['REAL'] ') '
+    | ' atand(' expr['REAL'] ') '
+    | ' atan2(' expr['REAL'] ', ' expr['REAL'] ') '
+    | ' atan2d(' expr['REAL'] ', ' expr['REAL'] ') '
+    | ' cos(' expr['REAL'] ') '
+    | ' cosd(' expr['REAL'] ') '
+    | ' cot(' expr['REAL'] ') '
+    | ' cotd(' expr['REAL'] ') '
+    | ' sin(' expr['REAL'] ') '
+    | ' sind(' expr['REAL'] ') '
+    | ' tan(' expr['REAL'] ') '
+    | ' tand(' expr['REAL'] ') '
+    | ' sinh(' expr['REAL'] ') '
+    | ' cosh(' expr['REAL'] ') '
+    | ' tanh(' expr['REAL'] ') '
+    | ' asinh(' expr['REAL'] ') '
+    | ' acosh(' expr['REAL'] ') '
+    | ' atanh(' expr['REAL'] ') '
+    | ' sqrt(' expr['REAL'] ') '
+    | ' radians(' expr['REAL'] ') '
+    | ' round(' expr['REAL'] ') '
+    | ' round(' expr['REAL'] ', ' expr['INT'] ') '
+    | ' sign(' expr['REAL'] ') '
+    | ' scale(' expr['REAL'] ') '
+    | ' min_scale(' expr['REAL'] ') '
+    | ' trim_scale(' expr['REAL'] ') '
+    | ' random() '
+    | ' setseed(' expr['REAL'] ') '
+    | ' width_bucket(' expr['REAL'] ', ' expr['REAL'] ', ' expr['REAL'] ', ' expr['INT'] ') ' error['count must be greater than zero']
+    ;
+
+range_expr : (range_const 90% | range_func | range_operation | <defined[symbols] and symbols_with_type[symbols, 'RANGE'].len>0> symbols_with_type[symbols, 'RANGE'].any ) commonRangeExpressionErr ;
+
+range_operation : expr['RANGE'] binary_range_op expr['RANGE'];
+
+range_const :  'int4range(' int_const ',' int_const ',\'' ('(' | '[' ) (']' | ')' ) '\')' error['range lower bound must be less than or equal to range upper bound'];
+
+range_func : ' range_merge(' expr['RANGE'] ', ' expr['RANGE'] ') ';
+
+boolean_expr : boolean_const 90% | boolean_func | boolean_operation | <defined[symbols] and symbols_with_type[symbols, 'BOOLEAN'].len>0> symbols_with_type[symbols, 'BOOLEAN'].any ;
+
+boolean_const : TRUE | FALSE;
+
+boolean_operation 
+    : '(' ( expr['BOOLEAN'] binary_logical_op expr['BOOLEAN']
+    | expr['REAL'] binary_comp_op expr['REAL']
+    | expr['RANGE'] binary_range_comp_op expr['RANGE']
+    | NOT expr['BOOLEAN']
+    | any_expr postfixOperator
+    | expr['TEXT'] SIMILAR TO expr['TEXT']
+    | expr['TEXT'] LIKE expr['TEXT']
+    | inOperator
+    | expr['BOOLEAN'] booleanPostfixOperator ) ')'
+    ;
+
+boolean_func
+    : ' inet_same_family(' expr['INET'] ', ' expr['INET'] ') '
+    | ' pg_jit_available() '
+    | ' lower_inc(' expr['RANGE'] ') '
+    | ' lower_inf(' expr['RANGE'] ') '
+    | ' upper_inc(' expr['RANGE'] ') '
+    | ' upper_inf(' expr['RANGE'] ') '
+    | ' isempty(' expr['RANGE'] ') '
+    | ' starts_with(' expr['TEXT'] ', ' expr['TEXT'] ') '
+    | ' pg_is_in_recovery() '
+    | ' pg_is_wal_replay_paused() ' error['recovery is not in progress']
+    | ' inet_contains(' expr['INET'] ', ' expr['INET'] ') '
+    | ' inet_contained(' expr['INET'] ', ' expr['INET'] ') '
+    | ' is_normalized(' expr['TEXT'] ') '
+    | ' pg_table_is_visible(' expr['INT'] '::oid) '
+    | ' pg_function_is_visible(' expr['INT'] '::oid) '
+    ;
+
+int_expr : int_const 90% | int_func | int_operation | <defined[symbols] and symbols_with_type[symbols, 'INT'].len>0> symbols_with_type[symbols, 'INT'].any ;
+
+int_operation : expr['INT'] binary_arith_op expr['INT'];
+
+int_const : lc=$0 ( '(' lc=$1 ('+' | DS))**random[0,1,90] FDIGIT DIGIT* ( <lc==0> '' | <lc==1> ')' );
+
+int_func 
+    : ' abs(' expr['INT'] ') '
+    | ' length(' expr['TEXT'] ') '
+    | ' num_nonnulls(' any_expr**random[1, 10, ','] ') '
+    | ' num_nulls(' any_expr**random[1, 10, ','] ') '
+    | ' family(' expr['INET'] ') '
+    | ' masklen(' expr['INET'] ') '
+    | ' inet_client_port() '
+    | ' pg_backend_pid() '
+    | ' pg_trigger_depth() '
+    | ' ascii(' expr['TEXT'] ') ' 
+    | ' strpos(' expr['TEXT'] ', ' expr['TEXT'] ') '
+    | ' get_bit(' expr['TEXT'] '::bytea, ' expr['INT'] ') '
+    | ' get_byte(' expr['TEXT'] '::bytea, ' expr['INT'] ') '
+    | ' lower(' expr['RANGE'] ') '
+    | ' upper(' expr['RANGE'] ') '
+    | ' pg_column_size(' expr['TEXT'] ')  '
+    | ' div(' expr['INT'] ', ' expr['INT'] ') '
+    | ' mod(' expr['INT'] ', ' expr['INT'] ') '
+    | ' gcd(' expr['INT'] ', ' expr['INT'] ') '
+    | ' lcm(' expr['INT'] ', ' expr['INT'] ') '
+    | ' factorial(' expr['INT'] ') ' error['factorial of a negative number is undefined']
+    | ' sign(' expr['INT'] ') '
+    | ' bit_length(' expr['TEXT'] ') '
+    | ' char_length(' expr['TEXT'] ') '
+    | ' octet_length(' expr['TEXT'] ') '
+    | ' position(' expr['TEXT'] ' in ' expr['TEXT'] ') '
+    | ' pg_current_xact_id() '
+    | ' pg_my_temp_schema() '
+    | ' cardinality(' expr['ARRAY'] ') '
+    ;
+
+text_expr : text_const 90% | text_func | text_operation | <defined[symbols] and symbols_with_type[symbols, 'TEXT'].len>0> symbols_with_type[symbols, 'TEXT'].any ;
+
+text_operation : expr['TEXT'] concat_op expr['TEXT'];
+
+text_const : '\'' (CH | DIGIT)+ '\'';
+
+text_func 
+    : ' abbrev(' expr['INET'] ') '
+    | ' text('  expr['INET'] ') '
+    | ' current_database() ' 
+    | ' current_schema() '
+    | ' pg_current_logfile() '
+    | ' version() '
+    | ' to_char(' expr['TEXT'] ',' expr['TEXT'] ') '
+    | ' btrim(' expr['TEXT'] ', ' expr['TEXT'] ') '
+    | ' chr(' random[1,127] ') '
+    | ' convert_from(' expr['TEXT'] ',' ( ' \'UTF8\' ' | ' \'LATIN1\' ')') '
+    | ' initcap(' expr['TEXT'] ') '
+    | ' left(' expr['TEXT'] ', ' expr['INT'] ') '
+    | ' lower(' expr['TEXT'] ') '
+    | ' md5(' expr['TEXT'] ') '
+    | ' upper(' expr['TEXT'] ') '
+    | ' quote_literal(' expr['TEXT'] ') '
+    | ' quote_ident(' expr['TEXT'] ') '
+    | ' regexp_replace(' expr['TEXT'] ',' expr['TEXT'] ',' expr['TEXT']') '
+    | ' replace(' expr['TEXT'] ',' expr['TEXT']') '
+    | ' reverse(' expr['TEXT']') '
+    | ' right(' expr['TEXT'] ', ' expr['INT'] ') '
+    | ' rpad(' expr['TEXT'] ', ' random[1,255] ', ' expr['TEXT'] ') '
+    | ' rtrim(' expr['TEXT'] ', ' expr['TEXT']') '
+    | ' split_part(' expr['TEXT'] ', ' expr['TEXT'] ', ' expr['INT'] ') ' error['field position must not be zero']
+    | ' substr(' expr['TEXT'] ', ' expr['INT'] ', ' expr['INT'] ') '
+    | ' to_ascii(' expr['TEXT'] ') ' error['encoding conversion from UTF8 to ASCII not supported', 'SQL_ASCII']
+    | ' translate(' expr['TEXT'] ', ' expr['TEXT'] ', ' expr['TEXT'] ') '
+    | ' to_hex(' expr['INT'] ') '
+    | ' concat(' any_expr**random[2, 5, ','] ') '
+    | ' concat_ws(' expr['TEXT'] ', ' any_expr**random[2, 5, ','] ') '
+    | ' format(' expr['TEXT'] ', ' any_expr**random[1, 3, ','] ') '
+    | ' lpad(' expr['TEXT'] ', ' expr['INT'] ', ' expr['TEXT'] ') '
+    | ' lpad(' expr['TEXT'] ', ' expr['INT'] ') '
+    | ' ltrim(' expr['TEXT'] ', ' expr['TEXT'] ') '
+    | ' ltrim(' expr['TEXT'] ') '
+    | ' repeat(' expr['TEXT'] ', ' expr['INT'] ') '
+    | ' substring(' expr['TEXT'] ', ' expr['INT'] ', ' expr['INT'] ') '
+    | ' substring(' expr['TEXT'] ' from ' expr['INT'] ' for ' expr['INT'] ') '
+    | ' trim(' expr['TEXT'] ') '
+    | ' trim(both ' expr['TEXT'] ' from ' expr['TEXT'] ') '
+    | ' overlay(' expr['TEXT'] ' placing ' expr['TEXT'] ' from ' expr['INT'] ' for ' expr['INT'] ') '
+    | ' encode(' expr['TEXT'] '::bytea, ' ( '\'base64\'' | '\'hex\'' | '\'escape\'' ) ') '
+    | ' decode(' expr['TEXT'] ', ' ( '\'base64\'' | '\'hex\'' | '\'escape\'' ) ') '
+    | ' quote_nullable(' expr['TEXT'] ') '
+    | ' normalize(' expr['TEXT'] ') ' 
+    | ' normalize(' expr['TEXT'] ', ' ( 'NFC' | 'NFD' | 'NFKC' | 'NFKD' ) ') '
+    | ' sha256(' expr['TEXT'] '::bytea) '
+    | ' sha384(' expr['TEXT'] '::bytea) '
+    | ' sha512(' expr['TEXT'] '::bytea) '
+    | ' current_user '
+    | ' session_user '
+    | ' current_setting(' expr['TEXT'] ') '
+    | ' pg_typeof(' any_expr ')::text '
+    //| ' gen_random_uuid()::text '
+    ;
+
+
+// PostgresConstant.java
+null_const : ' NULL ';
+dec_const [ts=4, ds=2] : (DS)**random[0, 1, '', 90] gs=$ts$-ds DIGIT**gs ( '.' DIGIT**ds )? ;
+bit_const [size=8] : ' \'' ( '0' | '1' )**random[1,size] '\'::bit';
+
+money_expr : money_const 95% | <defined[symbols] and symbols_with_type[symbols, 'MONEY'].len>0> symbols_with_type[symbols, 'MONEY'].any ;
+money_const : '\''   FDIGIT DIGIT* '\'' cast_op 'MONEY';
+
+bit_expr : ( bit_const 95% | bit_operation | <defined[symbols] and symbols_with_type[symbols, 'BIT'].len>0> symbols_with_type[symbols, 'BIT'].any ) error['bit string length'];
+
+bit_operation : expr['BIT'] binary_bit_op expr['BIT'] bitStrOpErr;
+
+timestamp_expr : timestamp_const 90% | timestamp_func | <defined[symbols] and symbols_with_type[symbols, 'TIMESTAMP'].len>0> symbols_with_type[symbols, 'TIMESTAMP'].any ;
+
+timestamp_const : ' now() ' | ' current_timestamp ' | ' \'2024-01-01 00:00:00\'::timestamp ';
+
+timestamp_func
+    : ' now() '
+    | ' current_timestamp '
+    | ' statement_timestamp() '
+    | ' transaction_timestamp() '
+    | ' clock_timestamp() '
+    | ' date_trunc(' expr['TEXT'] ', ' expr['TIMESTAMP'] ') '
+    | ' make_timestamp(' expr['INT'] ', ' expr['INT'] ', ' expr['INT'] ', ' expr['INT'] ', ' expr['INT'] ', ' expr['REAL'] ') '
+    | ' make_timestamptz(' expr['INT'] ', ' expr['INT'] ', ' expr['INT'] ', ' expr['INT'] ', ' expr['INT'] ', ' expr['REAL'] ') '
+    | ' to_timestamp(' expr['REAL'] ') '
+    | ' to_timestamp(' expr['TEXT'] ', ' expr['TEXT'] ') '
+    ;
+
+interval_expr : interval_const 90% | interval_func ;
+
+interval_const : ' interval \'' random[1,30] ( ' days' | ' hours' | ' minutes' | ' seconds' | ' months' | ' years' ) '\' ';
+
+interval_func
+    : ' age(' expr['TIMESTAMP'] ', ' expr['TIMESTAMP'] ') '
+    | ' age(' expr['TIMESTAMP'] ') '
+    | ' make_interval(days => ' expr['INT'] ') '
+    | ' justify_days(' expr['INTERVAL'] ') '
+    | ' justify_hours(' expr['INTERVAL'] ') '
+    | ' justify_interval(' expr['INTERVAL'] ') '
+    ;
+
+// caveat: decimal size is at this stage hard-coded
+// print the Postgres data type, return the effective type for internal processing
+data_types returns [et]
+    : ( SMALLINT | INTEGER | BIGINT ) et=$'INT'
+    | BOOLEAN et=$'BOOLEAN'
+    | ( TEXT | ' character(32) ' | CHARACTER_VARYING | NAME | REGCLASS ) et=$'TEXT'
+    | ( NUMERIC | DOUBLE_PRECISION | REAL | ' DECIMAL(12,6) ' ) et=$'REAL'
+    | INT4RANGE et=$'RANGE'
+    | MONEY et=$'MONEY'
+    | ( BIT | BIT_VARYING ) et=$'BIT'
+    | ' inet '  et=$'INET'
+    | ' TIMESTAMP ' et=$'TIMESTAMP'
+    ;
+
+effective_data_types returns [types] 
+    : types+=$'INT' types+=$'BOOLEAN' types+=$'TEXT' types+=$'REAL' types+=$'RANGE' types+=$'MONEY' types+=$'BIT' types+=$'INET' types+=$'TIMESTAMP'
+    ;
+
+type_matching [type] returns [effective_type]
+    : <type=='smallint'> effective_type=$'INT'
+    | <type=='integer'> effective_type=$'INT'
+    | <type=='bigint'> effective_type=$'INT'
+    | <type=='boolean'> effective_type=$'BOOLEAN'
+    | <type=='text'> effective_type=$'TEXT'
+    | <type=='character varying'> effective_type=$'TEXT'
+    | <type=='character'> effective_type=$'TEXT'
+    | <type=='name'> effective_type=$'TEXT' 
+    | <type=='regclass'> effective_type=$'TEXT' error['does not exist', 'improper relation name']
+    | <type=='numeric'> effective_type=$'REAL'
+    | <type=='double precision'> effective_type=$'REAL'
+    | <type=='real'> effective_type=$'REAL'
+    | <type=='decimal'> effective_type=$'REAL'
+    | <type=='int4range'> effective_type=$'RANGE'
+    | <type=='money'> effective_type=$'MONEY'
+    | <type=='bit'> effective_type=$'BIT'
+    | <type=='bit varying'> effective_type=$'BIT'
+    | <type=='inet'> effective_type=$'INET'
+    //add self-mappings, allow effective types to be treated as real types as well
+    | <type=='INT'> effective_type=$'INT'
+    | <type=='BOOLEAN'> effective_type=$'BOOLEAN'
+    | <type=='TEXT'> effective_type=$'TEXT'
+    | <type=='REAL'> effective_type=$'REAL'
+    | <type=='RANGE'> effective_type=$'RANGE'
+    | <type=='MONEY'> effective_type=$'MONEY'
+    | <type=='BIT'> effective_type=$'BIT'
+    | <type=='INET'> effective_type=$'INET'
+    | <type=='TIMESTAMP'> effective_type=$'TIMESTAMP'
+    ;
+
+alterColumn : ALTER COLUMN columns[t].any ' ' globalErr;
+
+alterTable [view=false]
+    : ALTER commonExprErr ( error['cannot be performed on relation'] VIEW view=$true| TABLE (ONLY error['cannot use ONLY for foreign key on partitioned table'])? ) 
+      (t=views.any <view==true> | t=tables.any <view==false> )
+      (
+        DROP (IF EXISTS)? columns[t].any ( RESTRICT | CASCADE )? error['because other objects depend on it', 'does not exist', 'cannot drop column', 'cannot drop inherited column']
+        | alterColumn (SET DATA)? TYPE dummy=$data_types error[
+            'cannot alter type of a column used by a view or rule',
+            'cannot convert infinity to numeric', 'is duplicated', 
+            'cannot be cast automatically', 'is an identity column',
+            'identity column type must be smallint, integer, or bigint',
+            'out of range',
+            'cannot alter type of column named in partition key',
+            'cannot alter type of column referenced in partition key expression',
+            'because it is part of the partition key of relation',
+            'argument of CHECK must be type boolean',
+            'operator does not exist',
+            'must be type',
+            'You might need to add explicit type casts',
+            'cannot cast type',
+            'foreign key constrain',
+            'division by zero',
+            'value too long for type character varying',
+            'cannot drop index',
+            'cannot alter inherited column',
+            'must be changed in child tables too',
+            'could not determine which collation to use for index expression',
+            'bit string too long for type bit varying',
+            'cannot alter type of a column used by a generated column',
+            'does not exist'
+          ]
+        | alterColumn ( DROP DEFAULT | SET DEFAULT symbols=$columns[t] expr[columns[t].any] error['is out of range', 'but default expression is of type', 'cannot cast']) error['is a generated column', 'is an identity column']
+        | alterColumn ( SET NOT NULL error['contains null values'] | DROP NOT NULL error['is in a primary key', 'is an identity column', 'is in index used as replica identity'])
+        | alterColumn SET STATISTICS random[0,10000,0]
+        | alterColumn SET '( n_distinct = ' ( '-0.' '0'* random[1,90] | random[1,200])  ') '
+        | alterColumn RESET '( n_distinct ) '
+        | alterColumn SET STORAGE ( PLAIN | EXTERNAL | EXTENDED | MAIN ) error['can only have storage', 'is an identity column']
+      ) error['read-only transaction'] globalErr
+    ;
+
+analyze : ANALYZE ( ' ( SKIP_LOCKED ) ' | ' ( VERBOSE ) ' )? ( t=tables.any (' ('  cc=$columns[t] (cc.unique_any)**random[1,cc.len, ',']  ' )')? )? error['deadlock'] globalErr;
+cluster 
+    : CLUSTER ( t=tables.any ( <indexes[t].len>0> USING indexes[t].any error['cannot cluster on partial index'] | ' ' )? )? 
+    error['there is no previously clustered index for table', 'cannot cluster a partitioned table', 'access method does not support clustering', 'cannot run inside a transaction block'] globalErr
+    ;
+
+comment
+    : COMMENT ON (
+        INDEX indexes[tables.any].any
+        | COLUMN t=tables.any DOT columns[t].any
+        | STATISTICS statistics[tables.any].any
+        | TABLE tables.any
+    ) IS ( NULL | text_const ) globalErr
+    ;
+
+// TODO: PostgresCommon
+
+delete
+    : globalErr DELETE FROM ONLY? t+=tables.any c=$columns[t.next] t.cur.c=$c where_predicate[t, 0]? (RETURNING any_expr)? error['too few entries', 'out of range', 'cannot cast', 'invalid input syntax for', 'division by zero', 'cannot perform DELETE RETURNING on relation']
+    ;
+
+discard
+    : globalErr DISCARD ( <tables.filter['type','==', 'BASE TABLE'].len>0> (ALL | TEMPORARY | TEMP) | PLANS | SEQUENCES ) error['cannot run inside a transaction block']
+    ;
+
+dropIndex 
+    : globalErr DROP INDEX (ifExists new['index'] <indexes.len==0> | ifExists? i=$indexes i.unique_any**random[1, i.len, ',', 95] ) ( CASCADE | RESTRICT )? 
+    error['cannot drop desired object(s) because other objects depend on them', 'cannot drop index', 'does not exist', 'transaction is aborted', 'read-only transaction']
+    ;
+
+explain : EXPLAIN ' (FORMAT JSON) ' select[0] globalErr ;
+
+
+op_classes [type='any'] : 
+    SPACE et=$type_matching[type] (
+        ( 'int2_ops' | 'int4_ops' | 'int8_ops' | 'oid_ops' 
+        | 'int2_hash_ops' | 'int4_hash_ops' | 'int8_hash_ops' | 'oid_hash_ops' 
+        ) <et=='INT'>
+    
+    | ( 'bool_ops' | 'bool_hash_ops' ) <et=='BOOLEAN'>
+    
+    | ( 'text_ops' | 'text_pattern_ops' | 'text_hash_ops' 
+        | 'bpchar_ops' | 'bpchar_pattern_ops' | 'bpchar_hash_ops'
+        | 'varchar_ops' | 'varchar_pattern_ops' | 'varchar_hash_ops'
+        | 'name_ops' | 'name_hash_ops' | 'char_ops' | 'char_hash_ops' 
+        ) <et=='TEXT'>
+    
+    | ( 'numeric_ops' | 'numeric_hash_ops' 
+    | 'float4_ops' | 'float4_hash_ops' 
+    | 'float8_ops' | 'float8_hash_ops' ) <et=='REAL'>
+    
+    | ( 'money_ops' ) <et=='MONEY'>
+    
+    | ( 'bit_ops' | 'varbit_ops' ) <et=='BIT'>
+    
+    | ( 'inet_ops' | 'inet_hash_ops' | 'cidr_ops' | 'cidr_hash_ops'
+    | 'macaddr_ops' | 'macaddr_hash_ops' | 'macaddr8_ops' | 'macaddr8_hash_ops' ) <et=='INET'>
+    
+    // Unmapped operator classes (no corresponding type in your data_types)
+    | ( 'abstime_ops' | 'abstime_hash_ops' | 'date_ops' | 'date_hash_ops'
+    | 'time_ops' | 'time_hash_ops' | 'timetz_ops' | 'timetz_hash_ops'
+    | 'timestamp_ops' | 'timestamp_hash_ops' | 'timestamptz_ops' | 'interval_ops' | 'interval_hash_ops'
+    | 'box_ops' | 'circle_ops' | 'line_ops' | 'lseg_ops' | 'path_ops' | 'point_ops' | 'polygon_ops'
+    | 'bytea_ops' | 'bytea_hash_ops' | 'tid_ops' | 'uuid_ops' | 'uuid_hash_ops'
+    | 'array_ops' | 'jsonb_ops' | 'jsonb_path_ops' | 'tsvector_ops' | 'tsquery_ops'
+    | 'pg_lsn_ops' | 'pg_lsn_hash_ops' ) <et=='UNMAPPED'> //TODO these op classes do not have corresponding expr type support
+    
+    ) SPACE error['does not accept data type', 'does not exist for access method \"btree\"']
+    ;
+
+createIndex [ih=false]
+    : globalErr CREATE error['index row requires'] UNIQUE? INDEX new['index'] ON ONLY? t+=tables.any c=$columns[t.any] t.any.c=$c ( USING ( ' BTREE ' | ' HASH ' ih=$true | ' GIST ' | ' GIN' ))? 
+    ' (' ( c.any | <ih!=true> (cc=c.any SPACE (op_classes[cc.type] error['does not accept', 'does not exist for access method'])**random[0,1,99] ( ASC | DESC )? ( ' NULLS FIRST ' | ' NULLS LAST ' )**random[0,1,99] )**random[1, 3, ','] ) ') '
+    ( INCLUDE '(' c.unique_any**random[1, c.len, ','] ')' <ih!=true> | ' ') where_predicate[t, 0]?
+    error['already contains data', 'You might need to add explicit type casts', ' collations are not supported', 
+        'because it has pending trigger events', 'could not determine which collation to use for index expression', 'could not determine which collation to use for string comparison', 
+        'is duplicated', 'access method \"gin\" does not support unique indexes', 'access method \"hash\" does not support unique indexes', 'already exists', 
+        'could not create unique index', 'has no default operator class', 'does not support', 'cannot cast', 'unsupported UNIQUE constraint with partition key definition', 
+        'insufficient columns in UNIQUE constraint definition', 'invalid input syntax for', 'must be type ', 'integer out of range', 'division by zero', 'out of range', 
+        'functions in index predicate must be marked IMMUTABLE', 'functions in index expression must be marked IMMUTABLE', 
+        'result of range difference would not be contiguous', 'which is part of the partition key', 'cannot use subquery in index predicate',
+        'no schema has been selected to create in', 'virtual'
+    ]
+    ;
+
+createInsert
+    : globalErr INSERT INTO t=tables.any c=$columns[t] ' ( ' (cc+=c.unique_any)**random[1, c.len, ',', 15] ' ) ' ( OVERRIDING (SYSTEM | USER ) VALUE )**random[0,1,90] VALUES error['cannot insert a non-DEFAULT value into column', 'violates check constraint' ]
+     ' ( ' ( 99% expr[cc.next.type] | temp=$cc.next DEFAULT error['DEFAULT is not allowed in this context'] )**random[cc.len, ','] ' ) '
+    ( ON CONFLICT (  error['there is no unique or exclusion constraint matching the ON CONFLICT specification'])? DO NOTHING )**random[0,1,90]
+    error[
+        'multiple assignments to same column',
+        'violates foreign key constraint',
+        'value too long for type character varying',
+        'conflicting key value violates exclusion constraint',
+        'violates not-null constraint',
+        'current transaction is aborted',
+        'bit string too long',
+        'new row violates check option for view',
+        'reached maximum value of sequence',
+        'but expression is of type',
+        'duplicate key value violates unique constraint',
+        'identity column defined as GENERATED ALWAYS',
+        'out of range',
+        'violates check constraint',
+        'no partition of relation',
+        'invalid input syntax',
+        'division by zero',
+        'violates foreign key constraint',
+        'data type unknown',
+        'ON CONFLICT clause cannot be used with table that has'
+    ];
+
+channel : 'asdf' | 'test';
+
+commit : COMMIT | ROLLBACK | transaction;
+notify : globalErr NOTIFY channel ', \'' str_const '\'' ;
+
+listen : globalErr LISTEN channel;
+
+uniqueConstraint
+    : UNIQUE nullsDistinctOption?
+    ;
+
+nullsDistinctOption
+    : NULLS DISTINCT
+    | NULLS NOT DISTINCT
+    ;
+
+unlisten : globalErr UNLISTEN ( channel | ASTERISK ) error['there is no unique constraint matching given keys'];
+
+reindex
+    : globalErr error['could not create unique index', 'cannot run inside a transaction block'] REINDEX 
+    ( INDEX CONCURRENTLY? indexes.any | TABLE CONCURRENTLY? tables.any | DATABASE CONCURRENTLY? DB ) error['can only reindex the currently open database', 'does not exist', 'REINDEX is not yet implemented for partitioned indexes', 'could not create unique index', 'concurrent index creation for exclusion constraints is not supported'];
+
+createSequence
+    : globalErr error['aborted'] CREATE ( TEMPORARY | TEMP )? SEQUENCE ifNotExists ' seq ' ( AS ( ' smallint ' | ' integer ' | ' bigint '))?
+    (INCREMENT BY? random[1, 75])? (( MINVALUE random[1,75] | NO MINVALUE ) error['must be less than MAXVALUE'])?
+    (( MAXVALUE random[1,75] | NO MAXVALUE ) error['must be less than MAXVALUE'])? 
+    (START WITH? random[1,75] error['cannot be less than MINVALUE', 'cannot be greater than MAXVALUE'])?
+    (CACHE random[1,75])? (NO? CYCLE)? (OWNED BY NONE)? error['is out of range', 'no schema has been selected to create in']
+    ;
+
+fragment configOptions 
+    : commonExprErr (' synchronous_commit = ' ( DEFAULT |  (' remote_apply ' | ' remote_write ' | ' local ' | ' off ' ))
+    | ' wal_compression = ' ( DEFAULT |  ( ' 1 ' | ' 0 ' ))
+    | ' commit_delay = ' ( DEFAULT |  random[1, 10000])
+    | ' commit_siblings = ' ( DEFAULT |  random[1, 10000])
+    | ' track_activities = ' ( DEFAULT |  (' 1 ' | ' 0 '))
+    | ' track_counts = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' track_io_timing = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' track_functions = ' ( DEFAULT |  ('\'none\'' | '\'pl\'' | '\'all\''))
+    | ' vacuum_freeze_table_age = ' ( DEFAULT |  ( ' 0 ' | ' 5 ' | ' 10 ' | ' 100 ' | ' 500 ' | ' 2000000000 ' ))
+    | ' vacuum_freeze_min_age = ' ( DEFAULT |  ( ' 0 ' | ' 5 ' | ' 10 ' | ' 100 ' | ' 500 ' | ' 2000000000 ' ))
+    | ' vacuum_multixact_freeze_table_age = ' ( DEFAULT |  ( ' 0 ' | ' 5 ' | ' 10 ' | ' 100 ' | ' 500 ' | ' 2000000000 ' ))
+    | ' vacuum_multixact_freeze_min_age = ' ( DEFAULT |  ( ' 0 ' | ' 5 ' | ' 10 ' | ' 100 ' | ' 500 ' | ' 2000000000 ' ))
+    | ' gin_fuzzy_search_limit = ' ( DEFAULT |  random[1, 10000])
+    | ' synchronize_seqscans = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_bitmapscan = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_gathermerge = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_hashjoin = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_indexscan = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_indexonlyscan = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_material = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_mergejoin = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_nestloop = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_parallel_append = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_parallel_hash = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_partition_pruning = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_partitionwise_join = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_partitionwise_aggregate = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_seqscan = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_sort = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' enable_tidscan = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' seq_page_cost = ' ( DEFAULT |  (' 0.0 ' | ' 0.00001 ' | ' 0.05 ' | ' 0.1 ' | ' 1 ' | ' 10 ' | ' 10000 ' ))
+    //| ' random_page_cost = ' ( DEFAULT |  (' 0.0 ' | ' 0.00001 ' | ' 0.05 ' | ' 0.1 ' | ' 1 ' | ' 10 ' | ' 10000 ' ))
+    | ' cpu_tuple_cost = ' ( DEFAULT |  (' 0.0 ' | ' 0.00001 ' | ' 0.05 ' | ' 0.1 ' | ' 1 ' | ' 10 ' | ' 10000 ' ))
+    | ' cpu_index_tuple_cost = ' ( DEFAULT |  (' 0.0 ' | ' 0.00001 ' | ' 0.05 ' | ' 0.1 ' | ' 1 ' | ' 10 ' | ' 10000 ' ))
+    | ' cpu_operator_cost = ' ( DEFAULT |  (' 0.0 ' | ' 0.00001 ' | ' 0.05 ' | ' 0.1 ' | ' 1 ' | ' 10 ' | ' 10000 ' ))
+    | ' parallel_setup_cost = ' ( DEFAULT |  random[1, 10000])
+    | ' parallel_tuple_cost = ' ( DEFAULT |  random[1, 10000] )
+    | ' min_parallel_table_scan_size = ' ( DEFAULT |  random[1, 10000])
+    | ' min_parallel_index_scan_size = ' ( DEFAULT |  random[1, 10000])
+    | ' effective_cache_size = ' ( DEFAULT |  random[1, 10000])
+    | ' jit_above_cost = ' ( DEFAULT |  ( ' -1 ' | random[0, 10000] ))
+    | ' jit_inline_above_cost = ' ( DEFAULT |  ( ' -1 ' | random[0, 10000] ))
+    | ' jit_optimize_above_cost = ' ( DEFAULT |  ( ' -1 ' | random[0, 10000] ))
+    | ' geqo = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' geqo_threshold = ' ( DEFAULT |  random[1, 10000])
+    | ' geqo_effort = ' ( DEFAULT |  random[1, 10000])
+    | ' geqo_pool_size = ' ( DEFAULT |  random[1, 10000])
+    | ' geqo_generations = ' ( DEFAULT |  random[1, 10000])
+    | ' geqo_selection_bias = ' ( DEFAULT |  (' 1.5 ' | ' 1.8 ' | ' 2.0 ' ))
+    | ' geqo_seed = ' ( DEFAULT |  ( ' 0 ' | ' 0.5 ' | ' 1 ' ))
+    | ' default_statistics_target = ' ( DEFAULT |  random[1, 10000])
+    | ' constraint_exclusion = ' ( DEFAULT |  ( ' on ' | ' off ' | ' partition '))
+    | ' cursor_tuple_fraction = ' ( DEFAULT |  ( ' 0.0 ' | ' 0.1 ' | ' 0.000001 ' | ' 1 ' | ' 0.5 ' | ' 0.9999999 ' ))
+    | ' from_collapse_limit = ' ( DEFAULT |  random[1, 10000])
+    | ' jit = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' join_collapse_limit = ' ( DEFAULT |  random[1, 10000])
+    | ' parallel_leader_participation = ' ( DEFAULT |  (' 1 ' | ' 0 ' ))
+    | ' plan_cache_mode = ' ( DEFAULT |  (' auto ' | ' force_generic_plan ' | ' force_custom_plan '))
+    );
+
+createSet : globalErr SET ( SESSION | LOCAL )? configOptions;
+
+createStatistics
+    : globalErr CREATE STATISTICS ifNotExists? t=$tables.any c=$columns[t] ( <c.len>=2> | <c.len>=2>) ' ' new['statistics']
+    ( error['unrecognized statistics kind'] sts+=$' n_distinct ' sts+=$' dependencies ' sts+=$' mcv ' '(' sts.unique_any**random[1,sts.len, ', '] ')' )?
+    ON c.unique_any**random[2,c.len,','] FROM t error['cannot have more than 8 columns in statistics', 'statistics creation on virtual generated columns']
+    ;
+
+dropStatistics : globalErr DROP STATISTICS statistics[tables.any].any ;
+
+alterStatistics : globalErr ALTER STATISTICS statistics[tables.any].any SET STATISTICS (' -1 ' | random[0,10000]);
+
+fragment storageParameters 
+    : ' fillfactor = ' random[10, 100]
+    | ' parallel_workers = ' random[0, 1024]
+    | ' autovacuum_enabled = ' ( ' 0 ' | ' 1 ')
+    | ' autovacuum_vacuum_threshold = ' random[0,10000]
+    | ' autovacuum_vacuum_scale_factor = ' ( ' 0 ' | ' 0.00001 ' | ' 0.01 ' | ' 0.1' | ' 0.2 ' | ' 0.5 ' | ' 0.8 ' | ' 0.9 ' | ' 1 ' )
+    | ' autovacuum_analyze_threshold = ' random[0,10000]
+    | ' autovacuum_analyze_scale_factor = ' ( ' 0 ' | ' 0.00001 ' | ' 0.01 ' | ' 0.1' | ' 0.2 ' | ' 0.5 ' | ' 0.8 ' | ' 0.9 ' | ' 1 ' )
+    | ' autovacuum_vacuum_cost_delay = ' random[1,100]
+    | ' autovacuum_vacuum_cost_limit = ' random[1,10000]
+    | ' autovacuum_freeze_min_age = ' random[0, 1000000000]
+    | ' autovacuum_freeze_max_age = ' random[100000, 2000000000]
+    | ' autovacuum_freeze_table_age = ' random[0, 2000000000]
+    ;
+
+fragment appendIndexParam
+    : (WITH '(' storageParameters error['unrecognized parameter', 'ALTER TABLE / ADD CONSTRAINT USING INDEX is not supported on partitioned tables'] ')' )?
+    ;
+
+fragment deleteOrUpdateAction : NO ACTION | RESTRICT | CASCADE | SET NULL | SET DEFAULT ;
+
+appendExcludeElement : ( cc=c.any op_type=$cc.type | '(' op_type=$effective_data_types.any expr[op_type] ')' ) op_classes[op_type]? (ASC | DESC)? (NULLS (FIRST | LAST) error['operator'])?;
+
+tableConstraints
+    : ( CHECK '(' expr['BOOLEAN'] ')' error['constraint must be added to child tables too', 'missing FROM-clause entry for table']  ( NOT? ENFORCED)?
+    | uniqueConstraint '(' (c.unique_any)**random[1, c.len, ',', 95] ')' appendIndexParam error['appears twice in unique constraint'] 
+    | error['multiple primary keys'] PRIMARY_KEY '(' (c.unique_any)**random[1, c.len, ',', 95] ')' appendIndexParam
+    | FOREIGN_KEY '(' (cl+=c.unique_any)**random[1, c.len, ',', 95] ')' REFERENCES tt=tables.any cc=$columns[tt] '(' (cc.unique_any)**random[cl.len, ','] ')'
+      ( MATCH FULL | MATCH SIMPLE )?  ( ON DELETE deleteOrUpdateAction error['ERROR: invalid ON DELETE action for foreign key constraint containing generated column'] )?
+      ( ON UPDATE deleteOrUpdateAction error['invalid ON UPDATE action for foreign key constraint containing generated column'] )?
+      ( DEFERRABLE (INITIALLY DEFERRED | INITIALLY IMMEDIATE ) | NOT DEFERRABLE )? ( NOT? ENFORCED)?
+    | EXCLUDE '(' (appendExcludeElement WITH error['is not commutative'] binary_comp_op)**random[1, ',', 99] ')' appendIndexParam where_predicate[t,0]? error['syntax error']
+      error['is not valid', 'no operator matches', 'operator does not exist', 'unknown has no default operator class',
+          'exclusion constraints are not supported on partitioned tables', 'The exclusion operator must be related to the index operator class for the constraint',
+          'could not create exclusion constraint'
+      ]
+    ) error['appears twice']
+    ;
+
+columnConstraints [type]
+    : first=$true
+    ( NOT? NULL error['conflicting NULL/NOT NULL declarations'] first=$false
+    | (<first> first=$false | <first==false> ' ') uniqueConstraint
+    | (<first> first=$false | <first==false> ' ') PRIMARY_KEY error['multiple primary keys']
+    | (<first> first=$false | <first==false> ' ') DEFAULT '(' expr[type] ')' error['out of range', 'is a generated column']
+    | (<first> first=$false | <first==false> ' ') CHECK '(' expr['BOOLEAN'] ')' (NO INHERIT)? error['out of range']
+    | (<first> first=$false | <first==false> ' ') GENERATED 
+        ( 
+            ALWAYS AS '(' expr[type] ')' ( STORED | VIRTUAL ) error['A generated column cannot reference another generated column.', 'cannot use generated column in partition key', 'generation expression is not immutable', 'cannot use column reference in DEFAULT expression']
+            | <type=='INT'> ( ALWAYS | BY DEFAULT ) AS IDENTITY
+        )
+    )**random[0,1,75]
+    ;
+
+generateInherits
+    : globalErr INHERITS t=$tables '(' t.unique_any**random[1, t.len, ',', 90] ')'
+      error['has a type conflict', 'has a generation conflict', 'cannot create partitioned table as inheritance child', 'cannot inherit from temporary relation', 
+      'cannot inherit from partitioned table', 'has a collation conflict', 'inherits conflicting default values', 'specifies generation expression']
+    ;
+
+generatePartitionBy 
+    : n=$3 PARTITION BY ( RANGE | LIST n=$1 | HASH ) error['unrecognized parameter', 'cannot use constant expression', 'cannot add NO INHERIT constraint to partitioned table', 
+      'unrecognized parameter', 'unsupported PRIMARY KEY constraint with partition key definition', 'which is part of the partition key.', 
+      'unsupported UNIQUE constraint with partition key definition', 'does not accept data type'
+    ] '(' ('(' cc=c.unique_any USING (op_classes[cc.type] error['does not exist for access method', 'syntax error'])')')**random[1, n, ','] ')'
+    ;
+
+generateUsing : USING tableAccessMethod.any;
+
+createTable : globalErr part=$false temp=$false CREATE (TEMPORARY temp=$true | TEMP temp=$true | UNLOGGED)? TABLE ifNotExists? t+=new['table'] (
+        '(' ((cc=new['columns'] ' ' type=$data_types cc.type=$type t.any.c+=$cc c+=$cc (<type=='TEXT'> collate_op error['not supported by type regclass'] | '') ' ' columnConstraints[type]**random[0,1,95] ))**random[3,',',50] (', ' tableConstraints
+            error['constraints on temporary tables may reference only temporary tables','constraints on unlogged tables may reference only permanent or unlogged tables',
+                'constraints on permanent tables may reference only permanent tables', 'cannot be implemented', 'there is no unique constraint matching given keys for referenced table',
+                'cannot reference partitioned table', 'unsupported ON COMMIT and foreign key combination', 'ERROR: invalid ON DELETE action for foreign key constraint containing generated column',
+                'exclusion constraints are not supported on partitioned tables', 'functions in index expression must be marked IMMUTABLE'
+            ]
+        )?  ')' (<temp!=true> generateinherits | '' )**random[0,1] (<defined[c] and temp!=true> generatePartitionBy part=$true | '' )**random[0,1] generateUsing? (<part==false> appendIndexParam | '' )?
+        ( <temp> ON COMMIT ( PRESERVE ROWS | DELETE ROWS | DROP) | '' )?
+      | 5% '( ' LIKE tables.any ( (EXCLUDING | INCLUDING ) ( DEFAULTS | CONSTRAINTS | INDEXES | STORAGE | COMMENTS | GENERATED | IDENTITY | STATISTICS | STORAGE | ALL ) )**random[0,3,' '] ')'
+    ) error['no schema has been selected to create in'];
+
+transaction : globalErr BEGIN ISOLATION LEVEL error['must be called before any query', 'current transaction is aborted'] ( SERIALIZABLE | REPEATABLE READ | READ COMMITTED | READ UNCOMMITTED );
+
+truncate : globalErr TRUNCATE TABLE? t=$tables t.unique_any**random[1, t.len, ',', 95] (RESTART IDENTITY | CONTINUE IDENTITY)? (CASCADE | RESTRICT)? error['cannot truncate a table referenced in a foreign key constraint', 'is not a table', 'is not distributed'];
+
+returningClause
+    : RETURNING returningItem**random[1, c.len, ','] error['too few entries']
+    ;
+
+returningItem
+    : (tableAlias '.')? columns[t.any].unique_any (AS new['column'])?
+    | any_expr (AS new['column'])?
+    ;
+
+tableAlias
+    : OLD
+    | NEW
+    ;
+
+createUpdate 
+    : error['conflicting key value violates exclusion constraint', 'reached maximum value of sequence', 'violates foreign key constraint', 
+      'violates not-null constraint', 'violates unique constraint', 'out of range', 'cannot cast', 'must be type boolean', 'is not unique', 
+      ' bit string too long', 'can only be updated to DEFAULT', 'division by zero', 'You might need to add explicit type casts.',
+      'invalid regular expression', 'View columns that are not columns of their base relation are not updatable','multiple assignments to same column', 
+      'new row violates check option for view', 'invalid input syntax for ', 'operator does not exist: text = boolean', 'SQL_ASCII',
+      'violates check constraint', 'could not determine which collation to use for string comparison', 'but expression is of type'
+    ] commonInsertUpdateErr globalErr UPDATE t+=tables.any c=$columns[t.any].subset t.any.c=$c SET (c.next '=' (constant[c.cur.type] | DEFAULT | '(' symbols=$columns[t.any] expr[c.cur.type] ')') )**random[c.len, ','] where_predicate[t,0]**random[0,1,90] 
+    ;
+
+fragment vacuumOption : ' FULL ' | ' FREEZE ' | ' ANALYZE ' | ' VERBOSE ' | ' DISABLE_PAGE_SKIPPING ' | ' SKIP_LOCKED ' | ' INDEX_CLEANUP ' | ' TRUNCATE ';
+
+tablesAndColumns
+    : t=tables.any (c=$columns[t] '(' c.unique_any**random[1, c.len, ','] ')')? 
+    ;
+
+vacuum : globalErr VACUUM 
+    ( '(' (vacuumOption (' 0 ' | ' 1 ')?)**random[1,3,','] ')' tablesAndColumns?
+      | ( ' FULL ' | ' FREEZE ' | ' VERBOSE ' ) ( ANALYZE tablesAndColumns | tables.any )
+    ) error['VACUUM cannot run inside a transaction block', 'deadlock', 'ERROR: ANALYZE option must be specified when a column list is provided', 'VACUUM option DISABLE_PAGE_SKIPPING cannot be used with FULL'] 
+    ;
+
+createView [n_mat = true, n_rec = true]
+    : globalErr CREATE (MATERIALIZED n_mat=$false | (OR REPLACE)? (TEMP | TEMPORARY)? ( RECURSIVE n_rec=$false)? ) VIEW new['view'] '(' (c+=new['column'])**random[1, 3, ',', 95] ')'
+      AS '(' select[0, random[c.len, ',']] ')' ( <n_mat> ( <n_rec> WITH ( CASCADED | LOCAL ) CHECK OPTION error['is supported only on automatically updatable views'] | ' ')| ' ') groupingErr
+      error['already exists', 'cannot drop columns from view', 'non-integer constant in ORDER BY', 'for SELECT DISTINCT, ORDER BY expressions must appear in select list', 'cannot change data type of view column', 
+        'specified more than once', 'materialized views must not use temporary tables or views', 
+        'does not have the form non-recursive-term', 'is not a view', 'non-integer constant in DISTINCT ON', 'SELECT DISTINCT ON expressions must match initial ORDER BY expressions',
+        'no schema has been selected to create in'
+      ] commonExprErr
+    ; 
+
+fragment funcErr : error['out of valid range', 'cannot take logarithm of a negative number', 'cannot take logarithm of zero', 'requested character too large for encoding', 
+                'null character not permitted', 'requested character not valid for encoding', 
+                'requested length too large', 'invalid memory alloc request size', 'negative substring length not allowed', 'invalid mask length'];
+fragment bitStrOpErr : error['cannot XOR bit strings of different sizes', 'cannot AND bit strings of different sizes', 
+                'cannot OR bit strings of different sizes', 'must be type boolean, not type text'];
+fragment toCharFuncErr : error['multiple decimal points', 'and decimal point together', 'multiple decimal points', 'cannot use \"S\" twice', 'must be ahead of \"PR\"', 
+                'cannot use \"S\" and \"PL\"/\"MI\"/\"SG\"/\"PR\" together', 'cannot use \"S\" and \"SG\" together', 'cannot use \"S\" and \"MI\" together', 
+                'cannot use \"S\" and \"PL\" together', 'cannot use \"PR\" and \"S\"/\"PL\"/\"MI\"/\"SG\" together', 'is not a number'];
+fragment groupingErr : error['non-integer constant in GROUP BY', 'must appear in the GROUP BY clause or be used in an aggregate function', 
+                'is not in select list', 'aggregate functions are not allowed in GROUP BY'];
+fragment commonInsertUpdateErr : error['value too long for type character', 'cannot insert a non-DEFAULT value into column', 'not found in view targetlist'];
+fragment commonRangeExpressionErr : error['range lower bound must be less than or equal to range upper bound', 'result of range difference would not be contiguous', 
+            'out of range', 'malformed range literal', 'result of range union would not be contiguous'];
+fragment commonRegexExpressionErr : error['is not a valid hexadecimal digit'];
+fragment funcRegexErr : error['encoding conversion from', 'not supported'];
+fragment commonExpressionRegexErr : error['cannot convert infinity to '];
+fragment commonExprErr 
+    : error['You might need to add explicit type casts', 'invalid regular expression', 'could not determine which collation to use', 'invalid regular expression', 'out of range', 'overflow', 'result of range union would not be contiguous',
+    'operator does not exist', 'quantifier operand invalid', 'collation mismatch', 'collations are not supported', 'operator is not unique', 'is not a valid binary digit', 'functions in index predicate must be marked IMMUTABLE',
+    'invalid hexadecimal digit', 'invalid hexadecimal data: odd number of digits', 'zero raised to a negative power is undefined', 'division by zero', 'invalid input syntax for type money', 'is outside the valid range for parameter',
+    'invalid input syntax for type', 'cannot cast type', 'value overflows numeric format', 'LIKE pattern must not end with escape character', 'range lower bound must be less than or equal to range upper bound', 'outside the valid range',
+    'numeric field overflow', 'could not determine which collation to use for string hashing', 'does not exist', 'Unicode normalization can only be performed if server encoding is UTF8',
+    'is of type boolean but expression is of type text', 'cannot convert infinity', 'out of valid range', 'No function matches the given name and argument types',
+    'a negative number raised to a non-integer power yields a complex result', 'could not determine polymorphic type because input has type unknown', 'character number must be positive', 'overflow', 'too long', 'invalid name syntax']
+    toCharFuncErr bitStrOpErr funcErr commonRangeExpressionErr commonRegexExpressionErr;
+
+setConstraints : globalErr SET CONSTRAINTS ALL ( DEFERRED | IMMEDIATE ) error['current transaction is aborted'];
+// DISABLED - Role rules can cause issues with test user  
+// resetRole : RESET ROLE;
+resetAll : globalErr RESET ALL error['because constraint'];
+
+//bug pass in ae
+windowColumn returns [cc]: error['must appear in the GROUP BY clause or be used in an aggregate function'] fn=windowFunctionNames  '(' st=$windowFuncArgs[fn] ( <fn.type=='polymorphic'> type=$st | <fn.type!='polymorphic'> type=$fn.type ) ')' OVER '(' orderBy t.any.c.any ( ASC | DESC ) ')' alias cc=new['columns'] cc.type=$type; 
+
+windowFunctionNames returns [fn] 
+    : fn=$'row_number' fn.type=$'bigint' 
+    | fn=$'rank' fn.type=$'bigint' 
+    | fn=$'dense_rank' fn.type=$'bigint' 
+    | fn=$'percent_rank' fn.type=$'double precision'
+    | fn=$'cume_dist' fn.type=$'double precision'
+    | fn=$'ntile' fn.type=$'integer' error['argument of ntile must be greater than zero']
+    | fn=$'lag' fn.type=$'polymorphic'
+    | fn=$'lead' fn.type=$'polymorphic'
+    | fn=$'first_value' fn.type=$'polymorphic'
+    | fn=$'last_value' fn.type=$'polymorphic'
+    | fn=$'nth_value' fn.type=$'polymorphic' error['argument of nth_value must be greater than zero']
+    ;
+
+createTablespace
+    : globalErr CREATE TABLESPACE new['tablespace']
+      ( OWNER ownerSpec )?
+      LOCATION directoryPath
+      ( WITH '(' tablespaceOptionList ')' )? error['already']
+    ;
+
+alterTablespace
+    : globalErr ALTER TABLESPACE t=tablespaces.any alterTablespaceAction
+    ;
+
+alterTablespaceAction
+    : RENAME TO new['tablespace']
+    | OWNER TO ownerSpec
+    | SET LB tablespaceOptionList RB
+    | RESET LB tablespaceOptionNameList RB
+    ;
+
+dropTablespace
+    : globalErr DROP TABLESPACE ( IF EXISTS )? tablespaces.any
+    ;
+
+
+tablespaceOptionNameList
+    : tablespaceOptionName ( COMMA tablespaceOptionName )? error['more than once']
+    ;
+
+ownerSpec
+    : CURRENT_ROLE
+    | CURRENT_USER
+    | SESSION_USER
+    ;
+
+directoryPath
+    : '\'/tmp/pg_fuzz_tablespace\''
+    ;
+
+tablespaceOptionList
+    : tablespaceOption ( COMMA tablespaceOption )? error['more than once']
+    ;
+
+tablespaceOption
+    : tablespaceOptionName EQ tablespaceOptionValue
+    ;
+
+tablespaceOptionName
+    : SEQ_PAGE_COST
+    //| RANDOM_PAGE_COST
+    | EFFECTIVE_IO_CONCURRENCY
+    | MAINTENANCE_IO_CONCURRENCY
+    ;
+
+tablespaceOptionValue
+    : random[1, 10]
+    ;
+
+// Room for improvement: better "else"-like semantics/last resort matching
+windowFuncArgs [fn=''] returns [st]
+    : ( <fn=='ntile'> expr['INT']  st=$'integer' | <fn!='ntile'> '')
+    ( <symbols and (fn=='lag' or fn=='lead' or fn=='nth_value')> s=symbols.any st=$s.type', ' expr['INT']  | <fn!='lag' and fn!='lead' and fn!='nth_value'>)
+    ( <symbols and (fn=='first_value' or fn=='last_value')> s=symbols.any st=$s.type | <fn!='first_value' and fn!='last_value'> )
+    ( <defined[st]==false> st=$'' | <defined[st]> )
+    ;
+
+forClause : FOR ( UPDATE | NO KEY UPDATE | SHARE | KEY SHARE) error['not allowed with', 'Multiple ResultSets were returned'] ;
+
+orderBy : ORDER BY;
+
+//distinct clause needs to be disabled for TLP
+select [outmost=1, rep=random[1,5,','], type='any'] returns [c]
+    : globalErr
+    @3
+    SELECT ALL? (
+        90% ( tt=t.any DOT  c+=tt.c.unique_any 90% | <type=='any'> c+=$windowColumn )**rep
+        | <outmost==1> ASTERISK ( tt=$t.next (c+=$tt.c.next)**tt.c.len )**t.len
+    ) 
+    @1
+    at=$tables
+	FROM ( 
+        (
+            tt=at.unique_any ( <type=='any'> tt.c=$columns[tt] cc=$tt.c | <type!='any'> tt.c=$columns[tt].filter['type', '==', type] cc=$tt.c ) t+=$tt ft=$tt 
+            | 30% '(' cc=$select[0, random[1,5,','], type] ')' AS tt=new['table'] tt.c=$cc 
+        )
+        t+=$tt ft=$tt symbols.concat[cc] 
+    )
+	//no separation needed since it is directly positioned after the FROM clause
+    (
+		JOIN error['ambiguous'] ( 
+            (
+                tt=at.unique_any ( <type=='any'> tt.c=$columns[tt] cc=$tt.c | <type!='any'> tt.c=$columns[tt].filter['type', '==', type] cc=$tt.c ) t+=$tt 
+                | 5% '(' cc=$select[0, random[1,5,','], type] ')' AS tt=new['table'] tt.c=$cc
+            ) t+=$tt symbols.concat[cc]
+        ) ON pivot_type=$ft.c.any.type ft '.' ft.c.filter['type', '==', pivot_type].any EQ tt '.' tt.c.filter['type', '==', pivot_type].any
+	)**random[0,1,90]
+    @2
+    ( ' /*BEGIN_COND*/ ' <outmost==1> | ' ' <outmost==0>)
+    ( where_predicate[t, outmost] | ' ' <outmost==0> )
+    (' /*END_COND*/ ' <outmost==1> | ' ' <outmost==0>)
+	//( ( UNION | INTERSECT )  selectStatement[0, random[c.len,',']] )?
+    (forClause? SC  <outmost==1> | ' ' <outmost==0> )
+     
+	;
+	
+where_predicate [t, outmost]:
+	WHERE error['could not determine which collation to use for string comparison']
+    ( ' /*BEGIN_PRED*/ ' <outmost==1> | ' ' <outmost==0> )
+    ( 
+        80% predicate[t]
+	    | cc=t.any.c.any IN '(' select[0, random[1,','], cc.type] ')' commonExprErr
+	    | NOT? EXISTS '(' select[0] ')' 
+    )
+    ( ' /*END_PRED*/ ' <outmost==1> | ' ' <outmost==0> )
+	;
+
+predicate [t]
+    : ( 
+        50%'(' pivot=$t.any.c.any ( symbols=$t.any.c expr[pivot.type] | tt=t.any DOT  cc=tt.c.filter['type', '==', pivot.type].any ) 
+        binary_comp_op
+        ( symbols=$t.any.c expr[pivot.type] 80% | tt=t.any DOT  cc=tt.c.filter['type', '==', pivot.type].any ) 
+        ')' 
+        | target=t.any.c.any between[target.type] 
+      );
+
+// ============================================================================
+// QUERY HELPERS - ORIGINAL
+// ============================================================================
+
+tables returns [t] : t=$query['SELECT table_name AS name, table_type AS type, table_schema FROM information_schema.tables WHERE table_schema NOT IN (\'information_schema\', \'pg_catalog\') AND table_type = \'BASE TABLE\';', 'name', 'type', 'type'];
+views returns [v] : v=$query['SELECT table_name AS name, table_type AS type, table_schema FROM information_schema.tables WHERE table_schema NOT IN (\'information_schema\', \'pg_catalog\') AND table_type = \'VIEW\';', 'name', 'type', 'type'];
+indexes [t=''] returns [i] 
+    : <t==''> i=$query['SELECT indexname FROM pg_indexes WHERE schemaname NOT IN (\'information_schema\', \'pg_catalog\')', 'indexname']
+    | <t!=''> i=$query['SELECT indexname FROM pg_indexes WHERE tablename = \'' $+ t $+ '\'', 'indexname']
+    ;
+tablespaces returns [t] : t=$query['SELECT spcname AS name FROM pg_catalog.pg_tablespace WHERE spcname NOT LIKE \'pg_%\';', 'name'];
+columns [t] returns [c] 
+    : c=$query[
+        'SELECT column_name AS name, data_type AS type, numeric_precision AS precision, numeric_scale AS scale, character_maximum_length AS length FROM information_schema.columns  WHERE table_name = \''$+ t $+ '\' AND table_schema = \'public\'', 
+        'name',
+        'type', 'type',
+        'precision', 'precision',
+        'scale', 'scale',
+        'length', 'length'
+    ];
+statistics [t] returns [s]
+    : s=$query[ 'SELECT n.nspname as s_name, s.stxname as name FROM pg_statistic_ext s JOIN pg_class c ON c.oid = s.stxrelid JOIN pg_namespace n ON n.oid = s.stxnamespace WHERE c.relname = \'' $+ t $+ '\'', 'name']
+    ;
+collates returns [c] : c=$query['SELECT collname FROM pg_collation ORDER BY collname', 'collname'] error['for encoding \"SQL_ASCII\" does not exist'];
+tableAccessMethod returns [am] : am=$query['SELECT amname FROM pg_am WHERE amtype = \'t\';', 'amname'];
+
+// ============================================================================
+// QUERY HELPERS - NEW
+// ============================================================================
+
+roles returns [r] : r=$query['SELECT rolname AS name FROM pg_roles WHERE rolname NOT LIKE \'pg_%\';', 'name'];
+schemas returns [s] : s=$query['SELECT schema_name AS name FROM information_schema.schemata WHERE schema_name NOT IN (\'information_schema\', \'pg_catalog\', \'pg_toast\');', 'name'];
+sequences returns [sq] : sq=$query['SELECT sequence_name AS name FROM information_schema.sequences WHERE sequence_schema = \'public\';', 'name'];
+functions returns [f] : f=$query['SELECT routine_name AS name FROM information_schema.routines WHERE routine_schema = \'public\' AND routine_type = \'FUNCTION\';', 'name'];
+triggerFunctions returns [tf] : tf=$query['SELECT p.proname AS name FROM pg_proc p JOIN pg_type t ON p.prorettype = t.oid WHERE t.typname = \'trigger\' AND p.pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = \'public\');', 'name'];
+procedures returns [p] : p=$query['SELECT routine_name AS name FROM information_schema.routines WHERE routine_schema = \'public\' AND routine_type = \'PROCEDURE\';', 'name'];
+triggers returns [tr] : tr=$query['SELECT trigger_name AS name, event_object_table AS table_name FROM information_schema.triggers WHERE trigger_schema = \'public\';', 'name', 'table_name', 'table_name'];
+domains returns [d] : d=$query['SELECT domain_name AS name FROM information_schema.domains WHERE domain_schema = \'public\';', 'name'];
+types returns [ty] : ty=$query['SELECT typname AS name FROM pg_type WHERE typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = \'public\');', 'name'];
+extensions returns [e] : e=$query['SELECT extname AS name FROM pg_extension;', 'name'];
+rules returns [ru] : ru=$query['SELECT rulename AS name, tablename AS table_name FROM pg_rules WHERE schemaname = \'public\';', 'name', 'table_name', 'table_name'];
+policies returns [po] : po=$query['SELECT policyname AS name, tablename AS table_name FROM pg_policies WHERE schemaname = \'public\';', 'name', 'table_name', 'table_name'];
+matViews returns [mv] : mv=$query['SELECT matviewname AS name FROM pg_matviews WHERE schemaname = \'public\';', 'name'];
+languages returns [la] : la=$query['SELECT lanname AS name FROM pg_language;', 'name'];
+
+ifNotExists : IF NOT EXISTS;
+ifExists : IF EXISTS;
+
+// ============================================================================
+// NEW STATEMENTS - PostgreSQL 18
+// ============================================================================
+
+// Helper for role specification
+roleSpec 
+    : <roles.len>0> roles.any
+    | CURRENT_ROLE
+    | CURRENT_USER
+    | SESSION_USER
+    ;
+
+simpleTypeName : ' integer ' | ' text ' | ' boolean ' | ' numeric ' | ' timestamp ' ;
+argTypeList : simpleTypeName ( ',' simpleTypeName )**random[0, 3] ;
+
+// ----------------------------------------------------------------------------
+// ALTER DATABASE
+// ----------------------------------------------------------------------------
+alterDatabase
+    : ALTER DATABASE DB (
+        ( WITH )? alterDatabaseOption**random[1, 2, ' ']
+        | RENAME TO new['database']
+        | OWNER TO roleSpec
+        | SET TABLESPACE tablespaces.any
+        | SET configParam ( TO | EQ ) ( configValue | DEFAULT )
+        | RESET configParam
+        | RESET ALL
+    ) error['must be owner', 'does not exist', 'already exists', 'cannot be executed from a function']
+    ;
+
+alterDatabaseOption
+    : ' ALLOW_CONNECTIONS ' ( ' true ' | ' false ')
+    | ' CONNECTION LIMIT ' ( ' -1 ' | random[1, 100] )
+    | ' IS_TEMPLATE ' ( ' true ' | ' false ')
+    ;
+
+configParam : ' work_mem ' | ' maintenance_work_mem ' | ' search_path ' | ' statement_timeout ' ;
+configValue : '\'' str_const '\'' | random[1, 1000] ;
+
+// ----------------------------------------------------------------------------
+// ALTER SCHEMA
+// ----------------------------------------------------------------------------
+alterSchema
+    : ALTER SCHEMA ( <schemas.len>0> schemas.any | new['schema'] )
+      ( RENAME TO new['schema'] | OWNER TO roleSpec )
+      error['does not exist', 'already exists', 'must be owner']
+    ;
+
+// ----------------------------------------------------------------------------
+// ALTER SEQUENCE
+// ----------------------------------------------------------------------------
+alterSequence
+    : globalErr ALTER SEQUENCE ifExists? ( <sequences.len>0> sequences.any | ' seq ') (
+        ( AS ( ' smallint ' | ' integer ' | ' bigint ' ) )?
+        ( INCREMENT BY? random[1, 100] )?
+        ( MINVALUE random[1, 100] | NO MINVALUE )?
+        ( MAXVALUE random[100, 10000] | NO MAXVALUE )?
+        ( START WITH? random[1, 100] )?
+        ( RESTART ( WITH? random[1, 100] )? )?
+        ( CACHE random[1, 100] )?
+        ( NO? CYCLE )?
+        ( OWNED BY ( NONE | t=tables.any DOT columns[t].any ) )?
+        | SET SCHEMA schemas.any
+        | OWNER TO roleSpec
+        | RENAME TO new['sequence']
+    ) error['does not exist', 'must be owner', 'is out of range', 'temporary', 'cannot be less than', 'cannot be more than', 'sequence must be in same schema as table it is linked to']
+    ;
+
+// ----------------------------------------------------------------------------
+// ALTER INDEX
+// ----------------------------------------------------------------------------
+alterIndex
+    : globalErr ALTER INDEX ifExists? ( <indexes.len>0> indexes.any | new['index'] ) (
+        RENAME TO new['index']
+        | SET TABLESPACE tablespaces.any
+        | SET '(' storageParameters ')'
+        | RESET '(' storageParamNames ')'
+    ) error['does not exist', 'must be owner', 'already exists', 'unrecognized parameter']
+    ;
+
+storageParamNames : ' fillfactor ' | ' deduplicate_items ' ;
+
+// ----------------------------------------------------------------------------
+// ALTER ROLE / USER / GROUP
+// ----------------------------------------------------------------------------
+// DISABLED - Role rules can cause issues with test user
+// alterRole
+//     : ALTER ( ROLE | USER ) roleSpec ( WITH )? (
+//         alterRoleOption**random[1, 3, ' ']
+//         | RENAME TO new['role']
+//         | SET configParam ( TO | EQ ) ( configValue | DEFAULT )
+//         | RESET configParam
+//         | RESET ALL
+//     ) error['does not exist', 'must be superuser', 'cannot rename']
+//     ;
+
+// alterRoleOption
+//     : ' SUPERUSER ' | ' NOSUPERUSER '
+//     | ' CREATEDB ' | ' NOCREATEDB '
+//     | ' CREATEROLE ' | ' NOCREATEROLE '
+//     | ' INHERIT ' | ' NOINHERIT '
+//     | ' LOGIN ' | ' NOLOGIN '
+//     | ' REPLICATION ' | ' NOREPLICATION '
+//     | ' BYPASSRLS ' | ' NOBYPASSRLS '
+//     | ' CONNECTION LIMIT ' ( ' -1 ' | random[1, 100] )
+//     | ' PASSWORD ' ( ' NULL ' | '\'' str_const '\'' )
+//     ;
+
+// DISABLED - Role rules can cause issues with test user
+// alterGroup
+//     : ALTER GROUP ( <roles.len>0> roles.any | new['role'] ) (
+//         ' ADD USER ' roleSpec**random[1, 2, ',']
+//         | ' DROP USER ' roleSpec**random[1, 2, ',']
+//         | RENAME TO new['role']
+//     ) error['does not exist', 'is not a member']
+//     ;
+
+// ----------------------------------------------------------------------------
+// ALTER DOMAIN
+// ----------------------------------------------------------------------------
+alterDomain
+    : globalErr ALTER DOMAIN ( <domains.len>0> domains.any | new['domain'] ) (
+        SET DEFAULT expr['TEXT']
+        | DROP DEFAULT
+        | SET NOT NULL error['contains null values']
+        | DROP NOT NULL
+        | ' ADD ' CONSTRAINT new['constraint'] CHECK '(' expr['BOOLEAN'] ')'
+        | ' DROP CONSTRAINT ' ifExists? new['constraint'] ( RESTRICT | CASCADE )?
+        | ' VALIDATE CONSTRAINT ' new['constraint']
+        | OWNER TO roleSpec
+        | RENAME TO new['domain']
+        | SET SCHEMA schemas.any
+    ) error['does not exist', 'must be owner', 'already exists', 'cannot move objects into or out of temporary schemas']
+    ;
+
+// ----------------------------------------------------------------------------
+// ALTER FUNCTION / PROCEDURE
+// ----------------------------------------------------------------------------
+alterFunction
+    : globalErr ALTER FUNCTION ( <functions.len>0> functions.any | new['function'] ) '(' argTypeList? ')' (
+        alterFunctionAction**random[1, 2, ' ']
+        | RENAME TO new['function']
+        | OWNER TO roleSpec
+        | SET SCHEMA schemas.any
+    ) error['does not exist', 'must be owner', 'cannot move objects into or out of temporary schemas', 'not applicable when function does not return a set']
+    ;
+
+alterProcedure
+    : globalErr ALTER PROCEDURE ( <procedures.len>0> procedures.any | new['procedure'] ) '(' argTypeList? ')' (
+        alterProcedureAction**random[1, 2, ' ']
+        | RENAME TO new['procedure']
+        | OWNER TO roleSpec
+        | SET SCHEMA schemas.any
+    ) error['does not exist', 'must be owner', 'cannot move objects into or out of temporary schemas']
+    ;
+
+alterFunctionAction
+    : ' CALLED ON NULL INPUT ' | ' RETURNS NULL ON NULL INPUT ' | ' STRICT '
+    | ' IMMUTABLE ' | ' STABLE ' | ' VOLATILE '
+    | ' PARALLEL ' ( ' UNSAFE ' | ' RESTRICTED ' | ' SAFE ' )
+    | ' COST ' random[1, 1000]
+    | ' ROWS ' random[1, 1000]
+    | SET configParam ( TO | EQ ) ( configValue | DEFAULT )
+    | RESET configParam
+    ;
+
+alterProcedureAction
+    : SET configParam ( TO | EQ ) ( configValue | DEFAULT )
+    | RESET configParam
+    ;
+
+// ----------------------------------------------------------------------------
+// ALTER TRIGGER
+// ----------------------------------------------------------------------------
+alterTrigger
+    : globalErr ALTER ' TRIGGER ' ( <triggers.len>0> triggers.any | new['trigger'] ) ON tables.any (
+        RENAME TO new['trigger']
+        | ' DEPENDS ON EXTENSION ' extensions.any
+    ) error['does not exist', 'must be owner']
+    ;
+
+// ----------------------------------------------------------------------------
+// ALTER TYPE
+// ----------------------------------------------------------------------------
+alterType
+    : globalErr ALTER TYPE ( <types.len>0> types.any | new['type'] ) (
+        OWNER TO roleSpec
+        | RENAME TO new['type']
+        | SET SCHEMA schemas.any
+        | ' ADD VALUE ' ifNotExists? '\'' str_const '\''
+        | ' RENAME VALUE ' '\'' str_const '\'' TO '\'' str_const '\''
+    ) error['does not exist', 'must be owner', 'already exists', 'cannot alter array type', 'cannot move objects into or out of temporary schemas', 'is not an enum']
+    ;
+
+// ----------------------------------------------------------------------------
+// ALTER MATERIALIZED VIEW
+// ----------------------------------------------------------------------------
+alterMaterializedView
+    : globalErr ALTER MATERIALIZED VIEW ifExists? ( <matViews.len>0> matViews.any | new['matview'] ) (
+        OWNER TO roleSpec
+        | RENAME TO new['matview']
+        | SET SCHEMA schemas.any
+        | ' SET ACCESS METHOD ' tableAccessMethod.any
+    ) error['does not exist', 'must be owner', 'is not a materialized view', 'temporary']
+    ;
+
+// ----------------------------------------------------------------------------
+// ALTER RULE
+// ----------------------------------------------------------------------------
+alterRule
+    : globalErr ALTER RULE ( <rules.len>0> rules.any | new['rule'] ) ON tables.any RENAME TO new['rule']
+    error['does not exist', 'must be owner']
+    ;
+
+// ----------------------------------------------------------------------------
+// ALTER POLICY
+// ----------------------------------------------------------------------------
+alterPolicy
+    : globalErr ALTER POLICY ( <policies.len>0> policies.any | new['policy'] ) ON tables.any (
+        RENAME TO new['policy']
+        | ( TO roleSpec )?
+          ( USING '(' expr['BOOLEAN'] ')' )?
+          ( WITH CHECK '(' expr['BOOLEAN'] ')' )?
+    ) error['does not exist', 'must be owner']
+    ;
+
+// ----------------------------------------------------------------------------
+// ALTER EXTENSION
+// ----------------------------------------------------------------------------
+alterExtension
+    : globalErr ALTER ' EXTENSION ' ( <extensions.len>0> extensions.any | new['extension'] ) (
+        ' UPDATE ' ( TO '\'' str_const '\'' )?
+        | SET SCHEMA schemas.any
+    ) error['does not exist', 'must be superuser', 'has no update path from version', 'does not support']
+    ;
+
+// ----------------------------------------------------------------------------
+// CREATE ROLE / USER / GROUP
+// ----------------------------------------------------------------------------
+// createRole
+//     : CREATE ROLE new['role']
+//       ( WITH )? ( createRoleOption )?
+//     error['already exists']
+//     ;
+
+// createUser
+//     : CREATE USER new['role']
+//       ( WITH )? ( createRoleOption )?
+//     error['already exists']
+//     ;
+
+// createGroup
+//     : CREATE GROUP new['role']
+//       ( WITH )? ( createRoleOption )?
+//     error['already exists']
+//     ;
+
+// createRoleOption
+//     : ' SUPERUSER ' | ' NOSUPERUSER '
+//     | ' CREATEDB ' | ' NOCREATEDB '
+//     | ' CREATEROLE ' | ' NOCREATEROLE '
+//     | ' INHERIT ' | ' NOINHERIT '
+//     | ' LOGIN ' | ' NOLOGIN '
+//     | ' REPLICATION ' | ' NOREPLICATION '
+//     | ' BYPASSRLS ' | ' NOBYPASSRLS '
+//     | ' CONNECTION LIMIT ' ( ' -1 ' | random[1, 100] )
+//     | ' PASSWORD ' ( ' NULL ' | '\'' str_const '\'' )
+//     ;
+
+// ----------------------------------------------------------------------------
+// CREATE SCHEMA
+// ----------------------------------------------------------------------------
+// createSchema
+//     : CREATE SCHEMA (
+//         ifNotExists? new['schema'] ( ' AUTHORIZATION ' roleSpec )?
+//         | ' AUTHORIZATION ' roleSpec
+//     )
+//     error['already exists', 'must be superuser']
+//     ;
+
+// ----------------------------------------------------------------------------
+// CREATE DOMAIN
+// ----------------------------------------------------------------------------
+createDomain
+    : CREATE DOMAIN new['domain'] AS? ph=$data_types
+      ( domainConstraint )?
+    error['already exists', 'conflicting NULL/NOT NULL constraints', 'no schema has been selected to create in']
+    ;
+
+domainConstraint
+    : ( CONSTRAINT new['constraint'] )? (
+        NOT NULL
+        | NULL
+        | CHECK '(' expr['BOOLEAN'] ')'
+    )
+    ;
+
+// ----------------------------------------------------------------------------
+// CREATE FUNCTION
+// ----------------------------------------------------------------------------
+createFunction
+    : CREATE ( OR REPLACE )? FUNCTION new['function']
+      '(' functionArgList? ')'
+      ( ' RETURNS integer LANGUAGE sql AS $$ SELECT 1; $$ '
+      | ' RETURNS integer LANGUAGE plpgsql AS $$ BEGIN RETURN 1; END; $$ '
+      | ' RETURNS boolean LANGUAGE sql AS $$ SELECT true; $$ '
+      | ' RETURNS boolean LANGUAGE plpgsql AS $$ BEGIN RETURN true; END; $$ '
+      | ' RETURNS text LANGUAGE sql AS $$ SELECT \'test\'; $$ '
+      | ' RETURNS text LANGUAGE plpgsql AS $$ BEGIN RETURN \'test\'; END; $$ '
+      | ' RETURNS numeric LANGUAGE sql AS $$ SELECT 1.0; $$ '
+      | ' RETURNS numeric LANGUAGE plpgsql AS $$ BEGIN RETURN 1.0; END; $$ '
+      )
+    error['already exists', 'must be owner', 'syntax error', 'no schema has been selected to create in']
+    ;
+
+functionArgList : functionArg ( ',' functionArg )**random[0, 2] ;
+functionArg : new['param'] simpleTypeName ;
+
+// ----------------------------------------------------------------------------
+// CREATE PROCEDURE
+// ----------------------------------------------------------------------------
+createProcedure
+    : CREATE ( OR REPLACE )? PROCEDURE new['procedure']
+      '(' functionArgList? ')'
+      ( ' LANGUAGE sql AS $$ SELECT 1; $$ '
+      | ' LANGUAGE plpgsql AS $$ BEGIN NULL; END; $$ ' )
+    error['already exists', 'must be owner', 'syntax error', 'no schema has been selected to create in']
+    ;
+
+// ----------------------------------------------------------------------------
+// CREATE TRIGGER
+// ----------------------------------------------------------------------------
+createTrigger
+    : <triggerFunctions.len>0> CREATE ( OR REPLACE )? ' TRIGGER ' new['trigger']
+      ( ' BEFORE ' | ' AFTER ' )
+      triggerEvent
+      ON tables.any
+      ( FOR EACH? ( ROW | ' STATEMENT ' ) )?
+      ' EXECUTE ' ( FUNCTION | PROCEDURE ) triggerFunctions.any '()'
+    error['already exists', 'does not exist', 'must be owner', 'must return type trigger', 'duplicate trigger events', 'TRUNCATE FOR EACH ROW triggers are not supported', 'Tables cannot have INSTEAD OF triggers', 'no schema has been selected to create in']
+    ;
+
+triggerEvent : INSERT | UPDATE | DELETE | TRUNCATE ;
+
+// Trigger functions must return TRIGGER type
+createTriggerFunction
+    : CREATE ( OR REPLACE )? FUNCTION new['function']
+      '() RETURNS TRIGGER LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END; $$'
+    error['already exists', 'must be owner', 'read-only transaction', 'no schema has been selected to create in']
+    ;
+
+// ----------------------------------------------------------------------------
+// CREATE TYPE
+// ----------------------------------------------------------------------------
+createType
+    : CREATE TYPE new['type'] (
+        AS '(' typeColumn ( ',' typeColumn )**random[0, 2] ')'
+        | AS ' ENUM ' '(' ( '\'' str_const '\'' ( ',' '\'' str_const '\'' )**random[0, 3] )? ')'
+        | ' '  // shell type
+    )
+    error['already exists', 'no schema has been selected to create in']
+    ;
+
+typeColumn : new['attribute'] ph=$data_types ;
+
+// ----------------------------------------------------------------------------
+// CREATE POLICY
+// ----------------------------------------------------------------------------
+createPolicy
+    : CREATE POLICY new['policy'] ON tables.any
+      ( ' AS ' ( ' PERMISSIVE ' | ' RESTRICTIVE ' ) )?
+      ( FOR ( ALL | INSERT | UPDATE ) ( TO roleSpec )?  ( WITH CHECK '(' expr['BOOLEAN'] ')' )?
+      | FOR ( SELECT | DELETE ) ( TO roleSpec )? ( USING '(' expr['BOOLEAN'] ')' )?
+      | ( TO roleSpec )? ( USING '(' expr['BOOLEAN'] ')' )?
+      )
+    error['already exists']
+    ;
+
+// ----------------------------------------------------------------------------
+// CREATE RULE
+// ----------------------------------------------------------------------------
+createRule
+    : CREATE ( OR REPLACE )? RULE new['rule'] AS
+      ON ruleEvent TO tables.any
+      ( WHERE expr['BOOLEAN'] )?
+      DO ( ' ALSO ' | ' INSTEAD ' )?
+      ( NOTHING | '(' ruleAction ')' )
+    error['already exists', 'must be owner', 'RETURNING lists are not supported']
+    ;
+
+ruleEvent : INSERT | UPDATE | DELETE ;
+ruleAction : select[0] | createInsert | createUpdate | delete ;
+
+// ----------------------------------------------------------------------------
+// CREATE MATERIALIZED VIEW
+// ----------------------------------------------------------------------------
+createMaterializedView
+    : CREATE MATERIALIZED VIEW ifNotExists? new['matview']
+      ( USING tableAccessMethod.any )?
+      AS select[0]
+      ( WITH ( NO )? DATA )?
+    error['already exists', 'materialized views must not use temporary tables', 'no schema has been selected to create in']
+    ;
+
+// ----------------------------------------------------------------------------
+// CREATE EXTENSION
+// ----------------------------------------------------------------------------
+createExtension
+    : CREATE ' EXTENSION ' ifNotExists? new['extension']
+      ( WITH )?
+      ( SCHEMA schemas.any )?
+      ( ' CASCADE ' )?
+    error['already loaded', 'could not open extension control file', 'must be superuser']
+    ;
+
+// ----------------------------------------------------------------------------
+// DROP STATEMENTS
+// ----------------------------------------------------------------------------
+dropTable
+    : DROP TABLE ifExists? t=$tables (t.unique_any)**random[1, t.len, ',', 95] ( RESTRICT | CASCADE )?
+    error['does not exist', 'cannot drop']
+    ;
+
+dropView
+    : DROP VIEW ifExists? v=$views ( v.unique_any )**random[1, v.len, ',', 95] ( RESTRICT | CASCADE )?
+    error['does not exist', 'cannot drop']
+    ;
+
+dropSequence
+    : DROP SEQUENCE ifExists? ( <sequences.len>0> sequences.any | new['sequence'] ) ( RESTRICT | CASCADE )?
+    error['does not exist', 'cannot drop']
+    ;
+
+// dropSchema
+//     : DROP SCHEMA ifExists? ( <schemas.len>0> schemas.any | new['schema'] ) ( RESTRICT | CASCADE )?
+//     error['does not exist', 'cannot drop']
+//     ;
+
+// dropRole
+//     : DROP ROLE ifExists? ( <roles.len>0> roles.any | new['role'] )
+//     error['does not exist', 'cannot be dropped']
+//     ;
+
+// dropUser
+//     : DROP USER ifExists? ( <roles.len>0> roles.any | new['role'] )
+//     error['does not exist', 'cannot be dropped']
+//     ;
+
+// DISABLED - Role rules can cause issues with test user
+// dropGroup
+//     : DROP GROUP ifExists? ( <roles.len>0> roles.any | new['role'] )
+//     error['does not exist', 'cannot be dropped']
+//     ;
+
+dropFunction
+    : DROP FUNCTION  ( <functions.len>0> ifExists? functions.any | ifExists new['function'] ) ( '(' argTypeList? ')' )? ( RESTRICT | CASCADE )?
+    error['does not exist', 'cannot drop']
+    ;
+
+dropProcedure
+    : DROP PROCEDURE ifExists? ( <procedures.len>0> procedures.any | new['procedure'] ) ( '(' argTypeList? ')' )? ( RESTRICT | CASCADE )?
+    error['does not exist', 'cannot drop']
+    ;
+
+dropTrigger
+    : DROP ' TRIGGER ' ifExists? ( <triggers.len>0> triggers.any | new['trigger'] ) ON tables.any ( RESTRICT | CASCADE )?
+    error['does not exist']
+    ;
+
+dropDomain
+    : DROP DOMAIN ifExists? ( <domains.len>0> domains.any | new['domain'] ) ( RESTRICT | CASCADE )?
+    error['does not exist', 'cannot drop']
+    ;
+
+dropType
+    : DROP TYPE ifExists? ( <types.len>0> types.any | new['type'] ) ( RESTRICT | CASCADE )?
+    error['does not exist', 'cannot drop']
+    ;
+
+dropMaterializedView
+    : DROP MATERIALIZED VIEW ifExists? ( <matViews.len>0> matViews.any | new['matview'] ) ( RESTRICT | CASCADE )?
+    error['does not exist', 'cannot drop']
+    ;
+
+dropPolicy
+    : DROP POLICY ifExists? ( <policies.len>0> policies.any | new['policy'] ) ON tables.any ( RESTRICT | CASCADE )?
+    error['does not exist']
+    ;
+
+dropRule
+    : DROP RULE ifExists? ( <rules.len>0> rules.any | new['rule'] ) ON tables.any ( RESTRICT | CASCADE )?
+    error['does not exist']
+    ;
+
+dropExtension
+    : DROP ' EXTENSION ' ifExists? ( <extensions.len>0> extensions.any | new['extension'] ) ( RESTRICT | CASCADE )?
+    error['does not exist', 'cannot drop']
+    ;
+
+// ----------------------------------------------------------------------------
+// GRANT / REVOKE
+// ----------------------------------------------------------------------------
+grant
+    : ' GRANT ' (
+        grantPrivileges ON grantTarget TO grantee ( WITH ' GRANT OPTION ' )?
+        | <roles.len>0> roles.any TO roleSpec ( WITH ' ADMIN OPTION ' )?
+    )
+    error['does not exist', 'permission denied']
+    ;
+
+// revoke
+//     : ' REVOKE ' ( ' GRANT OPTION FOR ' )? (
+//         grantPrivileges ON grantTarget FROM grantee ( RESTRICT | CASCADE )?
+//         | <roles.len>0> ( ' ADMIN OPTION FOR ' )? roles.any FROM roleSpec ( RESTRICT | CASCADE )?
+//     )
+//     error['does not exist', 'permission denied']
+//     ;
+
+grantPrivileges
+    : ' ALL ' ( ' PRIVILEGES ' )?
+    | grantPrivilege ( ',' grantPrivilege )**random[0, 2]
+    ;
+
+grantPrivilege
+    : SELECT | INSERT | UPDATE | DELETE | TRUNCATE | ' REFERENCES ' | ' TRIGGER ' | ' CREATE ' | ' EXECUTE ' | ' USAGE '
+    ;
+
+grantTarget
+    : TABLE tables.any
+    | SEQUENCE sequences.any
+    | SCHEMA schemas.any
+    | FUNCTION functions.any '(' argTypeList? ')'
+    | TYPE types.any
+    ;
+
+grantee : roleSpec | ' PUBLIC ' ;
+
+// ----------------------------------------------------------------------------
+// LOCK
+// ----------------------------------------------------------------------------
+lock
+    : LOCK TABLE? ( ONLY )? tables.any ( IN lockMode ' MODE ' )? ( NOWAIT )?
+    error['does not exist', 'deadlock detected', 'could not obtain lock', 'transaction blocks']
+    ;
+
+lockMode
+    : ' ACCESS SHARE '
+    | ' ROW SHARE '
+    | ' ROW EXCLUSIVE '
+    | ' SHARE UPDATE EXCLUSIVE '
+    | ' SHARE '
+    | ' SHARE ROW EXCLUSIVE '
+    | ' EXCLUSIVE '
+    | ' ACCESS EXCLUSIVE '
+    ;
+
+// ----------------------------------------------------------------------------
+// MERGE
+// ----------------------------------------------------------------------------
+merge
+    : ' MERGE INTO ' ( ONLY )? t=$tables t.unique_any ( AS new['alias'] )?
+      USING mergeSource[t.unique_any] ON expr['BOOLEAN']
+      mergeWhenClause**random[1, 3, ' ']
+    error['does not exist', 'MERGE command cannot affect row a second time', 'specified more than once', 'MERGE is not supported for relations with rules', 'unreachable WHEN clause']
+    ;
+
+mergeSource [t]
+    : ( ONLY )? t ( AS new['alias'] )?
+    | '(' select[0] ')' AS new['alias']
+    ;
+
+mergeWhenClause
+    : ' WHEN MATCHED ' ( ' AND ' expr['BOOLEAN'] )? ' THEN ' mergeMatchedAction
+    | ' WHEN NOT MATCHED ' ( ' AND ' expr['BOOLEAN'] )? ' THEN ' mergeNotMatchedAction
+    ;
+
+mergeMatchedAction
+    : UPDATE SET columns[tables.any].any EQ any_expr
+    | DELETE
+    | DO NOTHING
+    ;
+
+mergeNotMatchedAction
+    : INSERT ( '(' columns[tables.any].any ')' )? VALUES '(' any_expr ')'
+    | INSERT DEFAULT VALUES
+    | DO NOTHING
+    ;
+
+// ----------------------------------------------------------------------------
+// REFRESH MATERIALIZED VIEW
+// ----------------------------------------------------------------------------
+refreshMaterializedView
+    : ' REFRESH MATERIALIZED VIEW ' ( CONCURRENTLY )? ( <matViews.len>0> matViews.any | new['matview'] )
+      ( WITH ( NO )? DATA )?
+    error['does not exist', 'is not a materialized view', 'has not been populated', 'CONCURRENTLY and WITH NO DATA options cannot be used together', 'cannot be used when the materialized view is not populated']
+    ;
+
+// ----------------------------------------------------------------------------
+// DO - anonymous code block
+// ----------------------------------------------------------------------------
+doBlock
+    : DO ' $$ '
+      ' BEGIN '
+      ' NULL; '
+      ' END; '
+      ' $$ '
+    error['language does not exist']
+    ;
+
+// ----------------------------------------------------------------------------
+// CALL - invoke procedure
+// ----------------------------------------------------------------------------
+call
+    : ' CALL ' ( <procedures.len>0> procedures.any | new['procedure'] ) '(' ( any_constant ( ',' any_constant )**random[0, 2] )? ')'
+    error['does not exist', 'is not a procedure']
+    ;
+
+// ----------------------------------------------------------------------------
+// SHOW
+// ----------------------------------------------------------------------------
+show
+    : ' SHOW ' ( configParam | ALL | ' TRANSACTION ISOLATION LEVEL ' )
+    ;
+
+// ----------------------------------------------------------------------------
+// SET ROLE
+// ----------------------------------------------------------------------------
+// DISABLED - Role rules can cause issues with test user
+// setRole
+//     : SET ( SESSION )? ROLE ( roleSpec | ' NONE ' )
+//     error['does not exist', 'permission denied']
+//     ;
+
+// ----------------------------------------------------------------------------
+// SET TRANSACTION
+// ----------------------------------------------------------------------------
+setTransaction
+    : SET ' TRANSACTION ' transactionMode ( ',' transactionMode )**random[0, 2]
+    | SET ' SESSION CHARACTERISTICS AS TRANSACTION ' transactionMode
+    error['must be called before any query']
+    ;
+
+transactionMode
+    : ISOLATION LEVEL ( SERIALIZABLE | REPEATABLE READ | READ COMMITTED | READ UNCOMMITTED )
+    | READ ' WRITE '
+    | READ ONLY
+    | DEFERRABLE
+    | NOT DEFERRABLE
+    ;
+
+// ----------------------------------------------------------------------------
+// START TRANSACTION
+// ----------------------------------------------------------------------------
+startTransaction
+    : START ' TRANSACTION ' ( transactionMode ( ',' transactionMode )**random[0, 2] )?
+    ;
+
+// ----------------------------------------------------------------------------
+// VALUES
+// ----------------------------------------------------------------------------
+valuesStmt
+    : VALUES '(' any_expr ( ',' any_expr )**random[0, 3] ')' ( ',' '(' any_expr ( ',' any_expr )**random[0, 3] ')' )**random[0, 2]
+      ( ORDER BY expr['INT'] ( ASC | DESC )? )?
+      ( ' LIMIT ' random[1, 100] )?
+      ( ' OFFSET ' random[0, 100] )?
+      error['must all be the same length', 'is not in select list']
+    ;
+
+// ----------------------------------------------------------------------------
+// COPY (simplified - STDIN/STDOUT only for safety)
+// ----------------------------------------------------------------------------
+copy
+    : COPY (
+        t=tables.any c=$columns[t] ( '(' c.unique_any**random[1, columns[t].len, ','] ')' )? ( FROM | TO )
+        | '(' select[0] ')' TO
+    ) ' STDOUT '
+    ( WITH '(' copyOption ( ',' copyOption )**random[0, 2] ')' )?
+    error['does not exist', 'permission denied', 'COPY FROM not supported', 'CopyManager API']
+    ;
+
+copyOption
+    : ' FORMAT ' ( ' text ' | ' csv ' )
+    | ' DELIMITER ' '\'' ',' '\''
+    | ' HEADER ' ( ' true ' | ' false ' )?
+    ;
+
+// ============================================================================
+// LEXER TOKENS
+// ============================================================================
+
+ACTION : SPACE A C T I O N SPACE;
+ADD : SPACE A D D SPACE;
+ALGORITHM : SPACE A L G O R I T H M SPACE;
+ALL : SPACE A L L SPACE;
+ALTER : SPACE A L T E R SPACE;
+ALWAYS : SPACE A L W A Y S SPACE;
+ANALYZE : SPACE A N A L Y Z E SPACE;
+AS : SPACE A S SPACE;
+ASC : SPACE A S C SPACE;
+BEGIN : SPACE B E G I N SPACE;
+BIGINT : SPACE B I G I N T SPACE;
+BIT : SPACE B I T SPACE;
+BIT_VARYING : SPACE B I T SPACE V A R Y I N G SPACE;
+BOOLEAN : SPACE B O O L E A N SPACE;
+BY : SPACE B Y SPACE;
+CACHE : SPACE C A C H E SPACE;
+CASCADE : SPACE C A S C A D E SPACE;
+CASCADED : SPACE C A S C A D E D SPACE;
+CHARACTER : SPACE C H A R A C T E R SPACE;
+CHARACTER_VARYING : SPACE C H A R A C T E R SPACE V A R Y I N G SPACE;
+CHECK : SPACE C H E C K SPACE;
+CLUSTER : SPACE C L U S T E R SPACE;
+COLUMN : SPACE C O L U M N SPACE;
+COMMENT : SPACE C O M M E N T SPACE;
+COMMENTS : SPACE C O M M E N T S SPACE;
+COMMIT : SPACE C O M M I T SPACE;
+COMMITTED : SPACE C O M M I T T E D SPACE;
+CONCURRENTLY : SPACE C O N C U R R E N T L Y SPACE;
+CONFLICT : SPACE C O N F L I C T SPACE;
+CONSTRAINT : SPACE C O N S T R A I N T SPACE;
+CONSTRAINTS : SPACE C O N S T R A I N T S SPACE;
+CONTINUE : SPACE C O N T I N U E SPACE;
+COPY : SPACE C O P Y SPACE;
+CREATE : SPACE C R E A T E SPACE;
+CURRENT_ROLE : SPACE C U R R E N T '_' R O L E SPACE ;
+CURRENT_USER : SPACE C U R R E N T '_' U S E R SPACE ;
+CYCLE : SPACE C Y C L E SPACE;
+DATA : SPACE D A T A SPACE;
+DATABASE : SPACE D A T A B A S E SPACE;
+DECIMAL : SPACE D E C I M A L SPACE;
+DEFAULT : SPACE D E F A U L T SPACE commonExprErr;
+DEFAULTS : SPACE D E F A U L T S SPACE;
+DEFERRABLE : SPACE D E F E R R A B L E SPACE;
+DEFERRED : SPACE D E F E R R E D SPACE;
+DELAYED : SPACE D E L A Y E D SPACE;
+DELETE : SPACE D E L E T E SPACE;
+DESC : SPACE D E S C SPACE;
+DISCARD : SPACE D I S C A R D SPACE;
+DISTINCT : SPACE D I S T I N C T SPACE;
+DO : SPACE D O SPACE;
+DOMAIN : SPACE D O M A I N SPACE;
+DOUBLE : SPACE D O U B L E SPACE;
+DOUBLE_PRECISION : DOUBLE P R E C I S I O N SPACE;
+DROP : SPACE D R O P SPACE;
+EACH : SPACE E A C H SPACE;
+EFFECTIVE_IO_CONCURRENCY : SPACE E F F E C T I V E '_' I O '_' C O N C U R R E N C Y SPACE ;
+ENFORCED : SPACE E N F O R C E D SPACE;
+EXCLUDE : SPACE E X C L U D E SPACE;
+EXCLUDING : SPACE E X C L U D I N G SPACE;
+EXCLUSIVE : SPACE E X C L U S I V E SPACE;
+EXISTS : SPACE E X I S T S SPACE;
+EXPLAIN : SPACE E X P L A I N SPACE;
+EXPRESSION : SPACE E X P R E S S I O N SPACE;
+EXTENDED : SPACE E X T E N D E D SPACE;
+EXTERNAL : SPACE E X T E R N A L SPACE;
+FALSE : SPACE F A L S E SPACE;
+FIRST : SPACE F I R S T SPACE;
+FLOAT : SPACE F L O A T SPACE;
+FOR : SPACE F O R SPACE;
+FOREIGN_KEY : SPACE F O R E I G N SPACE K E Y SPACE;
+FROM : SPACE F R O M SPACE;
+FULL : SPACE F U L L SPACE;
+FULLTEXT : SPACE F U L L T E X T SPACE;
+FUNCTION : SPACE F U N C T I O N SPACE;
+GENERATED : SPACE G E N E R A T E D SPACE;
+GROUP : SPACE G R O U P SPACE;
+HASH : SPACE H A S H SPACE;
+HIGH_PRIORITY : SPACE H I G H '_' P R I O R I T Y SPACE;
+IDENTITY : SPACE I D E N T I T Y SPACE;
+IF : SPACE I F SPACE;
+IGNORE : SPACE I G N O R E SPACE;
+IMMEDIATE : SPACE I M M E D I A T E SPACE;
+IN : SPACE I N SPACE;
+INCLUDE : SPACE I N C L U D E SPACE;
+INCLUDING : SPACE I N C L U D I N G SPACE;
+INCREMENT : SPACE I N C R E M E N T SPACE;
+INDEX : SPACE I N D E X SPACE;
+INDEXES : SPACE I N D E X E S SPACE;
+INET : SPACE I N E T SPACE;
+INHERIT : SPACE I N H E R I T SPACE;
+INHERITS : SPACE I N H E R I T S SPACE;
+INITIALLY : SPACE I N I T I A L L Y SPACE;
+INPLACE : SPACE I N P L A C E SPACE;
+INSERT : SPACE I N S E R T SPACE;
+INT : SPACE I N T SPACE;
+INT4RANGE : SPACE I N T '4' R A N G E SPACE;
+INTEGER : SPACE I N T E G E R SPACE;
+INTO : SPACE I N T O SPACE;
+IS : SPACE I S SPACE;
+ISOLATION : SPACE I S O L A T I O N SPACE;
+JOIN : SPACE J O I N SPACE;
+KEY : SPACE K E Y SPACE;
+LAST : SPACE L A S T SPACE;
+LEVEL : SPACE L E V E L SPACE;
+LIKE : SPACE L I K E SPACE;
+LINEAR : SPACE L I N E A R SPACE;
+LIST : SPACE L I S T SPACE;
+LISTEN : SPACE L I S T E N SPACE;
+LOCAL : SPACE L O C A L SPACE;
+LOCATION : SPACE L O C A T I O N SPACE;
+LOCK : SPACE L O C K SPACE;
+LOW_PRIORITY : SPACE L O W '_' P R I O R I T Y SPACE;
+MAIN : SPACE M A I N SPACE;
+MAINTENANCE_IO_CONCURRENCY : SPACE M A I N T E N A N C E '_' I O '_' C O N C U R R E N C Y SPACE ;
+MATCH : SPACE M A T C H SPACE;
+MATERIALIZED : SPACE M A T E R I A L I Z E D SPACE;
+MAXVALUE : SPACE M A X V A L U E SPACE;
+MINVALUE : SPACE M I N V A L U E SPACE;
+MONEY : SPACE M O N E Y SPACE;
+NAME : SPACE N A M E SPACE;
+NEW : SPACE N E W SPACE;
+NO : SPACE N O SPACE;
+NONE : SPACE N O N E SPACE;
+NOT : SPACE N O T SPACE;
+NOTHING : SPACE N O T H I N G SPACE;
+NOTIFY : SPACE N O T I F Y SPACE;
+NOWAIT : SPACE N O W A I T SPACE;
+NULL : SPACE N U L L SPACE;
+NULLS : SPACE N U L L S SPACE;
+NUMERIC : SPACE N U M E R I C SPACE;
+OFFLINE : SPACE O F F L I N E SPACE;
+OLD : SPACE O L D SPACE;
+ON : SPACE O N SPACE;
+ONLINE : SPACE O N L I N E SPACE;
+ONLY : SPACE O N L Y SPACE;
+OPTION : SPACE O P T I O N SPACE;
+OR : SPACE O R SPACE;
+ORDER : SPACE O R D E R SPACE;
+OVER : SPACE O V E R SPACE;
+OVERRIDING : SPACE O V E R R I D I N G SPACE;
+OWNED : SPACE O W N E D SPACE;
+OWNER : SPACE O W N E R SPACE ;
+PARTITION : SPACE P A R T I T I O N SPACE;
+PLAIN : SPACE P L A I N SPACE;
+PLAN : SPACE P L A N SPACE;
+PLANS : SPACE P L A N S SPACE;
+POLICY : SPACE P O L I C Y SPACE;
+PRESERVE : SPACE P R E S E R V E SPACE;
+PRIMARY : SPACE P R I M A R Y SPACE;
+PRIMARY_KEY : SPACE P R I M A R Y SPACE K E Y SPACE;
+PROCEDURE : SPACE P R O C E D U R E SPACE;
+RANDOM_PAGE_COST : SPACE R A N D O M '_' P A G E '_' C O S T SPACE ;
+RANGE : SPACE R A N G E SPACE;
+READ : SPACE R E A D SPACE;
+REAL : SPACE R E A L SPACE;
+RECURSIVE : SPACE R E C U R S I V E SPACE;
+REFERENCES : SPACE R E F E R E N C E S SPACE;
+REGCLASS : SPACE R E G C L A S S SPACE;
+REINDEX : SPACE R E I N D E X SPACE;
+RENAME : SPACE R E N A M E SPACE;
+REPEATABLE : SPACE R E P E A T A B L E SPACE;
+REPLACE : SPACE R E P L A C E SPACE;
+RESET : SPACE R E S E T SPACE;
+RESTART : SPACE R E S T A R T SPACE;
+RESTRICT : SPACE R E S T R I C T SPACE;
+RETURNING : SPACE R E T U R N I N G SPACE;
+ROLE : SPACE R O L E SPACE;
+ROLLBACK : SPACE R O L L B A C K SPACE;
+ROW : SPACE R O W SPACE;
+ROWS : SPACE R O W S SPACE;
+RULE : SPACE R U L E SPACE;
+SCHEMA : SPACE S C H E M A SPACE;
+SELECT : SPACE S E L E C T SPACE;
+SEQUENCE : SPACE S E Q U E N C E SPACE;
+SEQUENCES : SPACE S E Q U E N C E S SPACE;
+SERIALIZABLE : SPACE S E R I A L I Z A B L E SPACE;
+SESSION : SPACE S E S S I O N SPACE;
+SESSION_USER : SPACE S E S S I O N '_' U S E R SPACE ;
+SEQ_PAGE_COST : SPACE S E Q '_' P A G E '_' C O S T SPACE ;
+SET : SPACE S E T SPACE;
+SHARE : SPACE S H A R E SPACE;
+SHARED : SPACE S H A R E D SPACE;
+SIMILAR : SPACE S I M I L A R SPACE;
+SIMPLE : SPACE S I M P L E SPACE;
+SMALLINT : SPACE S M A L L I N T SPACE;
+SPATIAL : SPACE S P A T I A L SPACE;
+START : SPACE S T A R T SPACE;
+STATISTICS : SPACE S T A T I S T I C S SPACE;
+STORAGE : SPACE S T O R A G E SPACE;
+STORED : SPACE S T O R E D SPACE;
+STUB : SPACE S T U B SPACE;
+SYSTEM : SPACE S Y S T E M SPACE;
+TABLE : SPACE T A B L E SPACE;
+TABLESPACE : SPACE T A B L E S P A C E SPACE;
+TEMP : SPACE T E M P SPACE;
+TEMPORARY : SPACE T E M P O R A R Y SPACE;
+TEXT : SPACE T E X T SPACE;
+TO : SPACE T O SPACE;
+TRUE : SPACE T R U E SPACE;
+TRUNCATE : SPACE T R U N C A T E SPACE;
+TYPE : SPACE T Y P E SPACE;
+UNCOMMITTED : SPACE U N C O M M I T T E D SPACE;
+UNIQUE : SPACE U N I Q U E SPACE;
+UNLISTEN : SPACE U N L I S T E N SPACE;
+UNLOGGED : SPACE U N L O G G E D SPACE;
+UPDATE : SPACE U P D A T E SPACE;
+USE : SPACE U S E SPACE;
+USER : SPACE U S E R SPACE;
+USING : SPACE U S I N G SPACE;
+VACUUM : SPACE V A C U U M SPACE;
+VALUE : SPACE V A L U E SPACE;
+VALUES : SPACE V A L U E S SPACE;
+VIEW : SPACE V I E W SPACE;
+VIRTUAL : SPACE V I R T U A L SPACE;
+WAIT : SPACE W A I T SPACE;
+WHERE : SPACE W H E R E SPACE;
+WITH : SPACE W I T H SPACE;
+
+
+
+LB : '(';
+RB : ')';
+LT : '<';
+GT : '>';
+EQ : '=';
+SC : ';';
+US : '_';
+DS : '-';
+ASTERISK : '*';
+DQ : '\"';
+SQ : '\'';
+COMMA : ',';
+DOT : '.';
+
+fragment FDIGIT : [1-9];
+fragment DIGIT : [0-9];
+fragment SPACE : [\u0020];
+fragment NL : [\n];
+fragment A : [Aa];
+fragment B : [Bb];
+fragment C : [Cc];
+fragment D : [Dd];
+fragment E : [Ee];
+fragment F : [Ff];
+fragment G : [Gg];
+fragment H : [Hh];
+fragment I : [Ii];
+fragment J : [Jj];
+fragment K : [Kk];
+fragment L : [Ll];
+fragment M : [Mm];
+fragment N : [Nn];
+fragment O : [Oo];
+fragment P : [Pp];
+fragment Q : [Qq];
+fragment R : [Rr];
+fragment S : [Ss];
+fragment T : [Tt];
+fragment U : [Uu];
+fragment V : [Vv];
+fragment W : [Ww];
+fragment X : [Xx];
+fragment Y : [Yy];
+fragment Z : [Zz];
+fragment CH : [A-Za-z];
+
+DB : ' ' CH CH**random[2,10] ' ';
+str_const : CH**random[3,10];
