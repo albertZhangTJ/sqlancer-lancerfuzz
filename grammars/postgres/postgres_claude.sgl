@@ -196,6 +196,8 @@ real_func
     | ' random() '
     | ' setseed(' expr['REAL'] ') '
     | ' width_bucket(' expr['REAL'] ', ' expr['REAL'] ', ' expr['REAL'] ', ' expr['INT'] ') ' error['count must be greater than zero']
+    | ' ts_rank(' tsvector_expr ', ' tsquery_expr ') ' error['syntax error in tsquery']
+    | ' ts_rank_cd(' tsvector_expr ', ' tsquery_expr ') ' error['syntax error in tsquery']
     ;
 
 range_expr : (range_const 90% | range_func | range_operation | <defined[symbols] and symbols_with_type[symbols, 'RANGE'].len>0> symbols_with_type[symbols, 'RANGE'].any ) commonRangeExpressionErr ;
@@ -238,6 +240,7 @@ boolean_func
     | ' is_normalized(' expr['TEXT'] ') '
     | ' pg_table_is_visible(' expr['INT'] '::oid) '
     | ' pg_function_is_visible(' expr['INT'] '::oid) '
+    | tsvector_expr ' @@ ' tsquery_expr error['syntax error in tsquery']
     ;
 
 int_expr : int_const 90% | int_func | int_operation | <defined[symbols] and symbols_with_type[symbols, 'INT'].len>0> symbols_with_type[symbols, 'INT'].any ;
@@ -276,6 +279,8 @@ int_func
     | ' pg_current_xact_id() '
     | ' pg_my_temp_schema() '
     | ' cardinality(' expr['ARRAY'] ') '
+    | ' length(' tsvector_expr ') '
+    | ' numnode(' tsquery_expr ') ' error['syntax error in tsquery']
     ;
 
 text_expr : text_const 90% | text_func | text_operation | <defined[symbols] and symbols_with_type[symbols, 'TEXT'].len>0> symbols_with_type[symbols, 'TEXT'].any ;
@@ -338,6 +343,7 @@ text_func
     | ' session_user '
     | ' current_setting(' expr['TEXT'] ') '
     | ' pg_typeof(' any_expr ')::text '
+    | ' ts_headline(' ts_config_name ', ' expr['TEXT'] ', ' tsquery_expr ') ' error['syntax error in tsquery']
     //| ' gen_random_uuid()::text '
     ;
 
@@ -353,6 +359,27 @@ money_const : '\''   FDIGIT DIGIT* '\'' cast_op 'MONEY';
 bit_expr : ( bit_const 95% | bit_operation | <defined[symbols] and symbols_with_type[symbols, 'BIT'].len>0> symbols_with_type[symbols, 'BIT'].any ) error['bit string length'];
 
 bit_operation : expr['BIT'] binary_bit_op expr['BIT'] bitStrOpErr;
+
+// Text Search expressions (exercises tsearch module)
+tsvector_expr
+    : ' to_tsvector(' ts_config_name ', ' expr['TEXT'] ') ' 95%
+    | ' strip(' tsvector_expr ') '
+    | ' setweight(' tsvector_expr ', \'' ( 'A' | 'B' | 'C' | 'D' ) '\') '
+    | tsvector_expr ' || ' tsvector_expr
+    ;
+
+tsquery_expr
+    : ' to_tsquery(' ts_config_name ', ' ts_query_text ') '
+    | ' plainto_tsquery(' ts_config_name ', ' expr['TEXT'] ') '
+    | ' phraseto_tsquery(' ts_config_name ', ' expr['TEXT'] ') '
+    | ' websearch_to_tsquery(' ts_config_name ', ' expr['TEXT'] ') '
+    | tsquery_expr ' && ' tsquery_expr
+    | tsquery_expr ' || ' tsquery_expr
+    | ' !! ' tsquery_expr
+    ;
+
+ts_config_name : '\'' ( 'english' | 'simple' ) '\'';
+ts_query_text : '\'' ( 'cat' | 'dog' | 'test' | 'hello' | 'world' | 'cat & dog' | 'cat | dog' ) '\'';
 
 timestamp_expr : timestamp_const 90% | timestamp_func | <defined[symbols] and symbols_with_type[symbols, 'TIMESTAMP'].len>0> symbols_with_type[symbols, 'TIMESTAMP'].any ;
 
@@ -1035,6 +1062,10 @@ rules returns [ru] : ru=$query['SELECT rulename AS name, tablename AS table_name
 policies returns [po] : po=$query['SELECT policyname AS name, tablename AS table_name FROM pg_policies WHERE schemaname = \'public\';', 'name', 'table_name', 'table_name'];
 matViews returns [mv] : mv=$query['SELECT matviewname AS name FROM pg_matviews WHERE schemaname = \'public\';', 'name'];
 languages returns [la] : la=$query['SELECT lanname AS name FROM pg_language;', 'name'];
+partitionedTables returns [pt] : pt=$query['SELECT c.relname AS name FROM pg_class c JOIN pg_partitioned_table p ON c.oid = p.partrelid JOIN pg_namespace n ON c.relnamespace = n.oid WHERE n.nspname = \'public\';', 'name'];
+partitions returns [pp] : pp=$query['SELECT c.relname AS name, parent.relname AS parent_name FROM pg_inherits i JOIN pg_class c ON i.inhrelid = c.oid JOIN pg_class parent ON i.inhparent = parent.oid JOIN pg_namespace n ON c.relnamespace = n.oid WHERE n.nspname = \'public\';', 'name', 'parent_name', 'parent_name'];
+tsConfigs returns [tc] : tc=$query['SELECT cfgname AS name FROM pg_ts_config;', 'name'];
+preparedStmts returns [ps] : ps=$query['SELECT name FROM pg_prepared_statements;', 'name'];
 
 ifNotExists : IF NOT EXISTS;
 ifExists : IF EXISTS;
@@ -1676,8 +1707,8 @@ show
 // SET TRANSACTION
 // ----------------------------------------------------------------------------
 setTransaction
-    : SET ' TRANSACTION ' transactionMode ( ',' transactionMode )**random[0, 2]
-    | SET ' SESSION CHARACTERISTICS AS TRANSACTION ' transactionMode
+    : ( SET ' TRANSACTION ' transactionMode ( ',' transactionMode )**random[0, 2]
+    | SET ' SESSION CHARACTERISTICS AS TRANSACTION ' transactionMode )
     error['must be called before any query']
     ;
 
@@ -1723,6 +1754,98 @@ copyOption
     : ' FORMAT ' ( ' text ' | ' csv ' )
     | ' DELIMITER ' '\'' ',' '\''
     | ' HEADER ' ( ' true ' | ' false ' )?
+    ;
+
+// ============================================================================
+// PARTITIONING SUPPORT (exercises src/backend/partitioning - 0% coverage)
+// ============================================================================
+
+// Create a partition child of an existing partitioned table
+createPartitionOf
+    : <partitionedTables.len>0> globalErr CREATE TABLE ifNotExists? t+=new['table']
+      PARTITION ' OF ' pt=partitionedTables.any
+      partitionBound
+      t.any.c=$columns[pt]
+    error['already exists', 'is not partitioned', 'not enough columns in the PARTITION BY', 
+          'partition key column', 'new row violates partition constraint',
+          'cannot create partition of relation that is not partitioned',
+          'overlap', 'conflict', 'every bound following MAXVALUE must also be MAXVALUE',
+          'every bound following MINVALUE must also be MINVALUE', 'out of range',
+          'no schema has been selected to create in', 'is already a partition',
+          'cannot attach a typed table as partition',
+          'specified value', 'bound specification for a hash partition']
+    ;
+
+partitionBound
+    : FOR VALUES IN '(' (int_const | text_const)**random[1, 5, ','] ')'
+    | FOR VALUES FROM '(' (int_const | ' MINVALUE ')**random[1, ','] ')' TO '(' (int_const | ' MAXVALUE ')**random[1, ','] ')'
+    | FOR VALUES WITH '( MODULUS ' random[1, 10] ', REMAINDER ' random[0, 9] ' )'
+    | DEFAULT
+    ;
+
+// Attach an existing table as a partition
+attachPartition
+    : <partitionedTables.len>0 and tables.len>1> globalErr ALTER TABLE partitionedTables.any
+      ' ATTACH PARTITION ' tables.any
+      partitionBound
+    error['does not exist', 'is not partitioned', 'overlap', 'already a partition',
+          'is already a child', 'cannot attach a typed table', 'cannot attach permanent relation',
+          'is not a table', 'table has different number of columns',
+          'cannot attach', 'violates partition constraint', 'column', 'type mismatch',
+          'bound specification for a hash partition']
+    ;
+
+// Detach a partition from its parent
+detachPartition
+    : <partitionedTables.len>0 and partitions.len>0> globalErr ALTER TABLE partitionedTables.any
+      ' DETACH PARTITION ' partitions.any ( CONCURRENTLY | ' FINALIZE ' )?
+    error['does not exist', 'is not a partition', 'is not partitioned', 
+          'cannot run inside a transaction block', 'has pending detach']
+    ;
+
+// ============================================================================
+// SET OPERATIONS (exercises executor/nodeSetOp, optimizer - low coverage)
+// ============================================================================
+
+selectUnion
+    : fr=$random[1,3,','] '(' select[0, fr] ')' ( ' UNION ' ( ALL )? | ' INTERSECT ' ( ALL )? | ' EXCEPT ' ( ALL )? ) '(' select[0, fr] ')'
+      ( ORDER BY random[1, 3] ( ASC | DESC )? )?
+      ( ' LIMIT ' random[1, 100] )?
+    error['each UNION query must have the same number of columns', 'ORDER BY position',
+          'could not determine which collation to use', 'UNION types', 'cannot cast']
+    ;
+
+// ============================================================================
+// PREPARE / EXECUTE / DEALLOCATE (exercises commands/prepare.c)
+// ============================================================================
+
+prepare
+    : globalErr ' PREPARE ' new['prepared'] AS ( select[0] | createInsert )
+    error['already exists']
+    ;
+
+execute
+    : globalErr ' EXECUTE ' ( <preparedStmts.len>0> preparedStmts.any | new['prepared'] )
+    error['does not exist', 'wrong number of parameters']
+    ;
+
+deallocate
+    : globalErr ' DEALLOCATE ' ( ALL | <preparedStmts.len>0> preparedStmts.any | new['prepared'] )
+    error['does not exist']
+    ;
+
+// ============================================================================
+// CTE - Common Table Expressions (exercises rewrite, optimizer/prep - ~42%)
+// ============================================================================
+
+selectCTE
+    : globalErr WITH ( RECURSIVE )?
+      cte_name=new['table'] AS ( MATERIALIZED | NOT MATERIALIZED )?
+      '(' select[0] ')'
+      SELECT ASTERISK FROM cte_name
+      ( WHERE expr['BOOLEAN'] )?
+    error['does not have a RECURSIVE', 'specified more than once', 'is not referenced in query',
+          'mutual recursion', 'recursive reference', 'UNION', 'recursive query']
     ;
 
 // ============================================================================
