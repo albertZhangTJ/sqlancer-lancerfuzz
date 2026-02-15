@@ -18,13 +18,15 @@
                 "createTable",
                 "createDomain",
                 "createType",
-                "createPartitionOf"
+                "createPartitionOf",
+                "createTableAs"
             ],
             "weights": [
                 10,
                 2,
                 2,
-                3
+                3,
+                2
             ],
             "min": 25,
             "max": 35
@@ -164,7 +166,18 @@
                 "selectCTE",
                 "prepare",
                 "execute",
-                "deallocate"
+                "deallocate",
+                "selectGroupBy",
+                "selectDistinctOn",
+                "insertOnConflictUpdate",
+                "alterTableAddConstraint",
+                "explainFull",
+                "savepoint",
+                "createTableAs",
+                "writableCTE",
+                "selectLateral",
+                "selectAggFilter",
+                "selectGroupingSets"
             ],
             "weights": [
                 30,
@@ -242,7 +255,18 @@
                 5,
                 2,
                 2,
-                1
+                1,
+                5,
+                3,
+                3,
+                2,
+                3,
+                2,
+                2,
+                3,
+                3,
+                3,
+                3
             ],
             "min": 1000,
             "max": 1500
@@ -256,7 +280,13 @@
                 "show",
                 "valuesStmt",
                 "selectUnion",
-                "selectCTE"
+                "selectCTE",
+                "selectGroupBy",
+                "selectDistinctOn",
+                "selectLateral",
+                "selectAggFilter",
+                "selectGroupingSets",
+                "explainFull"
             ],
             "weights": [
                 20,
@@ -264,7 +294,13 @@
                 3,
                 2,
                 5,
-                5
+                5,
+                5,
+                3,
+                3,
+                3,
+                3,
+                3
             ],
             "min": 100,
             "max": 200
@@ -300,7 +336,9 @@
                 "dropSequence",
                 "createPartitionOf",
                 "attachPartition",
-                "detachPartition"
+                "detachPartition",
+                "alterTableAddConstraint",
+                "createTableAs"
             ],
             "weights": [
                 5,
@@ -330,6 +368,8 @@
                 2,
                 3,
                 2,
+                2,
+                3,
                 2
             ],
             "min": 200,

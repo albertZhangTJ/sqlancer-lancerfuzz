@@ -1654,7 +1654,7 @@ public class Fuzzer{
                 }
                 try {
                     try {
-                        if (stmt.trim().toUpperCase().startsWith("SELECT")){
+                        if (stmt.contains("/*BEGIN_COND*/") && stmt.contains("/*BEGIN_PRED*/") && stmt.contains("/*END_PRED*/") && stmt.contains("/*END_COND*/")){
                             return test_TLP(stmt);
                         }
                         else {

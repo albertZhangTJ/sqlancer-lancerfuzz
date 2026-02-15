@@ -10,7 +10,7 @@ symbols_with_type [symbols, et] returns [fs]
 
 // PostgresAggregate.java
 aggregate_func  
-    : error['aggregate functions are not allowed in'] ('AVG(' ( expr['INT'] | expr['REAL'] )**random[1, ', '] ')' 
+    : error['aggregate functions are not allowed in', 'aggregate function calls cannot be nested'] ('AVG(' ( expr['INT'] | expr['REAL'] )**random[1, ', '] ')' 
     | 'BIT_AND(' expr['INT']**random[1, ', '] ')' | 'BIT_OR(' expr['INT']**random[1, ', '] ')' | 'BOOL_AND(' expr['BOOLEAN']**random[1, ', '] ')'
     | 'BOOL_AND(' expr['BOOLEAN']**random[1, ', '] ')' | 'COUNT(' expr['INT']**random[1, ', '] ')' | 'EVERY(' expr['BOOLEAN']**random[1, ', '] ')'
     | 'MAX(' any_expr**random[1, ', '] ')' | 'MIN(' any_expr**random[1, ', '] ')'
@@ -142,7 +142,10 @@ inet_func
     | ' set_masklen(' expr['INET'] ', ' expr['INET'] ') '
     ;
 
-real_expr : real_const 90% | real_func | real_operation | <defined[symbols] and symbols_with_type[symbols, 'REAL'].len>0> symbols_with_type[symbols, 'REAL'].any ;
+real_expr : real_const 90% | real_func | real_operation 
+    | <defined[symbols] and symbols_with_type[symbols, 'REAL'].len>0> symbols_with_type[symbols, 'REAL'].any 
+    | case_expr_real | coalesce_expr_real
+    ;
 
 real_operation : expr['REAL'] binary_arith_op expr['REAL'];
 
@@ -198,6 +201,16 @@ real_func
     | ' width_bucket(' expr['REAL'] ', ' expr['REAL'] ', ' expr['REAL'] ', ' expr['INT'] ') ' error['count must be greater than zero']
     | ' ts_rank(' tsvector_expr ', ' tsquery_expr ') ' error['syntax error in tsquery']
     | ' ts_rank_cd(' tsvector_expr ', ' tsquery_expr ') ' error['syntax error in tsquery']
+    | ' EXTRACT(EPOCH FROM ' timestamp_expr ') '
+    ;
+
+// CASE and COALESCE for REAL
+case_expr_real : ' CASE WHEN ' expr['BOOLEAN'] ' THEN ' expr['REAL'] ( ' WHEN ' expr['BOOLEAN'] ' THEN ' expr['REAL'] )**random[0,2,' '] ' ELSE ' expr['REAL'] ' END ';
+coalesce_expr_real
+    : ' COALESCE(' expr['REAL'] ', ' expr['REAL'] ') '
+    | ' NULLIF(' expr['REAL'] ', ' expr['REAL'] ') '
+    | ' GREATEST(' expr['REAL'] ', ' expr['REAL'] ') '
+    | ' LEAST(' expr['REAL'] ', ' expr['REAL'] ') '
     ;
 
 range_expr : (range_const 90% | range_func | range_operation | <defined[symbols] and symbols_with_type[symbols, 'RANGE'].len>0> symbols_with_type[symbols, 'RANGE'].any ) commonRangeExpressionErr ;
@@ -208,7 +221,10 @@ range_const :  'int4range(' int_const ',' int_const ',\'' ('(' | '[' ) (']' | ')
 
 range_func : ' range_merge(' expr['RANGE'] ', ' expr['RANGE'] ') ';
 
-boolean_expr : boolean_const 90% | boolean_func | boolean_operation | <defined[symbols] and symbols_with_type[symbols, 'BOOLEAN'].len>0> symbols_with_type[symbols, 'BOOLEAN'].any ;
+boolean_expr : boolean_const 90% | boolean_func | boolean_operation 
+    | <defined[symbols] and symbols_with_type[symbols, 'BOOLEAN'].len>0> symbols_with_type[symbols, 'BOOLEAN'].any 
+    | case_expr_bool | coalesce_expr_bool
+    ;
 
 boolean_const : TRUE | FALSE;
 
@@ -221,7 +237,10 @@ boolean_operation
     | expr['TEXT'] SIMILAR TO expr['TEXT']
     | expr['TEXT'] LIKE expr['TEXT']
     | inOperator
-    | expr['BOOLEAN'] booleanPostfixOperator ) ')'
+    | expr['BOOLEAN'] booleanPostfixOperator 
+    | expr['INT'] ('=' | '!=' | '<' | '<=' | '>' | '>=') ' ANY(ARRAY[' expr['INT'] ',' expr['INT'] '])'
+    | expr['TEXT'] ('=' | '!=' | '<' | '<=' | '>' | '>=') ' ALL(ARRAY[' expr['TEXT'] '])'
+    ) ')'
     ;
 
 boolean_func
@@ -241,9 +260,21 @@ boolean_func
     | ' pg_table_is_visible(' expr['INT'] '::oid) '
     | ' pg_function_is_visible(' expr['INT'] '::oid) '
     | tsvector_expr ' @@ ' tsquery_expr error['syntax error in tsquery']
+    | ' (' jsonb_literal ' @> ' jsonb_literal ') '
+    | ' (' jsonb_literal ' <@ ' jsonb_literal ') '
+    | ' (' jsonb_literal ' ? ' text_const ') ' error['cannot call jsonb_exists on a scalar']
+    | ' jsonb_path_exists(' jsonb_literal ', \'$\') '
+    | ' (' expr['INT'] ' = ANY(ARRAY[' expr['INT'] ',' expr['INT'] '])) '
     ;
 
-int_expr : int_const 90% | int_func | int_operation | <defined[symbols] and symbols_with_type[symbols, 'INT'].len>0> symbols_with_type[symbols, 'INT'].any ;
+// CASE and COALESCE for BOOLEAN
+case_expr_bool : ' CASE WHEN ' expr['BOOLEAN'] ' THEN ' expr['BOOLEAN'] ' ELSE ' expr['BOOLEAN'] ' END ';
+coalesce_expr_bool : ' COALESCE(' expr['BOOLEAN'] ', ' expr['BOOLEAN'] ') ';
+
+int_expr : int_const 90% | int_func | int_operation 
+    | <defined[symbols] and symbols_with_type[symbols, 'INT'].len>0> symbols_with_type[symbols, 'INT'].any 
+    | case_expr_int | coalesce_expr_int
+    ;
 
 int_operation : expr['INT'] binary_arith_op expr['INT'];
 
@@ -281,9 +312,27 @@ int_func
     | ' cardinality(' expr['ARRAY'] ') '
     | ' length(' tsvector_expr ') '
     | ' numnode(' tsquery_expr ') ' error['syntax error in tsquery']
+    | ' jsonb_array_length(' jsonb_literal ') ' error['cannot get array length']
+    | ' array_length(ARRAY[' expr['INT'] ',' expr['INT'] '], 1) '
+    | ' array_ndims(ARRAY[' expr['INT'] '] ) '
+    | ' array_position(ARRAY[' expr['INT'] ',' expr['INT'] ',' expr['INT'] '], ' expr['INT'] ') '
+    | ' EXTRACT(EPOCH FROM ' timestamp_expr ')::integer ' error['cannot cast']
+    | ' EXTRACT(' ( 'YEAR' | 'MONTH' | 'DAY' | 'HOUR' | 'DOW' ) ' FROM ' timestamp_expr ')::integer '
     ;
 
-text_expr : text_const 90% | text_func | text_operation | <defined[symbols] and symbols_with_type[symbols, 'TEXT'].len>0> symbols_with_type[symbols, 'TEXT'].any ;
+// CASE and COALESCE for INT (exercises executor/nodeCase.c, utils/adt)
+case_expr_int : ' CASE WHEN ' expr['BOOLEAN'] ' THEN ' expr['INT'] ( ' WHEN ' expr['BOOLEAN'] ' THEN ' expr['INT'] )**random[0,2,' '] ' ELSE ' expr['INT'] ' END ';
+coalesce_expr_int 
+    : ' COALESCE(' expr['INT'] ', ' expr['INT'] ') '
+    | ' NULLIF(' expr['INT'] ', ' expr['INT'] ') '
+    | ' GREATEST(' expr['INT'] ', ' expr['INT'] ') '
+    | ' LEAST(' expr['INT'] ', ' expr['INT'] ') '
+    ;
+
+text_expr : text_const 90% | text_func | text_operation 
+    | <defined[symbols] and symbols_with_type[symbols, 'TEXT'].len>0> symbols_with_type[symbols, 'TEXT'].any 
+    | case_expr_text | coalesce_expr_text
+    ;
 
 text_operation : expr['TEXT'] concat_op expr['TEXT'];
 
@@ -344,7 +393,22 @@ text_func
     | ' current_setting(' expr['TEXT'] ') '
     | ' pg_typeof(' any_expr ')::text '
     | ' ts_headline(' ts_config_name ', ' expr['TEXT'] ', ' tsquery_expr ') ' error['syntax error in tsquery']
+    | ' (' jsonb_literal ' ->> ' random[0,3] ')' error['cannot extract element from a scalar']
+    | ' jsonb_typeof(' jsonb_literal ') '
+    | ' jsonb_pretty(' jsonb_literal ') '
+    | ' array_to_string(ARRAY[' expr['TEXT'] ',' expr['TEXT'] '], \',\') '
+    | ' to_char(now(), \'YYYY-MM-DD\') '
+    | ' to_char(' expr['INT'] '::numeric, \'FM999,999\') '
     //| ' gen_random_uuid()::text '
+    ;
+
+// CASE and COALESCE for TEXT
+case_expr_text : ' CASE WHEN ' expr['BOOLEAN'] ' THEN ' expr['TEXT'] ( ' WHEN ' expr['BOOLEAN'] ' THEN ' expr['TEXT'] )**random[0,2,' '] ' ELSE ' expr['TEXT'] ' END ';
+coalesce_expr_text
+    : ' COALESCE(' expr['TEXT'] ', ' expr['TEXT'] ') '
+    | ' NULLIF(' expr['TEXT'] ', ' expr['TEXT'] ') '
+    | ' GREATEST(' expr['TEXT'] ', ' expr['TEXT'] ') '
+    | ' LEAST(' expr['TEXT'] ', ' expr['TEXT'] ') '
     ;
 
 
@@ -381,6 +445,24 @@ tsquery_expr
 ts_config_name : '\'' ( 'english' | 'simple' ) '\'';
 ts_query_text : '\'' ( 'cat' | 'dog' | 'test' | 'hello' | 'world' | 'cat & dog' | 'cat | dog' ) '\'';
 
+// JSONB literal constructors (exercises utils/adt/jsonb*.c - 21.4% coverage)
+jsonb_literal
+    : '\'' jsonb_value '\'::jsonb' 95%
+    | ' jsonb_build_object(' text_const ', ' any_expr ') '
+    | ' jsonb_build_array(' any_expr (',' any_expr)**random[0,2] ') '
+    | ' to_jsonb(' any_expr ') '
+    | ' jsonb_strip_nulls(' jsonb_literal ') '
+    | ' jsonb_set(' jsonb_literal ', \'{a}\', \'' jsonb_value '\'::jsonb) '
+    | jsonb_literal ' || ' jsonb_literal
+    | jsonb_literal ' - ' text_const
+    ;
+
+jsonb_value
+    : '{}' | '[]' | 'null' | '42' | '\"hello\"'
+    | '{\"a\":1}' | '{\"a\":1,\"b\":2}' | '{\"a\":\"test\",\"b\":true}'
+    | '[1,2,3]' | '{\"a\":[1,2],\"b\":{\"c\":3}}'
+    | '{\"x\":null,\"y\":0}' | '[{\"id\":1},{\"id\":2}]'
+    ;
 timestamp_expr : timestamp_const 90% | timestamp_func | <defined[symbols] and symbols_with_type[symbols, 'TIMESTAMP'].len>0> symbols_with_type[symbols, 'TIMESTAMP'].any ;
 
 timestamp_const : ' now() ' | ' current_timestamp ' | ' \'2024-01-01 00:00:00\'::timestamp ';
@@ -572,7 +654,7 @@ op_classes [type='any'] :
     ;
 
 createIndex [ih=false]
-    : globalErr CREATE error['index row requires'] UNIQUE? INDEX new['index'] ON ONLY? t+=tables.any c=$columns[t.any] t.any.c=$c ( USING ( ' BTREE ' | ' HASH ' ih=$true | ' GIST ' | ' GIN' ))? 
+    : globalErr CREATE error['index row requires'] UNIQUE? INDEX new['index'] ON ONLY? t+=tables.any c=$columns[t.any] t.any.c=$c ( USING ( ' BTREE ' | ' HASH ' ih=$true | ' GIST ' | ' GIN' | ' BRIN ' | ' SPGIST ' ))? 
     ' (' ( c.any | <ih!=true> (cc=c.any SPACE (op_classes[cc.type] error['does not accept', 'does not exist for access method'])**random[0,1,99] ( ASC | DESC )? ( ' NULLS FIRST ' | ' NULLS LAST ' )**random[0,1,99] )**random[1, 3, ','] ) ') '
     ( INCLUDE '(' c.unique_any**random[1, c.len, ','] ')' <ih!=true> | ' ') where_predicate[t, 0]?
     error['already contains data', 'You might need to add explicit type casts', ' collations are not supported', 
@@ -582,7 +664,9 @@ createIndex [ih=false]
         'insufficient columns in UNIQUE constraint definition', 'invalid input syntax for', 'must be type ', 'integer out of range', 'division by zero', 'out of range', 
         'functions in index predicate must be marked IMMUTABLE', 'functions in index expression must be marked IMMUTABLE', 
         'result of range difference would not be contiguous', 'which is part of the partition key', 'cannot use subquery in index predicate',
-        'no schema has been selected to create in', 'virtual'
+        'no schema has been selected to create in', 'virtual',
+        'access method \"brin\" does not support unique indexes', 'access method \"spgist\" does not support unique indexes',
+        'data type has no default operator class for access method'
     ]
     ;
 
@@ -1457,7 +1541,7 @@ createRule
       ( WHERE expr['BOOLEAN'] )?
       DO ( ' ALSO ' | ' INSTEAD ' )?
       ( NOTHING | '(' ruleAction ')' )
-    error['already exists', 'must be owner', 'RETURNING lists are not supported']
+    error['already exists', 'must be owner', 'RETURNING lists are not supported', 'infinite recursion detected in rules']
     ;
 
 ruleEvent : INSERT | UPDATE | DELETE ;
@@ -1846,6 +1930,199 @@ selectCTE
       ( WHERE expr['BOOLEAN'] )?
     error['does not have a RECURSIVE', 'specified more than once', 'is not referenced in query',
           'mutual recursion', 'recursive reference', 'UNION', 'recursive query']
+    ;
+
+// ============================================================================
+// SELECT with GROUP BY / HAVING (exercises executor/nodeAgg.c)
+// ============================================================================
+
+selectGroupBy
+    : globalErr SELECT 
+      tt=tables.any DOT cc=columns[tt].any ',' aggregate_func
+      FROM tt
+      ( WHERE expr['BOOLEAN'] )?
+      GROUP BY tt DOT cc
+      ( ' HAVING ' aggregate_func binary_comp_op expr['INT'] )?
+      ( ORDER BY random[1, 3] ( ASC | DESC )? )?
+      ( ' LIMIT ' random[1, 100] )?
+      SC
+    error['must appear in the GROUP BY clause or be used in an aggregate function',
+          'is not in select list', 'aggregate functions are not allowed in GROUP BY',
+          'division by zero', 'out of range', 'does not exist']
+    ;
+
+// ============================================================================
+// SELECT DISTINCT ON (exercises executor/nodeUnique.c, parser)
+// ============================================================================
+
+selectDistinctOn
+    : globalErr SELECT DISTINCT ON '(' tt=tables.any DOT columns[tt].any ')' 
+      ' ' tt DOT columns[tt].any (',' tt DOT columns[tt].any)**random[0,2]
+      FROM tt
+      ( WHERE expr['BOOLEAN'] )?
+      ORDER BY tt DOT columns[tt].any ( ASC | DESC )?
+      ( ' LIMIT ' random[1, 100] )?
+      SC
+    error['SELECT DISTINCT ON expressions must match initial ORDER BY expressions',
+          'does not exist', 'for SELECT DISTINCT']
+    ;
+
+// ============================================================================
+// INSERT ... ON CONFLICT DO UPDATE (exercises executor/nodeModifyTable.c)
+// ============================================================================
+
+insertOnConflictUpdate
+    : globalErr INSERT INTO t=tables.any c=$columns[t] ' ( ' (cc+=c.unique_any)**random[1, c.len, ',', 15] ' ) '
+      VALUES ' ( ' ( expr[cc.next.type] )**random[cc.len, ','] ' ) '
+      ON CONFLICT DO UPDATE SET columns[t].any ' = EXCLUDED.' columns[t].any
+    error['ON CONFLICT DO UPDATE command cannot affect row a second time',
+          'there is no unique or exclusion constraint matching the ON CONFLICT specification',
+          'violates foreign key constraint', 'violates not-null constraint',
+          'duplicate key value violates unique constraint', 'out of range',
+          'violates check constraint', 'bit string too long',
+          'but expression is of type', 'data type unknown',
+          'ON CONFLICT clause cannot be used with table that has',
+          'invalid input syntax']
+    ;
+
+// ============================================================================
+// ALTER TABLE ADD CONSTRAINT (exercises commands/tablecmds.c)
+// ============================================================================
+
+alterTableAddConstraint
+    : globalErr ALTER TABLE t=tables.any c=$columns[t] ' ADD ' ( CONSTRAINT new['constraint'] )?
+      ( CHECK '(' expr['BOOLEAN'] ')' ( NOT? ENFORCED)?
+      | uniqueConstraint '(' c.unique_any**random[1, c.len, ','] ')' appendIndexParam
+      | PRIMARY_KEY '(' c.unique_any**random[1, c.len, ','] ')' appendIndexParam
+      | FOREIGN_KEY '(' (cl+=c.unique_any)**random[1, c.len, ','] ')' REFERENCES tt=tables.any cc=$columns[tt] '(' cc.unique_any**random[cl.len, ','] ')' 
+        ( MATCH FULL | MATCH SIMPLE )? ( ON DELETE deleteOrUpdateAction )? ( ON UPDATE deleteOrUpdateAction )? 
+        ( DEFERRABLE (INITIALLY DEFERRED | INITIALLY IMMEDIATE ) | NOT DEFERRABLE )? ( NOT? ENFORCED)?
+      )
+    error['already exists', 'multiple primary keys for table',
+          'there is no unique constraint matching given keys for referenced table',
+          'constraint must be added to child tables too', 'is not yet implemented',
+          'cannot reference partitioned table', 'contains null values',
+          'could not create unique index', 'appears twice',
+          'foreign key constraint cannot be implemented',
+          'invalid ON DELETE action for foreign key constraint containing generated column']
+    ;
+
+// ============================================================================
+// EXPLAIN with more options (exercises commands/explain.c)
+// ============================================================================
+
+explainFull
+    : EXPLAIN ' (' explainOption ( ',' explainOption )**random[0, 3] ') ' ( select[0] | createInsert | createUpdate | delete )
+    error['requires ANALYZE']
+    ;
+
+explainOption
+    : ' ANALYZE ' ( ' true ' | ' false ' )?
+    | ' VERBOSE ' ( ' true ' | ' false ' )?
+    | ' COSTS ' ( ' true ' | ' false ' )?
+    | ' BUFFERS ' ( ' true ' | ' false ' )?
+    | ' TIMING ' ( ' true ' | ' false ' )?
+    | ' FORMAT ' ( ' TEXT ' | ' JSON ' | ' YAML ' | ' XML ' )
+    ;
+
+// ============================================================================
+// SAVEPOINT / RELEASE / ROLLBACK TO (exercises access/transam)
+// ============================================================================
+
+savepoint
+    : ' SAVEPOINT ' new['savepoint']
+    | ' RELEASE SAVEPOINT ' new['savepoint']
+    | ' ROLLBACK TO SAVEPOINT ' new['savepoint']
+    error['no such savepoint', 'does not exist']
+    ;
+
+// ============================================================================
+// CREATE TABLE AS (exercises commands/createas.c)
+// ============================================================================
+
+createTableAs
+    : globalErr CREATE ( TEMPORARY | TEMP | UNLOGGED )? TABLE ifNotExists? new['table'] AS select[0]
+      ( WITH ( NO )? DATA )?
+    error['already exists', 'no schema has been selected to create in', 'materialized views must not use temporary tables']
+    ;
+
+// ============================================================================
+// Writable CTE (exercises rewrite, executor - INSERT/UPDATE/DELETE in CTE)
+// ============================================================================
+
+writableCTE
+    : globalErr WITH cte_name=new['table'] AS
+      '(' ( cteInsert | cteUpdate | cteDelete ) ')'
+      SELECT ASTERISK FROM cte_name
+    error['RETURNING is not allowed in this context', 'does not exist',
+          'specified more than once', 'is not referenced in query',
+          'INSERT/UPDATE/DELETE in a CTE must have a RETURNING clause',
+          'DO ALSO rules are not supported for data-modifying statements in WITH']
+    ;
+
+cteInsert
+    : INSERT INTO t=tables.any c=$columns[t] ' ( ' (cc+=c.unique_any)**random[1, c.len, ',', 15] ' ) '
+      VALUES ' ( ' ( expr[cc.next.type] )**random[cc.len, ','] ' ) '
+      RETURNING ASTERISK
+    error['violates', 'out of range', 'bit string too long', 'invalid input syntax']
+    ;
+
+cteUpdate
+    : UPDATE t+=tables.any c=$columns[t.any] cc=c.any SET cc '=' constant[cc.type] 
+      ( WHERE expr['BOOLEAN'] )?
+      RETURNING ASTERISK
+    error['violates', 'out of range', 'cannot cast']
+    ;
+
+cteDelete
+    : DELETE FROM t+=tables.any c=$columns[t.next] t.cur.c=$c
+      where_predicate[t, 0]?
+      RETURNING ASTERISK
+    error['cannot perform DELETE RETURNING on relation']
+    ;
+
+// ============================================================================
+// SELECT with LATERAL (exercises optimizer/path, executor)
+// ============================================================================
+
+selectLateral
+    : globalErr SELECT ASTERISK
+      FROM tt=tables.any tt.c=$columns[tt]
+      ', LATERAL (' SELECT ASTERISK FROM tables.any ' LIMIT ' random[1, 5] ') AS ' new['table']
+      ( WHERE expr['BOOLEAN'] )?
+      ( ' LIMIT ' random[1, 100] )?
+      SC
+    error['does not exist', 'LATERAL reference', 'invalid reference']
+    ;
+
+// ============================================================================
+// Aggregate with FILTER (exercises executor/nodeAgg.c)
+// ============================================================================
+
+selectAggFilter
+    : globalErr SELECT 
+      tt=$tables.any tt.c=$columns[tt] cc=$tt.c
+      ' COUNT(*) FILTER (WHERE ' cc.any postfixOperator ') '
+      (',' aggregate_func ' FILTER (WHERE ' cc.any postfixOperator ')' )**random[0, 2]
+      FROM tt
+      SC
+    error['does not exist', 'must appear in the GROUP BY', 'aggregate functions are not allowed in']
+    ;
+
+// ============================================================================
+// SELECT with GROUPING SETS / CUBE / ROLLUP (exercises executor/nodeAgg.c)
+// ============================================================================
+
+selectGroupingSets
+    : globalErr SELECT tt=tables.any DOT cc=columns[tt].any ',' aggregate_func
+      FROM tt
+      ( WHERE expr['BOOLEAN'] )?
+      GROUP BY ( ' GROUPING SETS ((' tt DOT cc '), ()) '
+               | ' CUBE(' tt DOT cc ')'
+               | ' ROLLUP(' tt DOT cc ')' )
+      SC
+    error['must appear in the GROUP BY clause or be used in an aggregate function',
+          'does not exist', 'is not in select list']
     ;
 
 // ============================================================================
