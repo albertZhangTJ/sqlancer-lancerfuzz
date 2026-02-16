@@ -1,0 +1,11 @@
+# Build (5-10 minutes)
+docker-compose build
+
+# Start
+docker-compose up -d
+
+docker exec postgres-fuzzing coverage-helper.sh collect
+docker exec postgres-fuzzing coverage-helper.sh report
+
+docker-compose down        # Stop (keep data)
+docker-compose down -v     # Remove everything

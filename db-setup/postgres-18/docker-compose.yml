@@ -1,0 +1,34 @@
+services:
+  postgres-fuzz:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PG_VERSION: "18.1"
+    container_name: postgres-fuzzing
+    hostname: postgres-fuzz
+    ports:
+      - "5432:5432"
+    volumes:
+      # Mount coverage output directory
+      - ./coverage:/coverage
+      # Mount fuzzing directories
+      - ./fuzzing/inputs:/fuzzing/inputs
+      - ./fuzzing/outputs:/fuzzing/outputs
+      - ./fuzzing/corpus:/fuzzing/corpus
+      # Mount helper script
+      - ./coverage-helper.sh:/usr/local/bin/coverage-helper.sh:ro
+      # Mount custom fuzzing scripts
+      - ./fuzzers:/fuzzers:ro
+    environment:
+      - PGDATA=/var/lib/postgresql/data
+    # No auto-restart for easier debugging
+    # restart: unless-stopped
+    # Add security capabilities for fuzzing (optional, may need adjustment)
+    cap_add:
+      - SYS_PTRACE
+    # Increase shared memory for PostgreSQL
+    shm_size: 1gb
+    # Optional: resource limits for fuzzing
+    # mem_limit: 4g
+    # cpus: 2
