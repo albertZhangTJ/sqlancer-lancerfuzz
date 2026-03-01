@@ -1,0 +1,24 @@
+services:
+  postgres-fuzz:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PG_VERSION: "18.1"
+    container_name: postgres-fuzzing-sgl
+    hostname: postgres-fuzz-sgl
+    # Port 5432 is NOT published to the host - the fuzzer runs inside the
+    # container and connects to localhost:5432 directly.
+    # If you need host access for debugging, uncomment the lines below:
+    # ports:
+    #   - "5432:5432"
+    volumes:
+      # Mount coverage output directory
+      - ./coverage:/coverage
+      # Mount helper script
+      - ./coverage-helper.sh:/usr/local/bin/coverage-helper.sh:ro
+    environment:
+      - PGDATA=/var/lib/postgresql/data
+    cap_add:
+      - SYS_PTRACE
+    shm_size: 1gb
