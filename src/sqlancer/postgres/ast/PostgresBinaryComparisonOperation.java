@@ -126,7 +126,7 @@ public class PostgresBinaryComparisonOperation
         PostgresConstant leftExpectedValue = getLeft().getExpectedValue();
         PostgresConstant rightExpectedValue = getRight().getExpectedValue();
         if (leftExpectedValue == null || rightExpectedValue == null) {
-            return null;
+            return PostgresConstant.createNullConstant();
         }
         return getOp().getExpectedValue(leftExpectedValue, rightExpectedValue);
     }
