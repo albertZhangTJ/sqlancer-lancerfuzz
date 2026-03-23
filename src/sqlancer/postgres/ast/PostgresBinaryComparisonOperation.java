@@ -1,6 +1,7 @@
 package sqlancer.postgres.ast;
 
 import sqlancer.Randomly;
+import sqlancer.IgnoreMeException;
 import sqlancer.common.ast.BinaryOperatorNode;
 import sqlancer.common.ast.BinaryOperatorNode.Operator;
 import sqlancer.postgres.PostgresSchema.PostgresDataType;
@@ -126,7 +127,7 @@ public class PostgresBinaryComparisonOperation
         PostgresConstant leftExpectedValue = getLeft().getExpectedValue();
         PostgresConstant rightExpectedValue = getRight().getExpectedValue();
         if (leftExpectedValue == null || rightExpectedValue == null) {
-            return PostgresConstant.createNullConstant();
+            throw new IgnoreMeException();
         }
         return getOp().getExpectedValue(leftExpectedValue, rightExpectedValue);
     }

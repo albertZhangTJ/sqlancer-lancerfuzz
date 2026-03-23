@@ -127,7 +127,7 @@ public class PostgresAlterTableGenerator {
         if (!randomTable.hasIndexes()) {
             action.remove(Action.ADD_TABLE_CONSTRAINT_USING_INDEX);
         }
-        if (randomTable.isPartitioned()){
+        if (randomTable.isPartitioned()) {
             action.remove(Action.SET_LOGGED_UNLOGGED);
         }
         if (action.isEmpty()) {

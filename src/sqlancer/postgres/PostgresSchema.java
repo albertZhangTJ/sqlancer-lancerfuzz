@@ -172,7 +172,7 @@ public class PostgresSchema extends AbstractSchema<PostgresGlobalState, Postgres
             this.statistics = statistics;
             this.isInsertable = isInsertable;
             this.tableType = tableType;
-            //TODO: simple adapter for other implementations 
+            // TODO: simple adapter for other implementations
             this.isPartitioned = false;
         }
 
