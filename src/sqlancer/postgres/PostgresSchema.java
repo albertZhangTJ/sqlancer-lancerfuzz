@@ -343,3 +343,4 @@ public class PostgresSchema extends AbstractSchema<PostgresGlobalState, Postgres
     }
 
 }
+

@@ -1,7 +1,7 @@
 package sqlancer.postgres.ast;
 
-import sqlancer.Randomly;
 import sqlancer.IgnoreMeException;
+import sqlancer.Randomly;
 import sqlancer.common.ast.BinaryOperatorNode;
 import sqlancer.common.ast.BinaryOperatorNode.Operator;
 import sqlancer.postgres.PostgresSchema.PostgresDataType;
@@ -138,3 +138,4 @@ public class PostgresBinaryComparisonOperation
     }
 
 }
+
